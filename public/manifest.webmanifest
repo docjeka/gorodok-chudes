@@ -1,0 +1,18 @@
+{
+  "name": "Маленький город чудес",
+  "short_name": "Город чудес",
+  "description": "Кукольный домик-песочница: герои, комнаты, наряды, готовка и подарки. Без рекламы и покупок.",
+  "lang": "ru",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "any",
+  "background_color": "#fff6e6",
+  "theme_color": "#fff6e6",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

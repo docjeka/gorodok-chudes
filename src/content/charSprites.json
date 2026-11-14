@@ -1,0 +1,1874 @@
+{
+ "hero_mila:summer:stand": {
+  "file": "hero_mila_summer_stand.webp",
+  "w": 379,
+  "h": 530,
+  "unit": 2,
+  "origin": {
+   "x": 189,
+   "y": 529
+  },
+  "eyeL": {
+   "x": 151,
+   "y": 136
+  },
+  "eyeR": {
+   "x": 228,
+   "y": 136
+  },
+  "browL": {
+   "x": 151,
+   "y": 110
+  },
+  "browR": {
+   "x": 228,
+   "y": 110
+  },
+  "mouth": {
+   "x": 189,
+   "y": 182
+  },
+  "handL": {
+   "x": 92,
+   "y": 345
+  },
+  "handR": {
+   "x": 290,
+   "y": 343
+  },
+  "faceScale": 1.18
+ },
+ "hero_mila:summer:sit": {
+  "file": "hero_mila_summer_sit.webp",
+  "w": 383,
+  "h": 490,
+  "unit": 2,
+  "origin": {
+   "x": 190,
+   "y": 421
+  },
+  "eyeL": {
+   "x": 151,
+   "y": 135
+  },
+  "eyeR": {
+   "x": 228,
+   "y": 135
+  },
+  "browL": {
+   "x": 151,
+   "y": 109
+  },
+  "browR": {
+   "x": 228,
+   "y": 109
+  },
+  "mouth": {
+   "x": 190,
+   "y": 181
+  },
+  "handL": {
+   "x": 88,
+   "y": 343
+  },
+  "handR": {
+   "x": 295,
+   "y": 341
+  },
+  "faceScale": 1.18
+ },
+ "hero_mila:princess:stand": {
+  "file": "hero_mila_princess_stand.webp",
+  "w": 374,
+  "h": 560,
+  "unit": 2,
+  "origin": {
+   "x": 187,
+   "y": 558
+  },
+  "eyeL": {
+   "x": 149,
+   "y": 180
+  },
+  "eyeR": {
+   "x": 226,
+   "y": 180
+  },
+  "browL": {
+   "x": 149,
+   "y": 154
+  },
+  "browR": {
+   "x": 226,
+   "y": 154
+  },
+  "mouth": {
+   "x": 187,
+   "y": 227
+  },
+  "handL": {
+   "x": 96,
+   "y": 384
+  },
+  "handR": {
+   "x": 274,
+   "y": 383
+  },
+  "faceScale": 1.18
+ },
+ "hero_mila:princess:sit": {
+  "file": "hero_mila_princess_sit.webp",
+  "w": 378,
+  "h": 521,
+  "unit": 2,
+  "origin": {
+   "x": 189,
+   "y": 467
+  },
+  "eyeL": {
+   "x": 151,
+   "y": 181
+  },
+  "eyeR": {
+   "x": 228,
+   "y": 181
+  },
+  "browL": {
+   "x": 151,
+   "y": 155
+  },
+  "browR": {
+   "x": 228,
+   "y": 155
+  },
+  "mouth": {
+   "x": 189,
+   "y": 228
+  },
+  "handL": {
+   "x": 125,
+   "y": 386
+  },
+  "handR": {
+   "x": 272,
+   "y": 386
+  },
+  "faceScale": 1.18
+ },
+ "hero_mila:pajama:stand": {
+  "file": "hero_mila_pajama_stand.webp",
+  "w": 378,
+  "h": 533,
+  "unit": 2,
+  "origin": {
+   "x": 189,
+   "y": 532
+  },
+  "eyeL": {
+   "x": 151,
+   "y": 137
+  },
+  "eyeR": {
+   "x": 228,
+   "y": 137
+  },
+  "browL": {
+   "x": 151,
+   "y": 111
+  },
+  "browR": {
+   "x": 228,
+   "y": 111
+  },
+  "mouth": {
+   "x": 189,
+   "y": 183
+  },
+  "handL": {
+   "x": 94,
+   "y": 356
+  },
+  "handR": {
+   "x": 284,
+   "y": 355
+  },
+  "faceScale": 1.18
+ },
+ "hero_mila:pajama:sit": {
+  "file": "hero_mila_pajama_sit.webp",
+  "w": 382,
+  "h": 492,
+  "unit": 2,
+  "origin": {
+   "x": 190,
+   "y": 421
+  },
+  "eyeL": {
+   "x": 151,
+   "y": 135
+  },
+  "eyeR": {
+   "x": 228,
+   "y": 135
+  },
+  "browL": {
+   "x": 151,
+   "y": 109
+  },
+  "browR": {
+   "x": 228,
+   "y": 109
+  },
+  "mouth": {
+   "x": 190,
+   "y": 181
+  },
+  "handL": {
+   "x": 90,
+   "y": 356
+  },
+  "handR": {
+   "x": 289,
+   "y": 355
+  },
+  "faceScale": 1.18
+ },
+ "hero_timur:casual:stand": {
+  "file": "hero_timur_casual_stand.webp",
+  "w": 255,
+  "h": 508,
+  "unit": 2,
+  "origin": {
+   "x": 129,
+   "y": 507
+  },
+  "eyeL": {
+   "x": 90,
+   "y": 141
+  },
+  "eyeR": {
+   "x": 167,
+   "y": 141
+  },
+  "browL": {
+   "x": 90,
+   "y": 115
+  },
+  "browR": {
+   "x": 167,
+   "y": 115
+  },
+  "mouth": {
+   "x": 129,
+   "y": 188
+  },
+  "handL": {
+   "x": 33,
+   "y": 351
+  },
+  "handR": {
+   "x": 221,
+   "y": 351
+  },
+  "faceScale": 1.18
+ },
+ "hero_timur:casual:sit": {
+  "file": "hero_timur_casual_sit.webp",
+  "w": 253,
+  "h": 467,
+  "unit": 2,
+  "origin": {
+   "x": 128,
+   "y": 398
+  },
+  "eyeL": {
+   "x": 90,
+   "y": 140
+  },
+  "eyeR": {
+   "x": 167,
+   "y": 140
+  },
+  "browL": {
+   "x": 90,
+   "y": 114
+  },
+  "browR": {
+   "x": 167,
+   "y": 114
+  },
+  "mouth": {
+   "x": 128,
+   "y": 187
+  },
+  "handL": {
+   "x": 29,
+   "y": 350
+  },
+  "handR": {
+   "x": 222,
+   "y": 349
+  },
+  "faceScale": 1.18
+ },
+ "hero_timur:chef:stand": {
+  "file": "hero_timur_chef_stand.webp",
+  "w": 255,
+  "h": 637,
+  "unit": 2,
+  "origin": {
+   "x": 128,
+   "y": 635
+  },
+  "eyeL": {
+   "x": 89,
+   "y": 257
+  },
+  "eyeR": {
+   "x": 166,
+   "y": 257
+  },
+  "browL": {
+   "x": 89,
+   "y": 231
+  },
+  "browR": {
+   "x": 166,
+   "y": 231
+  },
+  "mouth": {
+   "x": 128,
+   "y": 303
+  },
+  "handL": {
+   "x": 35,
+   "y": 471
+  },
+  "handR": {
+   "x": 217,
+   "y": 470
+  },
+  "faceScale": 1.18
+ },
+ "hero_timur:chef:sit": {
+  "file": "hero_timur_chef_sit.webp",
+  "w": 257,
+  "h": 603,
+  "unit": 2,
+  "origin": {
+   "x": 129,
+   "y": 519
+  },
+  "eyeL": {
+   "x": 91,
+   "y": 261
+  },
+  "eyeR": {
+   "x": 168,
+   "y": 261
+  },
+  "browL": {
+   "x": 91,
+   "y": 235
+  },
+  "browR": {
+   "x": 168,
+   "y": 235
+  },
+  "mouth": {
+   "x": 129,
+   "y": 308
+  },
+  "handL": {
+   "x": 27,
+   "y": 474
+  },
+  "handR": {
+   "x": 228,
+   "y": 472
+  },
+  "faceScale": 1.18
+ },
+ "hero_timur:dragon:stand": {
+  "file": "hero_timur_dragon_stand.webp",
+  "w": 321,
+  "h": 580,
+  "unit": 2,
+  "origin": {
+   "x": 139,
+   "y": 578
+  },
+  "eyeL": {
+   "x": 101,
+   "y": 191
+  },
+  "eyeR": {
+   "x": 178,
+   "y": 191
+  },
+  "browL": {
+   "x": 101,
+   "y": 165
+  },
+  "browR": {
+   "x": 178,
+   "y": 165
+  },
+  "mouth": {
+   "x": 139,
+   "y": 238
+  },
+  "handL": {
+   "x": 38,
+   "y": 421
+  },
+  "handR": {
+   "x": 240,
+   "y": 420
+  },
+  "faceScale": 1.18
+ },
+ "hero_timur:dragon:sit": {
+  "file": "hero_timur_dragon_sit.webp",
+  "w": 345,
+  "h": 515,
+  "unit": 2,
+  "origin": {
+   "x": 140,
+   "y": 452
+  },
+  "eyeL": {
+   "x": 101,
+   "y": 194
+  },
+  "eyeR": {
+   "x": 178,
+   "y": 194
+  },
+  "browL": {
+   "x": 101,
+   "y": 168
+  },
+  "browR": {
+   "x": 178,
+   "y": 168
+  },
+  "mouth": {
+   "x": 140,
+   "y": 240
+  },
+  "handL": {
+   "x": 37,
+   "y": 410
+  },
+  "handR": {
+   "x": 242,
+   "y": 408
+  },
+  "faceScale": 1.18
+ },
+ "hero_lev:sport:stand": {
+  "file": "hero_lev_sport_stand.webp",
+  "w": 334,
+  "h": 602,
+  "unit": 2,
+  "origin": {
+   "x": 141,
+   "y": 599
+  },
+  "eyeL": {
+   "x": 103,
+   "y": 191
+  },
+  "eyeR": {
+   "x": 180,
+   "y": 191
+  },
+  "browL": {
+   "x": 103,
+   "y": 165
+  },
+  "browR": {
+   "x": 180,
+   "y": 165
+  },
+  "mouth": {
+   "x": 141,
+   "y": 237
+  },
+  "handL": {
+   "x": 37,
+   "y": 421
+  },
+  "handR": {
+   "x": 245,
+   "y": 422
+  },
+  "faceScale": 1.18
+ },
+ "hero_lev:sport:sit": {
+  "file": "hero_lev_sport_sit.webp",
+  "w": 343,
+  "h": 533,
+  "unit": 2,
+  "origin": {
+   "x": 151,
+   "y": 464
+  },
+  "eyeL": {
+   "x": 112,
+   "y": 191
+  },
+  "eyeR": {
+   "x": 189,
+   "y": 191
+  },
+  "browL": {
+   "x": 112,
+   "y": 165
+  },
+  "browR": {
+   "x": 189,
+   "y": 165
+  },
+  "mouth": {
+   "x": 151,
+   "y": 237
+  },
+  "handL": {
+   "x": 26,
+   "y": 422
+  },
+  "handR": {
+   "x": 272,
+   "y": 419
+  },
+  "faceScale": 1.18
+ },
+ "hero_lev:astronaut:stand": {
+  "file": "hero_lev_astronaut_stand.webp",
+  "w": 312,
+  "h": 596,
+  "unit": 2,
+  "origin": {
+   "x": 157,
+   "y": 593
+  },
+  "eyeL": {
+   "x": 118,
+   "y": 193
+  },
+  "eyeR": {
+   "x": 195,
+   "y": 193
+  },
+  "browL": {
+   "x": 118,
+   "y": 167
+  },
+  "browR": {
+   "x": 195,
+   "y": 167
+  },
+  "mouth": {
+   "x": 157,
+   "y": 240
+  },
+  "handL": {
+   "x": 44,
+   "y": 426
+  },
+  "handR": {
+   "x": 262,
+   "y": 428
+  },
+  "faceScale": 1.18
+ },
+ "hero_lev:astronaut:sit": {
+  "file": "hero_lev_astronaut_sit.webp",
+  "w": 313,
+  "h": 539,
+  "unit": 2,
+  "origin": {
+   "x": 157,
+   "y": 468
+  },
+  "eyeL": {
+   "x": 119,
+   "y": 196
+  },
+  "eyeR": {
+   "x": 196,
+   "y": 196
+  },
+  "browL": {
+   "x": 119,
+   "y": 170
+  },
+  "browR": {
+   "x": 196,
+   "y": 170
+  },
+  "mouth": {
+   "x": 157,
+   "y": 243
+  },
+  "handL": {
+   "x": 30,
+   "y": 432
+  },
+  "handR": {
+   "x": 279,
+   "y": 429
+  },
+  "faceScale": 1.18
+ },
+ "hero_lev:rain:stand": {
+  "file": "hero_lev_rain_stand.webp",
+  "w": 274,
+  "h": 596,
+  "unit": 2,
+  "origin": {
+   "x": 136,
+   "y": 594
+  },
+  "eyeL": {
+   "x": 97,
+   "y": 201
+  },
+  "eyeR": {
+   "x": 174,
+   "y": 201
+  },
+  "browL": {
+   "x": 97,
+   "y": 175
+  },
+  "browR": {
+   "x": 174,
+   "y": 175
+  },
+  "mouth": {
+   "x": 136,
+   "y": 247
+  },
+  "handL": {
+   "x": 30,
+   "y": 429
+  },
+  "handR": {
+   "x": 238,
+   "y": 431
+  },
+  "faceScale": 1.18
+ },
+ "hero_lev:rain:sit": {
+  "file": "hero_lev_rain_sit.webp",
+  "w": 275,
+  "h": 556,
+  "unit": 2,
+  "origin": {
+   "x": 137,
+   "y": 474
+  },
+  "eyeL": {
+   "x": 98,
+   "y": 201
+  },
+  "eyeR": {
+   "x": 175,
+   "y": 201
+  },
+  "browL": {
+   "x": 98,
+   "y": 175
+  },
+  "browR": {
+   "x": 175,
+   "y": 175
+  },
+  "mouth": {
+   "x": 137,
+   "y": 248
+  },
+  "handL": {
+   "x": 26,
+   "y": 426
+  },
+  "handR": {
+   "x": 246,
+   "y": 424
+  },
+  "faceScale": 1.18
+ },
+ "hero_lev:pajama:stand": {
+  "file": "hero_lev_pajama_stand.webp",
+  "w": 275,
+  "h": 599,
+  "unit": 2,
+  "origin": {
+   "x": 136,
+   "y": 597
+  },
+  "eyeL": {
+   "x": 98,
+   "y": 202
+  },
+  "eyeR": {
+   "x": 175,
+   "y": 202
+  },
+  "browL": {
+   "x": 98,
+   "y": 176
+  },
+  "browR": {
+   "x": 175,
+   "y": 176
+  },
+  "mouth": {
+   "x": 136,
+   "y": 248
+  },
+  "handL": {
+   "x": 32,
+   "y": 432
+  },
+  "handR": {
+   "x": 236,
+   "y": 432
+  },
+  "faceScale": 1.18
+ },
+ "hero_lev:pajama:sit": {
+  "file": "hero_lev_pajama_sit.webp",
+  "w": 275,
+  "h": 559,
+  "unit": 2,
+  "origin": {
+   "x": 137,
+   "y": 474
+  },
+  "eyeL": {
+   "x": 98,
+   "y": 202
+  },
+  "eyeR": {
+   "x": 175,
+   "y": 202
+  },
+  "browL": {
+   "x": 98,
+   "y": 176
+  },
+  "browR": {
+   "x": 175,
+   "y": 176
+  },
+  "mouth": {
+   "x": 137,
+   "y": 249
+  },
+  "handL": {
+   "x": 29,
+   "y": 428
+  },
+  "handR": {
+   "x": 243,
+   "y": 427
+  },
+  "faceScale": 1.18
+ },
+ "hero_nora:gardener:stand": {
+  "file": "hero_nora_gardener_stand.webp",
+  "w": 369,
+  "h": 604,
+  "unit": 2,
+  "origin": {
+   "x": 187,
+   "y": 601
+  },
+  "eyeL": {
+   "x": 149,
+   "y": 172
+  },
+  "eyeR": {
+   "x": 226,
+   "y": 172
+  },
+  "browL": {
+   "x": 149,
+   "y": 146
+  },
+  "browR": {
+   "x": 226,
+   "y": 146
+  },
+  "mouth": {
+   "x": 187,
+   "y": 219
+  },
+  "handL": {
+   "x": 90,
+   "y": 409
+  },
+  "handR": {
+   "x": 281,
+   "y": 408
+  },
+  "faceScale": 1.18
+ },
+ "hero_nora:gardener:sit": {
+  "file": "hero_nora_gardener_sit.webp",
+  "w": 369,
+  "h": 563,
+  "unit": 2,
+  "origin": {
+   "x": 187,
+   "y": 472
+  },
+  "eyeL": {
+   "x": 149,
+   "y": 173
+  },
+  "eyeR": {
+   "x": 226,
+   "y": 173
+  },
+  "browL": {
+   "x": 149,
+   "y": 147
+  },
+  "browR": {
+   "x": 226,
+   "y": 147
+  },
+  "mouth": {
+   "x": 187,
+   "y": 220
+  },
+  "handL": {
+   "x": 73,
+   "y": 416
+  },
+  "handR": {
+   "x": 298,
+   "y": 416
+  },
+  "faceScale": 1.18
+ },
+ "hero_nora:summer:stand": {
+  "file": "hero_nora_summer_stand.webp",
+  "w": 300,
+  "h": 559,
+  "unit": 2,
+  "origin": {
+   "x": 151,
+   "y": 556
+  },
+  "eyeL": {
+   "x": 113,
+   "y": 134
+  },
+  "eyeR": {
+   "x": 190,
+   "y": 134
+  },
+  "browL": {
+   "x": 113,
+   "y": 108
+  },
+  "browR": {
+   "x": 190,
+   "y": 108
+  },
+  "mouth": {
+   "x": 151,
+   "y": 181
+  },
+  "handL": {
+   "x": 51,
+   "y": 367
+  },
+  "handR": {
+   "x": 259,
+   "y": 365
+  },
+  "faceScale": 1.18
+ },
+ "hero_nora:summer:sit": {
+  "file": "hero_nora_summer_sit.webp",
+  "w": 304,
+  "h": 529,
+  "unit": 2,
+  "origin": {
+   "x": 152,
+   "y": 434
+  },
+  "eyeL": {
+   "x": 114,
+   "y": 135
+  },
+  "eyeR": {
+   "x": 191,
+   "y": 135
+  },
+  "browL": {
+   "x": 114,
+   "y": 109
+  },
+  "browR": {
+   "x": 191,
+   "y": 109
+  },
+  "mouth": {
+   "x": 152,
+   "y": 182
+  },
+  "handL": {
+   "x": 42,
+   "y": 374
+  },
+  "handR": {
+   "x": 267,
+   "y": 373
+  },
+  "faceScale": 1.18
+ },
+ "hero_nora:chef:stand": {
+  "file": "hero_nora_chef_stand.webp",
+  "w": 308,
+  "h": 663,
+  "unit": 2,
+  "origin": {
+   "x": 156,
+   "y": 660
+  },
+  "eyeL": {
+   "x": 117,
+   "y": 243
+  },
+  "eyeR": {
+   "x": 194,
+   "y": 243
+  },
+  "browL": {
+   "x": 117,
+   "y": 217
+  },
+  "browR": {
+   "x": 194,
+   "y": 217
+  },
+  "mouth": {
+   "x": 156,
+   "y": 290
+  },
+  "handL": {
+   "x": 56,
+   "y": 482
+  },
+  "handR": {
+   "x": 247,
+   "y": 483
+  },
+  "faceScale": 1.18
+ },
+ "hero_nora:chef:sit": {
+  "file": "hero_nora_chef_sit.webp",
+  "w": 306,
+  "h": 625,
+  "unit": 2,
+  "origin": {
+   "x": 153,
+   "y": 549
+  },
+  "eyeL": {
+   "x": 115,
+   "y": 250
+  },
+  "eyeR": {
+   "x": 192,
+   "y": 250
+  },
+  "browL": {
+   "x": 115,
+   "y": 224
+  },
+  "browR": {
+   "x": 192,
+   "y": 224
+  },
+  "mouth": {
+   "x": 153,
+   "y": 296
+  },
+  "handL": {
+   "x": 50,
+   "y": 493
+  },
+  "handR": {
+   "x": 251,
+   "y": 492
+  },
+  "faceScale": 1.18
+ },
+ "hero_nora:princess:stand": {
+  "file": "hero_nora_princess_stand.webp",
+  "w": 305,
+  "h": 614,
+  "unit": 2,
+  "origin": {
+   "x": 152,
+   "y": 612
+  },
+  "eyeL": {
+   "x": 114,
+   "y": 210
+  },
+  "eyeR": {
+   "x": 191,
+   "y": 210
+  },
+  "browL": {
+   "x": 114,
+   "y": 184
+  },
+  "browR": {
+   "x": 191,
+   "y": 184
+  },
+  "mouth": {
+   "x": 152,
+   "y": 257
+  },
+  "handL": {
+   "x": 57,
+   "y": 433
+  },
+  "handR": {
+   "x": 246,
+   "y": 433
+  },
+  "faceScale": 1.18
+ },
+ "hero_nora:princess:sit": {
+  "file": "hero_nora_princess_sit.webp",
+  "w": 347,
+  "h": 575,
+  "unit": 2,
+  "origin": {
+   "x": 172,
+   "y": 506
+  },
+  "eyeL": {
+   "x": 134,
+   "y": 207
+  },
+  "eyeR": {
+   "x": 211,
+   "y": 207
+  },
+  "browL": {
+   "x": 134,
+   "y": 181
+  },
+  "browR": {
+   "x": 211,
+   "y": 181
+  },
+  "mouth": {
+   "x": 172,
+   "y": 254
+  },
+  "handL": {
+   "x": 91,
+   "y": 419
+  },
+  "handR": {
+   "x": 254,
+   "y": 418
+  },
+  "faceScale": 1.18
+ },
+ "hero_asya:artist:stand": {
+  "file": "hero_asya_artist_stand.webp",
+  "w": 328,
+  "h": 575,
+  "unit": 2,
+  "origin": {
+   "x": 168,
+   "y": 573
+  },
+  "eyeL": {
+   "x": 129,
+   "y": 197
+  },
+  "eyeR": {
+   "x": 206,
+   "y": 197
+  },
+  "browL": {
+   "x": 129,
+   "y": 171
+  },
+  "browR": {
+   "x": 206,
+   "y": 171
+  },
+  "mouth": {
+   "x": 168,
+   "y": 244
+  },
+  "handL": {
+   "x": 70,
+   "y": 421
+  },
+  "handR": {
+   "x": 267,
+   "y": 419
+  },
+  "faceScale": 1.18
+ },
+ "hero_asya:artist:sit": {
+  "file": "hero_asya_artist_sit.webp",
+  "w": 327,
+  "h": 551,
+  "unit": 2,
+  "origin": {
+   "x": 166,
+   "y": 454
+  },
+  "eyeL": {
+   "x": 127,
+   "y": 198
+  },
+  "eyeR": {
+   "x": 204,
+   "y": 198
+  },
+  "browL": {
+   "x": 127,
+   "y": 172
+  },
+  "browR": {
+   "x": 204,
+   "y": 172
+  },
+  "mouth": {
+   "x": 166,
+   "y": 245
+  },
+  "handL": {
+   "x": 55,
+   "y": 426
+  },
+  "handR": {
+   "x": 273,
+   "y": 426
+  },
+  "faceScale": 1.18
+ },
+ "hero_asya:ballerina:stand": {
+  "file": "hero_asya_ballerina_stand.webp",
+  "w": 339,
+  "h": 580,
+  "unit": 2,
+  "origin": {
+   "x": 174,
+   "y": 578
+  },
+  "eyeL": {
+   "x": 136,
+   "y": 199
+  },
+  "eyeR": {
+   "x": 212,
+   "y": 199
+  },
+  "browL": {
+   "x": 136,
+   "y": 173
+  },
+  "browR": {
+   "x": 212,
+   "y": 173
+  },
+  "mouth": {
+   "x": 174,
+   "y": 246
+  },
+  "handL": {
+   "x": 73,
+   "y": 408
+  },
+  "handR": {
+   "x": 274,
+   "y": 405
+  },
+  "faceScale": 1.18
+ },
+ "hero_asya:ballerina:sit": {
+  "file": "hero_asya_ballerina_sit.webp",
+  "w": 336,
+  "h": 549,
+  "unit": 2,
+  "origin": {
+   "x": 172,
+   "y": 454
+  },
+  "eyeL": {
+   "x": 133,
+   "y": 198
+  },
+  "eyeR": {
+   "x": 210,
+   "y": 198
+  },
+  "browL": {
+   "x": 133,
+   "y": 172
+  },
+  "browR": {
+   "x": 210,
+   "y": 172
+  },
+  "mouth": {
+   "x": 172,
+   "y": 245
+  },
+  "handL": {
+   "x": 67,
+   "y": 404
+  },
+  "handR": {
+   "x": 278,
+   "y": 401
+  },
+  "faceScale": 1.18
+ },
+ "hero_asya:winter:stand": {
+  "file": "hero_asya_winter_stand.webp",
+  "w": 303,
+  "h": 531,
+  "unit": 2,
+  "origin": {
+   "x": 152,
+   "y": 529
+  },
+  "eyeL": {
+   "x": 113,
+   "y": 185
+  },
+  "eyeR": {
+   "x": 190,
+   "y": 185
+  },
+  "browL": {
+   "x": 113,
+   "y": 159
+  },
+  "browR": {
+   "x": 190,
+   "y": 159
+  },
+  "mouth": {
+   "x": 152,
+   "y": 232
+  },
+  "handL": {
+   "x": 62,
+   "y": 395
+  },
+  "handR": {
+   "x": 240,
+   "y": 395
+  },
+  "faceScale": 1.18
+ },
+ "hero_asya:winter:sit": {
+  "file": "hero_asya_winter_sit.webp",
+  "w": 306,
+  "h": 494,
+  "unit": 2,
+  "origin": {
+   "x": 152,
+   "y": 446
+  },
+  "eyeL": {
+   "x": 114,
+   "y": 189
+  },
+  "eyeR": {
+   "x": 191,
+   "y": 189
+  },
+  "browL": {
+   "x": 114,
+   "y": 163
+  },
+  "browR": {
+   "x": 191,
+   "y": 163
+  },
+  "mouth": {
+   "x": 152,
+   "y": 235
+  },
+  "handL": {
+   "x": 48,
+   "y": 400
+  },
+  "handR": {
+   "x": 261,
+   "y": 398
+  },
+  "faceScale": 1.18
+ },
+ "hero_asya:cat:stand": {
+  "file": "hero_asya_cat_stand.webp",
+  "w": 320,
+  "h": 527,
+  "unit": 2,
+  "origin": {
+   "x": 160,
+   "y": 525
+  },
+  "eyeL": {
+   "x": 121,
+   "y": 180
+  },
+  "eyeR": {
+   "x": 198,
+   "y": 180
+  },
+  "browL": {
+   "x": 121,
+   "y": 154
+  },
+  "browR": {
+   "x": 198,
+   "y": 154
+  },
+  "mouth": {
+   "x": 160,
+   "y": 227
+  },
+  "handL": {
+   "x": 69,
+   "y": 391
+  },
+  "handR": {
+   "x": 259,
+   "y": 394
+  },
+  "faceScale": 1.18
+ },
+ "hero_asya:cat:sit": {
+  "file": "hero_asya_cat_sit.webp",
+  "w": 325,
+  "h": 486,
+  "unit": 2,
+  "origin": {
+   "x": 162,
+   "y": 436
+  },
+  "eyeL": {
+   "x": 123,
+   "y": 179
+  },
+  "eyeR": {
+   "x": 200,
+   "y": 179
+  },
+  "browL": {
+   "x": 123,
+   "y": 153
+  },
+  "browR": {
+   "x": 200,
+   "y": 153
+  },
+  "mouth": {
+   "x": 162,
+   "y": 226
+  },
+  "handL": {
+   "x": 54,
+   "y": 395
+  },
+  "handR": {
+   "x": 273,
+   "y": 394
+  },
+  "faceScale": 1.18
+ },
+ "hero_mila:fairy:stand": {
+  "file": "hero_mila_fairy_stand.webp",
+  "w": 399,
+  "h": 612,
+  "unit": 2,
+  "origin": {
+   "x": 199,
+   "y": 610
+  },
+  "eyeL": {
+   "x": 161,
+   "y": 163
+  },
+  "eyeR": {
+   "x": 238,
+   "y": 163
+  },
+  "browL": {
+   "x": 161,
+   "y": 137
+  },
+  "browR": {
+   "x": 238,
+   "y": 137
+  },
+  "mouth": {
+   "x": 199,
+   "y": 210
+  },
+  "handL": {
+   "x": 105,
+   "y": 393
+  },
+  "handR": {
+   "x": 293,
+   "y": 393
+  },
+  "faceScale": 1.18
+ },
+ "hero_mila:fairy:sit": {
+  "file": "hero_mila_fairy_sit.webp",
+  "w": 396,
+  "h": 545,
+  "unit": 2,
+  "origin": {
+   "x": 196,
+   "y": 445
+  },
+  "eyeL": {
+   "x": 158,
+   "y": 159
+  },
+  "eyeR": {
+   "x": 235,
+   "y": 159
+  },
+  "browL": {
+   "x": 158,
+   "y": 133
+  },
+  "browR": {
+   "x": 235,
+   "y": 133
+  },
+  "mouth": {
+   "x": 196,
+   "y": 205
+  },
+  "handL": {
+   "x": 98,
+   "y": 394
+  },
+  "handR": {
+   "x": 295,
+   "y": 393
+  },
+  "faceScale": 1.18
+ },
+ "hero_timur:pirate:stand": {
+  "file": "hero_timur_pirate_stand.webp",
+  "w": 289,
+  "h": 530,
+  "unit": 2,
+  "origin": {
+   "x": 131,
+   "y": 529
+  },
+  "eyeL": {
+   "x": 92,
+   "y": 148
+  },
+  "eyeR": {
+   "x": 169,
+   "y": 148
+  },
+  "browL": {
+   "x": 92,
+   "y": 122
+  },
+  "browR": {
+   "x": 169,
+   "y": 122
+  },
+  "mouth": {
+   "x": 131,
+   "y": 195
+  },
+  "handL": {
+   "x": 33,
+   "y": 380
+  },
+  "handR": {
+   "x": 226,
+   "y": 379
+  },
+  "faceScale": 1.18
+ },
+ "hero_timur:pirate:sit": {
+  "file": "hero_timur_pirate_sit.webp",
+  "w": 291,
+  "h": 494,
+  "unit": 2,
+  "origin": {
+   "x": 132,
+   "y": 406
+  },
+  "eyeL": {
+   "x": 93,
+   "y": 148
+  },
+  "eyeR": {
+   "x": 170,
+   "y": 148
+  },
+  "browL": {
+   "x": 93,
+   "y": 122
+  },
+  "browR": {
+   "x": 170,
+   "y": 122
+  },
+  "mouth": {
+   "x": 132,
+   "y": 194
+  },
+  "handL": {
+   "x": 23,
+   "y": 377
+  },
+  "handR": {
+   "x": 238,
+   "y": 376
+  },
+  "faceScale": 1.18
+ },
+ "hero_yuki:casual:stand": {
+  "file": "hero_yuki_casual_stand.webp",
+  "w": 296,
+  "h": 538,
+  "unit": 2,
+  "origin": {
+   "x": 150,
+   "y": 535
+  },
+  "eyeL": {
+   "x": 112,
+   "y": 151
+  },
+  "eyeR": {
+   "x": 189,
+   "y": 151
+  },
+  "browL": {
+   "x": 112,
+   "y": 125
+  },
+  "browR": {
+   "x": 189,
+   "y": 125
+  },
+  "mouth": {
+   "x": 150,
+   "y": 198
+  },
+  "handL": {
+   "x": 52,
+   "y": 376
+  },
+  "handR": {
+   "x": 250,
+   "y": 375
+  },
+  "faceScale": 1.18
+ },
+ "hero_yuki:casual:sit": {
+  "file": "hero_yuki_casual_sit.webp",
+  "w": 297,
+  "h": 480,
+  "unit": 2,
+  "origin": {
+   "x": 150,
+   "y": 427
+  },
+  "eyeL": {
+   "x": 111,
+   "y": 151
+  },
+  "eyeR": {
+   "x": 188,
+   "y": 151
+  },
+  "browL": {
+   "x": 111,
+   "y": 125
+  },
+  "browR": {
+   "x": 188,
+   "y": 125
+  },
+  "mouth": {
+   "x": 150,
+   "y": 198
+  },
+  "handL": {
+   "x": 48,
+   "y": 368
+  },
+  "handR": {
+   "x": 250,
+   "y": 365
+  },
+  "faceScale": 1.18
+ },
+ "hero_yuki:winter:stand": {
+  "file": "hero_yuki_winter_stand.webp",
+  "w": 294,
+  "h": 594,
+  "unit": 2,
+  "origin": {
+   "x": 148,
+   "y": 591
+  },
+  "eyeL": {
+   "x": 109,
+   "y": 197
+  },
+  "eyeR": {
+   "x": 186,
+   "y": 197
+  },
+  "browL": {
+   "x": 109,
+   "y": 171
+  },
+  "browR": {
+   "x": 186,
+   "y": 171
+  },
+  "mouth": {
+   "x": 148,
+   "y": 244
+  },
+  "handL": {
+   "x": 41,
+   "y": 438
+  },
+  "handR": {
+   "x": 255,
+   "y": 435
+  },
+  "faceScale": 1.18
+ },
+ "hero_yuki:winter:sit": {
+  "file": "hero_yuki_winter_sit.webp",
+  "w": 293,
+  "h": 563,
+  "unit": 2,
+  "origin": {
+   "x": 146,
+   "y": 477
+  },
+  "eyeL": {
+   "x": 108,
+   "y": 201
+  },
+  "eyeR": {
+   "x": 185,
+   "y": 201
+  },
+  "browL": {
+   "x": 108,
+   "y": 175
+  },
+  "browR": {
+   "x": 185,
+   "y": 175
+  },
+  "mouth": {
+   "x": 146,
+   "y": 248
+  },
+  "handL": {
+   "x": 41,
+   "y": 446
+  },
+  "handR": {
+   "x": 253,
+   "y": 446
+  },
+  "faceScale": 1.18
+ },
+ "hero_yuki:dragon:stand": {
+  "file": "hero_yuki_dragon_stand.webp",
+  "w": 338,
+  "h": 611,
+  "unit": 2,
+  "origin": {
+   "x": 151,
+   "y": 608
+  },
+  "eyeL": {
+   "x": 113,
+   "y": 211
+  },
+  "eyeR": {
+   "x": 190,
+   "y": 211
+  },
+  "browL": {
+   "x": 113,
+   "y": 185
+  },
+  "browR": {
+   "x": 190,
+   "y": 185
+  },
+  "mouth": {
+   "x": 151,
+   "y": 257
+  },
+  "handL": {
+   "x": 41,
+   "y": 451
+  },
+  "handR": {
+   "x": 258,
+   "y": 449
+  },
+  "faceScale": 1.18
+ },
+ "hero_yuki:dragon:sit": {
+  "file": "hero_yuki_dragon_sit.webp",
+  "w": 345,
+  "h": 558,
+  "unit": 2,
+  "origin": {
+   "x": 150,
+   "y": 487
+  },
+  "eyeL": {
+   "x": 112,
+   "y": 211
+  },
+  "eyeR": {
+   "x": 189,
+   "y": 211
+  },
+  "browL": {
+   "x": 112,
+   "y": 185
+  },
+  "browR": {
+   "x": 189,
+   "y": 185
+  },
+  "mouth": {
+   "x": 150,
+   "y": 258
+  },
+  "handL": {
+   "x": 47,
+   "y": 446
+  },
+  "handR": {
+   "x": 252,
+   "y": 444
+  },
+  "faceScale": 1.18
+ },
+ "hero_yuki:ballerina:stand": {
+  "file": "hero_yuki_ballerina_stand.webp",
+  "w": 300,
+  "h": 585,
+  "unit": 2,
+  "origin": {
+   "x": 149,
+   "y": 582
+  },
+  "eyeL": {
+   "x": 111,
+   "y": 163
+  },
+  "eyeR": {
+   "x": 188,
+   "y": 163
+  },
+  "browL": {
+   "x": 111,
+   "y": 137
+  },
+  "browR": {
+   "x": 188,
+   "y": 137
+  },
+  "mouth": {
+   "x": 149,
+   "y": 209
+  },
+  "handL": {
+   "x": 52,
+   "y": 394
+  },
+  "handR": {
+   "x": 255,
+   "y": 392
+  },
+  "faceScale": 1.18
+ },
+ "hero_yuki:ballerina:sit": {
+  "file": "hero_yuki_ballerina_sit.webp",
+  "w": 311,
+  "h": 547,
+  "unit": 2,
+  "origin": {
+   "x": 151,
+   "y": 444
+  },
+  "eyeL": {
+   "x": 113,
+   "y": 168
+  },
+  "eyeR": {
+   "x": 190,
+   "y": 168
+  },
+  "browL": {
+   "x": 113,
+   "y": 142
+  },
+  "browR": {
+   "x": 190,
+   "y": 142
+  },
+  "mouth": {
+   "x": 151,
+   "y": 215
+  },
+  "handL": {
+   "x": 54,
+   "y": 403
+  },
+  "handR": {
+   "x": 257,
+   "y": 402
+  },
+  "faceScale": 1.18
+ }
+}

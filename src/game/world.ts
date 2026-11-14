@@ -1,0 +1,233 @@
+// Создание нового мира, проверка целостности, миграции и разбор импорта.
+import { FURNITURE, initialFurniture, ROOM_IDS } from '../content/furniture';
+import { ITEMS } from '../content/items';
+import { GARMENTS, PRESET_HEROES, presetCharacter } from '../content/wardrobe';
+import { isInside, isValidOutfit, moveItem, spawnItem } from './rules';
+import type { ItemInst, Owner, RoomId, World } from './types';
+import { BAG_CAPACITY, MAX_ITEMS, SCHEMA_VERSION } from './types';
+
+type Seed = [def: string, owner: Owner];
+const surf = (furnitureId: string, slot: number): Owner => ({ kind: 'surface', furnitureId, slot });
+const inside = (furnitureId: string, slot: number): Owner => ({ kind: 'furniture', furnitureId, slot });
+const floor = (roomId: RoomId, x: number, y: number): Owner => ({ kind: 'room', roomId, x, y });
+
+const SEEDS: Seed[] = [
+  // гостиная
+  ['cup', surf('lv_table', 0)], ['book', surf('lv_table', 2)], ['teapot', surf('lv_table', 3)],
+  ['starlamp', surf('lv_shelf', 0)], ['robot', surf('lv_shelf', 2)], ['snowglobe', surf('lv_shelf', 4)], 
+  ['teddy', inside('lv_toybox', 0)], ['blocks', inside('lv_toybox', 1)], ['car', inside('lv_toybox', 2)], ['doll', inside('lv_toybox', 3)],
+  ['ball', floor('living', 1010, 840)], ['basket', floor('living', 1420, 840)], ['pillow', floor('living', 250, 850)],
+  // кухня
+  ...['bread', 'cheese', 'tomato', 'lettuce', 'cucumber', 'apple', 'banana', 'strawberry', 'milk', 'egg', 'dough', 'chocolate'].map((d, i): Seed => [d, inside('kt_fridge', i)]),
+  ['plate', inside('kt_cupboard', 0)], ['plate', inside('kt_cupboard', 1)], ['cup', inside('kt_cupboard', 2)], ['cup', inside('kt_cupboard', 3)],
+  ['glass', inside('kt_cupboard', 4)], ['glass', inside('kt_cupboard', 5)], ['bowl', inside('kt_cupboard', 6)],
+  ['plate', surf('kt_table', 1)], ['plate', surf('kt_table', 3)], ['kibble', floor('kitchen', 1400, 850)], ['carrot', surf('kt_table', 4)],
+  // спальня
+  ['bunnytoy', surf('bd_bed', 0)], ['starlamp', surf('bd_night', 0)], ['book', surf('bd_night', 1)],
+  ['rocket', surf('bd_shelf', 0)], ['planet', surf('bd_shelf', 1)], ['crown', surf('bd_shelf', 2)], ['teddy', surf('bd_shelf', 3)], ['duck', floor('bedroom', 1380, 850)],
+  ['blocks', floor('bedroom', 760, 850)], ['car', floor('bedroom', 620, 860)], ['wand', floor('bedroom', 860, 840)],
+  ['mittens', inside('bd_night', 0)], ['bone', floor('bedroom', 1120, 850)],
+  // ванная
+  ['toothbrush', surf('bt_sink', 0)], ['soap', surf('bt_sink', 1)], ['duck', surf('bt_tub', 0)],
+  ['comb', surf('bt_shelf', 0)], ['towel', surf('bt_shelf', 2)], ['petbrush', surf('bt_shelf', 4)], ['towel', inside('bt_laundry', 0)],
+];
+
+export function createWorld(lang: 'ru' | 'en' = 'ru'): World {
+  let w: World = {
+    schemaVersion: SCHEMA_VERSION, revision: 0, nextId: 0, currentRoomId: 'living', lastScreen: 'title',
+    items: {}, characters: {}, pets: {}, furniture: initialFurniture(),
+    rooms: {
+      living: { wallpaper: 0, floor: 0, lightOn: true }, kitchen: { wallpaper: 1, floor: 1, lightOn: true },
+      bedroom: { wallpaper: 2, floor: 2, lightOn: true }, bathroom: { wallpaper: 3, floor: 3, lightOn: true },
+    },
+    openedGiftIds: [], savedOutfits: [],
+    settings: { lang, music: 0.5, sfx: 0.8, mute: false, reducedMotion: false, tutorialDone: false, voices: true },
+  };
+  for (const [id] of PRESET_HEROES) w.characters[id] = presetCharacter(id)!;
+  Object.assign(w.characters.hero_mila, { roomId: 'living', x: 760, y: 800 });
+  Object.assign(w.characters.hero_timur, { roomId: 'living', x: 300, y: 820 });
+  w.pets = {
+    pet_cat: { id: 'pet_cat', kind: 'cat', roomId: 'living', x: 1340, y: 800, sleeping: false, seat: null, collar: 0, flipped: false },
+    pet_dog: { id: 'pet_dog', kind: 'dog', roomId: 'bedroom', x: 900, y: 830, sleeping: false, seat: null, collar: 1, flipped: false },
+    pet_rabbit: { id: 'pet_rabbit', kind: 'rabbit', roomId: 'kitchen', x: 1250, y: 840, sleeping: false, seat: null, collar: 2, flipped: true },
+  };
+  for (const [def, owner] of SEEDS) {
+    // контейнеры временно открыты, чтобы разложить вещи
+    const r = spawnItem(w, def, owner);
+    if (!r.ok) throw new Error(`seed ${def}: ${r.reason}`);
+    w = r.world;
+    w.items[r.info!.instanceId as string].home = owner;
+  }
+  return w;
+}
+
+// ---------- Проверка целостности ----------
+
+const ID_RE = /^[a-z0-9_]{1,48}$/i;
+
+/** Возвращает список нарушений инвариантов. Пустой список — мир цел. */
+export function validateWorld(w: World): string[] {
+  const errs: string[] = [];
+  const slotKeys = new Set<string>();
+  const take = (key: string, what: string) => { if (slotKeys.has(key)) errs.push(`double:${what}`); slotKeys.add(key); };
+  if (Object.keys(w.items).length > MAX_ITEMS + 40) errs.push('too_many_items');
+  for (const [id, it] of Object.entries(w.items)) {
+    if (it.instanceId !== id || !ID_RE.test(id)) errs.push(`bad_id:${id}`);
+    const def = ITEMS[it.definitionId];
+    if (!def) { errs.push(`no_def:${id}`); continue; }
+    const o = it.owner;
+    switch (o?.kind) {
+      case 'room': if (!w.rooms[o.roomId] || !isFinite(o.x) || !isFinite(o.y)) errs.push(`bad_room:${id}`); break;
+      case 'surface': {
+        const f = w.furniture[o.furnitureId];
+        if (!f || !FURNITURE[f.definitionId]?.surfaces?.[o.slot]) errs.push(`orphan:${id}`);
+        take(`s:${o.furnitureId}:${o.slot}`, id); break;
+      }
+      case 'furniture': {
+        const f = w.furniture[o.furnitureId];
+        const c = f && FURNITURE[f.definitionId]?.container;
+        if (!c || !(o.slot >= 0 && o.slot < c.capacity)) errs.push(`orphan:${id}`);
+        take(`f:${o.furnitureId}:${o.slot}`, id); break;
+      }
+      case 'hand': {
+        if (!w.characters[o.characterId]) errs.push(`orphan:${id}`);
+        if (def.tags.includes('big') !== (o.slot === 'both')) errs.push(`bad_hand:${id}`);
+        take(`h:${o.characterId}:${o.slot}`, id);
+        if (o.slot === 'both') { take(`h:${o.characterId}:left`, id); take(`h:${o.characterId}:right`, id); }
+        break;
+      }
+      case 'item': {
+        const p = w.items[o.itemId];
+        const cap = p && ITEMS[p.definitionId]?.capacity;
+        if (!p || !cap || !(o.slot >= 0 && o.slot < cap)) errs.push(`orphan:${id}`);
+        else if (o.itemId === id || isInside(w, o.itemId, id)) errs.push(`cycle:${id}`);
+        take(`i:${o.itemId}:${o.slot}`, id); break;
+      }
+      case 'bag': if (!(o.slot >= 0 && o.slot < BAG_CAPACITY)) errs.push(`orphan:${id}`); take(`b:${o.slot}`, id); break;
+      case 'lost': break;
+      default: errs.push(`bad_owner:${id}`);
+    }
+  }
+  const seats = new Set<string>();
+  for (const [id, c] of Object.entries(w.characters)) {
+    if (c.id !== id || !ID_RE.test(id)) errs.push(`bad_id:${id}`);
+    if (c.roomId !== null && !w.rooms[c.roomId]) errs.push(`bad_room:${id}`);
+    if (!isValidOutfit(c.outfit)) errs.push(`bad_outfit:${id}`);
+    if (c.seat) {
+      const f = w.furniture[c.seat.furnitureId];
+      if (!f || !FURNITURE[f.definitionId]?.seats?.[c.seat.slot] || f.roomId !== c.roomId) errs.push(`bad_seat:${id}`);
+      const k = `${c.seat.furnitureId}:${c.seat.slot}`;
+      if (seats.has(k)) errs.push(`double_seat:${id}`);
+      seats.add(k);
+    }
+  }
+  for (const [id, f] of Object.entries(w.furniture)) {
+    if (f.id !== id || !FURNITURE[f.definitionId]) errs.push(`bad_furniture:${id}`);
+    if (f.roomId !== null && !w.rooms[f.roomId]) errs.push(`bad_room:${id}`);
+  }
+  for (const [id, p] of Object.entries(w.pets)) if (p.id !== id || !w.rooms[p.roomId]) errs.push(`bad_pet:${id}`);
+  if (!w.rooms[w.currentRoomId]) errs.push('bad_current_room');
+  return errs;
+}
+
+/** Мягкая починка: осиротевшие вещи отправляются в корзину найденных вещей, а не удаляются. */
+export function repairWorld(world: World): World {
+  let w: World = JSON.parse(JSON.stringify(world));
+  for (let pass = 0; pass < 3; pass++) {
+    const errs = validateWorld(w);
+    if (!errs.length) break;
+    for (const e of errs) {
+      const [kind, id] = e.split(':');
+      if (['orphan', 'cycle', 'double', 'bad_owner', 'bad_hand', 'bad_room'].includes(kind) && w.items[id]) w.items[id].owner = { kind: 'lost' };
+      if (kind === 'no_def') delete w.items[id];
+      if ((kind === 'bad_seat' || kind === 'double_seat') && w.characters[id]) { w.characters[id].seat = null; w.characters[id].pose = 'standing'; }
+      if (kind === 'bad_outfit' && w.characters[id]) w.characters[id].outfit = { top: { id: 'tee', color: 0 }, bottom: { id: 'shorts', color: 0 } };
+    }
+  }
+  return w;
+}
+
+// ---------- Миграции ----------
+
+type Migration = (raw: any) => any;
+/** Ключ — версия, С которой переводим. */
+export const MIGRATIONS: Record<number, Migration> = {
+  // v1 (этап A): не было питомцев, сохранённых комплектов и стартовых мест мебели.
+  1: (raw) => {
+    const fresh = createWorld(raw.settings?.lang === 'en' ? 'en' : 'ru');
+    raw.pets = raw.pets ?? fresh.pets;
+    raw.savedOutfits = raw.savedOutfits ?? [];
+    for (const [id, f] of Object.entries<any>(raw.furniture ?? {})) {
+      f.homeX = f.homeX ?? fresh.furniture[id]?.homeX ?? f.x;
+      f.homeY = f.homeY ?? fresh.furniture[id]?.homeY ?? f.y;
+      f.color = f.color ?? 0; f.on = typeof f.on === 'number' ? f.on : f.on ? 1 : 0;
+    }
+    for (const [id, f] of Object.entries(fresh.furniture)) if (!raw.furniture[id]) raw.furniture[id] = f;
+    for (const r of ROOM_IDS) raw.rooms[r] = raw.rooms[r] ?? fresh.rooms[r];
+    raw.settings = { ...fresh.settings, ...(raw.settings ?? {}) };
+    raw.schemaVersion = 2;
+    return raw;
+  },
+};
+
+export function migrate(raw: any): any {
+  let cur = raw;
+  for (let guard = 0; cur.schemaVersion < SCHEMA_VERSION && guard < 20; guard++) {
+    const m = MIGRATIONS[cur.schemaVersion];
+    if (!m) throw new Error('no_migration');
+    cur = m(cur);
+  }
+  return cur;
+}
+
+// ---------- Импорт ----------
+
+export const MAX_IMPORT_BYTES = 2_000_000;
+const isObj = (v: unknown): v is Record<string, any> => !!v && typeof v === 'object' && !Array.isArray(v);
+const num = (v: unknown) => typeof v === 'number' && isFinite(v);
+
+/** Проверка формы данных: только известные поля и типы. Ничего не исполняется, URL ассетов в сохранении нет вовсе. */
+function checkShape(w: any): string | null {
+  if (!isObj(w)) return 'not_object';
+  if (!num(w.schemaVersion) || !num(w.revision) || !num(w.nextId)) return 'bad_header';
+  for (const k of ['items', 'characters', 'pets', 'furniture', 'rooms', 'settings']) if (!isObj(w[k])) return `bad_${k}`;
+  if (!Array.isArray(w.openedGiftIds) || !w.openedGiftIds.every((x: unknown) => typeof x === 'string' && ID_RE.test(x))) return 'bad_gifts';
+  if (!Array.isArray(w.savedOutfits) || w.savedOutfits.length > 40) return 'bad_outfits';
+  for (const it of Object.values<any>(w.items)) {
+    if (!isObj(it) || typeof it.instanceId !== 'string' || typeof it.definitionId !== 'string' || !isObj(it.owner) || !isObj(it.state)) return 'bad_item';
+    if (it.state.card !== undefined && (typeof it.state.card !== 'string' || it.state.card.length > 60)) return 'bad_item';
+    if (it.state.mix !== undefined && !(Array.isArray(it.state.mix) && it.state.mix.length <= 4 && it.state.mix.every((m: unknown) => typeof m === 'string' && !!ITEMS[m as string]))) return 'bad_item';
+  }
+  for (const c of Object.values<any>(w.characters)) {
+    if (!isObj(c) || typeof c.id !== 'string' || typeof c.name !== 'string' || c.name.length > 16 || !isObj(c.look) || !isObj(c.outfit) || !num(c.x) || !num(c.y)) return 'bad_character';
+    for (const k of ['skin', 'face', 'eyes', 'brows', 'hair', 'hairColor', 'glasses']) if (!num(c.look[k]) || c.look[k] < 0 || c.look[k] > 8) return 'bad_look';
+    for (const worn of Object.values<any>(c.outfit)) if (!isObj(worn) || !GARMENTS[worn.id]) return 'bad_outfit';
+    if (c.dream !== undefined && !ITEMS[c.dream]) return 'bad_character';
+  }
+  for (const f of Object.values<any>(w.furniture)) if (!isObj(f) || !FURNITURE[f.definitionId] || !num(f.x) || !num(f.y)) return 'bad_furniture';
+  for (const p of Object.values<any>(w.pets)) if (!isObj(p) || !['cat', 'dog', 'rabbit'].includes(p.kind) || !num(p.x) || !num(p.y)) return 'bad_pet';
+  for (const s of w.savedOutfits) if (!isObj(s) || typeof s.name !== 'string' || s.name.length > 24 || !isObj(s.outfit) || !isValidOutfit(s.outfit)) return 'bad_outfits';
+  const st = w.settings;
+  if (!['ru', 'en'].includes(st.lang) || !num(st.music) || !num(st.sfx)) return 'bad_settings';
+  return null;
+}
+
+export type ParseResult = { ok: true; world: World } | { ok: false; reason: string };
+
+/** Разбор сохранения или импортируемого файла: размер → JSON → версия → миграции → форма → инварианты. */
+export function parseWorld(text: string): ParseResult {
+  if (typeof text !== 'string' || text.length > MAX_IMPORT_BYTES) return { ok: false, reason: 'too_big' };
+  let raw: any;
+  try { raw = JSON.parse(text); } catch { return { ok: false, reason: 'not_json' }; }
+  if (!isObj(raw) || !num(raw.schemaVersion)) return { ok: false, reason: 'not_world' };
+  if (raw.schemaVersion > SCHEMA_VERSION) return { ok: false, reason: 'newer_version' };
+  if (raw.schemaVersion < 1) return { ok: false, reason: 'bad_version' };
+  try { raw = migrate(raw); } catch { return { ok: false, reason: 'migration_failed' }; }
+  const shape = checkShape(raw);
+  if (shape) return { ok: false, reason: shape };
+  const errs = validateWorld(raw as World);
+  if (errs.length) return { ok: false, reason: `invalid:${errs[0]}` };
+  return { ok: true, world: raw as World };
+}
+
+export { moveItem };

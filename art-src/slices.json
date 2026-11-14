@@ -1,0 +1,306 @@
+{
+ "furn": {
+  "sofa": {
+   "w": 291,
+   "h": 169,
+   "footX": 146
+  },
+  "armchair": {
+   "w": 244,
+   "h": 247,
+   "footX": 121
+  },
+  "coffeetable": {
+   "w": 261,
+   "h": 110,
+   "footX": 130
+  },
+  "shelf": {
+   "w": 257,
+   "h": 53,
+   "footX": 129
+  },
+  "tv": {
+   "w": 269,
+   "h": 233,
+   "footX": 134
+  },
+  "floorlamp": {
+   "w": 96,
+   "h": 270,
+   "footX": 48
+  },
+  "rug": {
+   "w": 278,
+   "h": 120,
+   "footX": 136
+  },
+  "plant": {
+   "w": 193,
+   "h": 244,
+   "footX": 97
+  },
+  "toybox": {
+   "w": 273,
+   "h": 177,
+   "footX": 136
+  },
+  "picture": {
+   "w": 247,
+   "h": 206,
+   "footX": 122
+  },
+  "window": {
+   "w": 268,
+   "h": 230,
+   "footX": 134
+  },
+  "fridge": {
+   "w": 178,
+   "h": 271,
+   "footX": 88
+  },
+  "counter": {
+   "w": 279,
+   "h": 195,
+   "footX": 138
+  },
+  "stove": {
+   "w": 266,
+   "h": 247,
+   "footX": 132
+  },
+  "sink": {
+   "w": 241,
+   "h": 258,
+   "footX": 120
+  },
+  "cupboard": {
+   "w": 263,
+   "h": 169,
+   "footX": 132
+  },
+  "blenderstand": {
+   "w": 243,
+   "h": 263,
+   "footX": 121
+  },
+  "table": {
+   "w": 281,
+   "h": 159,
+   "footX": 140
+  },
+  "chair": {
+   "w": 156,
+   "h": 264,
+   "footX": 77
+  },
+  "clock": {
+   "w": 227,
+   "h": 230,
+   "footX": 114
+  },
+  "bed": {
+   "w": 282,
+   "h": 173,
+   "footX": 140
+  },
+  "nightstand": {
+   "w": 229,
+   "h": 245,
+   "footX": 114
+  },
+  "ceilinglamp": {
+   "w": 190,
+   "h": 222,
+   "footX": 95
+  },
+  "wardrobe": {
+   "w": 193,
+   "h": 283,
+   "footX": 96
+  },
+  "toyshelf": {
+   "w": 235,
+   "h": 272,
+   "footX": 118
+  },
+  "petbed": {
+   "w": 260,
+   "h": 111,
+   "footX": 130
+  },
+  "bathtub": {
+   "w": 280,
+   "h": 191,
+   "footX": 139
+  },
+  "bathsink": {
+   "w": 205,
+   "h": 266,
+   "footX": 102
+  },
+  "mirror": {
+   "w": 218,
+   "h": 267,
+   "footX": 108
+  },
+  "bathshelf": {
+   "w": 269,
+   "h": 63,
+   "footX": 134
+  },
+  "laundry": {
+   "w": 192,
+   "h": 240,
+   "footX": 96
+  },
+  "bathmat": {
+   "w": 261,
+   "h": 104,
+   "footX": 131
+  },
+  "stool": {
+   "w": 216,
+   "h": 220,
+   "footX": 108
+  },
+  "fridge_open": {
+   "w": 280,
+   "h": 297,
+   "footX": 140
+  },
+  "cupboard_open": {
+   "w": 334,
+   "h": 163,
+   "footX": 167
+  },
+  "toybox_open": {
+   "w": 292,
+   "h": 271,
+   "footX": 146
+  },
+  "nightstand_open": {
+   "w": 272,
+   "h": 289,
+   "footX": 136
+  },
+  "laundry_open": {
+   "w": 227,
+   "h": 301,
+   "footX": 114
+  },
+  "tv_alt": {
+   "w": 318,
+   "h": 271,
+   "footX": 158
+  },
+  "floorlamp_on": {
+   "w": 118,
+   "h": 307,
+   "footX": 58
+  },
+  "ceilinglamp_on": {
+   "w": 209,
+   "h": 243,
+   "footX": 104
+  },
+  "stove_on": {
+   "w": 298,
+   "h": 286,
+   "footX": 148
+  },
+  "bathtub_on": {
+   "w": 321,
+   "h": 218,
+   "footX": 158
+  },
+  "window_night": {
+   "w": 308,
+   "h": 288,
+   "footX": 152
+  },
+  "sink_on": {
+   "w": 279,
+   "h": 299,
+   "footX": 140
+  }
+ },
+ "pets": {
+  "cat_idle": {
+   "w": 210,
+   "h": 261,
+   "footX": 103
+  },
+  "cat_happy": {
+   "w": 210,
+   "h": 262,
+   "footX": 102
+  },
+  "cat_sleep": {
+   "w": 289,
+   "h": 203,
+   "footX": 158
+  },
+  "cat_eat": {
+   "w": 210,
+   "h": 261,
+   "footX": 102
+  },
+  "cat_play": {
+   "w": 210,
+   "h": 260,
+   "footX": 101
+  },
+  "dog_idle": {
+   "w": 255,
+   "h": 233,
+   "footX": 150
+  },
+  "dog_happy": {
+   "w": 259,
+   "h": 250,
+   "footX": 151
+  },
+  "dog_sleep": {
+   "w": 270,
+   "h": 183,
+   "footX": 148
+  },
+  "dog_eat": {
+   "w": 262,
+   "h": 233,
+   "footX": 156
+  },
+  "dog_play": {
+   "w": 267,
+   "h": 234,
+   "footX": 156
+  },
+  "rabbit_idle": {
+   "w": 169,
+   "h": 295,
+   "footX": 87
+  },
+  "rabbit_happy": {
+   "w": 181,
+   "h": 296,
+   "footX": 88
+  },
+  "rabbit_sleep": {
+   "w": 269,
+   "h": 205,
+   "footX": 138
+  },
+  "rabbit_eat": {
+   "w": 168,
+   "h": 296,
+   "footX": 86
+  },
+  "rabbit_play": {
+   "w": 168,
+   "h": 295,
+   "footX": 86
+  }
+ }
+}
