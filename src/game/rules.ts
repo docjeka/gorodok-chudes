@@ -1,6 +1,6 @@
 // Чистые правила мира. Каждая функция получает мир и возвращает новый мир либо причину отказа.
 // Ничего не знает про DOM, Canvas и хранилище — поэтому тестируется напрямую.
-import { FARM_KINDS, FURNITURE, GRAIN_EATERS, HAY_EATERS, groupOf } from '../content/furniture';
+import { FURNITURE, GRAIN_EATERS, HAY_EATERS, charAllowedIn, petAllowedIn } from '../content/furniture';
 import { GIFTS, ITEMS, RECIPES } from '../content/items';
 import { GARMENTS, OUTFITS, presetCharacter } from '../content/wardrobe';
 import { charPos, clampFloor, itemPlace, petPos } from './geometry';
@@ -233,9 +233,11 @@ export function travel(world: World, roomId: RoomId, characterIds: string[], pet
   const ids = [...new Set(characterIds)];
   if (ids.length > 4) return fail('too_many_travelers');
   const w = clone(world);
+  const stayed: string[] = [];
   ids.forEach((id, i) => {
     const c = w.characters[id];
     if (!c) return;
+    if (!charAllowedIn(id, roomId)) { stayed.push(id); return; } // фермер остаётся на ферме
     const p = clampFloor(520 + i * 170, 780 + (i % 2) * 40);
     c.roomId = roomId; c.x = p.x; c.y = p.y; c.seat = null; c.pose = 'standing';
     if (c.emotion === 'sleepy') c.emotion = 'joy';
@@ -246,12 +248,12 @@ export function travel(world: World, roomId: RoomId, characterIds: string[], pet
     const p = w.pets[id];
     if (!p) return;
     // жители фермы ходят только по ферме: это правило игры, а не только кнопок
-    if (FARM_KINDS.has(p.kind) && groupOf(roomId) !== 'farm') { refused.push(id); return; }
+    if (!petAllowedIn(p.kind, roomId)) { refused.push(id); return; }
     const at = clampFloor(980 + i * 130, 830 - (i % 2) * 50);
     p.roomId = roomId; p.x = at.x; p.y = at.y; p.seat = null; p.sleeping = false; delete p.inItem;
   });
   w.currentRoomId = roomId;
-  return ok(w, refused.length ? { refused } : undefined);
+  return ok(w, refused.length || stayed.length ? { refused: [...stayed, ...refused] } : undefined);
 }
 
 /** Позвать героя в комнату (или убрать на полку, roomId=null). Герой всегда ровно в одном месте. */
@@ -259,6 +261,7 @@ export function summonCharacter(world: World, id: string, roomId: RoomId | null)
   const w = clone(world);
   const c = w.characters[id];
   if (!c) return fail('no_character');
+  if (!charAllowedIn(id, roomId)) return fail('lives_on_farm'); // его нельзя ни позвать в другое место, ни убрать на полку
   if (roomId === null) {
     const p = charPos(w, c);
     let i = 0;

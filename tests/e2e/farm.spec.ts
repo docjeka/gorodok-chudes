@@ -28,7 +28,7 @@ test('ферма: двор и амбар с животными, кормлени
   if (await page.locator('.travelcard').isVisible()) await page.click('.travelcard .pill:not(.plain)');
   let w = await world(page);
   expect(w.currentRoomId).toBe('farm_yard');
-  await expect(page.locator('.roombtn')).toHaveCount(2);
+  await expect(page.locator('.roombtn')).toHaveCount(3);
   await expect(page.locator('.roombtn.current')).toHaveText('Двор');
   const where = (x: any) => Object.fromEntries(Object.values<any>(x.pets).filter((q) => q.id.match(/hen|chick|pony|cow|sheep|pig|goat/)).map((q) => [q.id, q.roomId]));
   expect(where(w)).toEqual({ pet_hen: 'farm_yard', pet_chick: 'farm_yard', pet_pony: 'farm_yard', pet_cow: 'farm_barn', pet_sheep: 'farm_barn', pet_pig: 'farm_barn', pet_goat: 'farm_barn' });
@@ -149,3 +149,116 @@ test('ферма на английском: экраны, место на кар
   await page.evaluate(() => window.__game.play.farmStay('pet_hen'));
   await expect(page.locator('.toast')).toHaveText('I live on the farm.');
 });
+
+for (const [name, vw, vh] of [['4:3', 1024, 768], ['16:9', 1280, 720]] as const) {
+  test(`фермер Лев и загон кенгуру (${name}): Лев во дворе, три наряда стоя и сидя, кенгуру прыгают и не выносятся; после перезапуска всё на месте`, async ({ page }) => {
+    await page.setViewportSize({ width: vw, height: vh });
+    await page.goto('./');
+    await page.waitForFunction(() => !!window.__game);
+    await page.evaluate(() => window.__game.game.update((w: any) => { w.settings.tutorialDone = true; }));
+    await page.click('#play');
+    const enterFarm = async () => { await page.evaluate(() => window.__game.map.enter('farm')); if (await page.locator('.travelcard').isVisible()) await page.click('.travelcard .pill:not(.plain)'); await page.waitForTimeout(500); };
+    await enterFarm();
+    let w = await world(page);
+    expect(w.characters.farm_worker_lev).toMatchObject({ roomId: 'farm_yard', pose: 'standing', costume: 'farmer_work' });
+    expect(Object.keys(w.characters).filter((id) => id === 'farm_worker_lev')).toHaveLength(1);
+    // три экрана фермы, кнопки видны и не обрезаны сверху
+    await expect(page.locator('.roombtn')).toHaveCount(3);
+    await expect(page.locator('.roombtn').nth(2)).toHaveText('Загон кенгуру');
+    const btn = await page.locator('.roombtn').nth(2).boundingBox();
+    expect(btn!.y).toBeGreaterThanOrEqual(0); expect(btn!.x + btn!.width).toBeLessThan(vw);
+    const edge = () => page.evaluate(() => { const s = window.__game.scene; return [Math.round(s.toScreen({ x: 0, y: 0 }).y), Math.round(s.toScreen({ x: 0, y: 900 }).y)]; });
+    expect((await edge())[0]).toBeLessThanOrEqual(0); expect((await edge())[1]).toBe(vh);
+    // тап по Льву: реплика текстом, он улыбается; касание попадает в него
+    await page.evaluate(() => window.__game.scene.centerOn(window.__game.game.world.characters.farm_worker_lev.x));
+    await page.waitForTimeout(300);
+    await page.mouse.click(...(await at(page, 'farm_worker_lev', -130)));
+    await page.waitForFunction(() => window.__game.talk.log.length === 1);
+    const line = await page.evaluate(() => window.__game.talk.log[0]);
+    expect(line).toMatchObject({ heroId: 'farm_worker_lev', event: 'farmer', audio: false });
+    expect(['Привет! Поможешь на ферме?', 'Загляни к кенгуру!']).toContain(await page.locator('.bubble').innerText());
+    // наряды: существующее меню одежды; поза и место не меняются; фигурки стоя и сидя загружаются
+    const key = () => page.evaluate(() => window.__game.scene.nodeOf('farm_worker_lev').key as string);
+    const pos0 = [w.characters.farm_worker_lev.x, w.characters.farm_worker_lev.y];
+    for (const [label, file] of [['Дождевик', 'farmer_rain'], ['Жилет', 'farmer_harvest'], ['Комбинезон', 'farmer_work'], ['Дождевик', 'farmer_rain']] as const) {
+      await page.click('[aria-label="Следующий наряд"]');
+      await expect(page.locator('.grouplabel').first()).toHaveText(label);
+      await page.waitForFunction((f) => window.__game.scene.nodeOf('farm_worker_lev').key.includes(f + '_stand') && !!window.__game.scene.nodeOf('farm_worker_lev').tex, file);
+      const c = (await world(page)).characters.farm_worker_lev;
+      expect([c.x, c.y, c.pose]).toEqual([...pos0, 'standing']);
+    }
+    // сидя: посадили на стул, принесённый на ферму, и сменили наряд — поза и место те же
+    await page.evaluate(() => { const g = window.__game; g.game.commit(g.rules.storeFurniture(g.game.world, 'kt_chair1')); g.game.commit(g.rules.unstoreFurniture(g.game.world, 'kt_chair1', 'farm_yard')); g.game.commit(g.rules.moveFurniture(g.game.world, 'kt_chair1', 1200, 800)); g.game.commit(g.rules.placeCharacter(g.game.world, 'farm_worker_lev', { furnitureId: 'kt_chair1', slot: 0 })); });
+    for (const file of ['farmer_rain', 'farmer_harvest', 'farmer_work']) {
+      await page.evaluate((f) => { const g = window.__game; g.game.commit(g.rules.wearSet(g.game.world, 'farm_worker_lev', f)); }, file);
+      await page.waitForFunction((f) => window.__game.scene.nodeOf('farm_worker_lev').key.includes(f + '_sit') && !!window.__game.scene.nodeOf('farm_worker_lev').tex, file);
+      expect((await world(page)).characters.farm_worker_lev).toMatchObject({ pose: 'sitting', seat: { furnitureId: 'kt_chair1' } });
+      // лицо рисует игра: глаза и рот стоят на своих точках внутри головы
+      const face = await page.evaluate(() => { const n = window.__game.scene.nodeOf('farm_worker_lev'); return n.parts ? { ex: n.parts.eyeR.x - n.parts.eyeL.x, my: n.parts.mouth.y - n.parts.eyeL.y } : null; });
+      expect(face!.ex).toBeGreaterThan(25); expect(face!.my).toBeGreaterThan(10);
+    }
+    await page.evaluate(() => { const g = window.__game; g.game.commit(g.rules.wearSet(g.game.world, 'farm_worker_lev', 'farmer_harvest')); });
+    // в списке героев его нельзя позвать или отправить отдыхать
+    await page.click('[data-panel="heroes"]');
+    const card = page.locator('.card', { hasText: 'Фермер Лев' });
+    await expect(card).toContainText('живёт на ферме');
+    await expect(card.locator('.pill')).toHaveCount(1);
+    await page.click('[data-panel="heroes"]');
+    // загон кенгуру
+    await page.click('.roombtn:has-text("Загон кенгуру")');
+    if (await page.locator('.travelcard').isVisible()) { expect(await page.locator('.herochip:not(.petchip)').count()).toBeGreaterThanOrEqual(0); await page.click('.travelcard .pill:not(.plain)'); }
+    await page.evaluate(() => window.__game.scene.setZoom(0.1)); await page.waitForTimeout(500);
+    w = await world(page);
+    expect(w.currentRoomId).toBe('farm_pen');
+    expect((await edge())[1]).toBe(vh);
+    const roo0 = w.pets.farm_kangaroo_adult;
+    // тап: радостный кадр, один прыжок и возврат на место
+    const hop = page.evaluate(async () => { const n = window.__game.scene.nodeOf('farm_kangaroo_adult'); const ys: number[] = []; const t0 = performance.now(); while (performance.now() - t0 < 900) { ys.push(n.c.y); await new Promise((r) => requestAnimationFrame(r)); } return { up: Math.max(...ys) - Math.min(...ys), end: ys.at(-1), start: n.by, key: n.key as string }; });
+    await page.mouse.click(...(await at(page, 'farm_kangaroo_adult', -80)));
+    const h = await hop;
+    expect(h.up).toBeGreaterThan(20); expect(Math.abs(h.end! - h.start)).toBeLessThan(1);
+    expect(await page.evaluate(() => (window.__game.scene as any).petMoods.get('farm_kangaroo_adult')?.mood)).toBe('happy');
+    expect((await world(page)).pets.farm_kangaroo_adult).toEqual(roo0);
+    // угощение: морковка исчезает, кенгурёнок радуется
+    const carrot = await page.evaluate(() => { const g = window.__game; const r = g.rules.spawnItem(g.game.world, 'carrot', { kind: 'room', roomId: 'farm_pen', x: 1300, y: 850 }); g.game.commit(r); return r.info.instanceId as string; });
+    await page.waitForTimeout(300);
+    await drag(page, await at(page, carrot, -10), await at(page, 'farm_kangaroo_joey', -50));
+    expect((await world(page)).items[carrot]).toBeUndefined();
+    // вынести нельзя: ни в сумку, ни на карту, ни в соседний экран, ни напрямую правилом
+    const bag = await page.locator('[data-panel="things"]').boundingBox();
+    await drag(page, await at(page, 'farm_kangaroo_joey', -50), [bag!.x + bag!.width / 2, bag!.y + bag!.height / 2]);
+    await expect(page.locator('.toast')).toHaveText('Я живу на ферме.');
+    const mapBtn = await page.locator('#tomap').boundingBox();
+    await drag(page, await at(page, 'farm_kangaroo_adult', -80), [mapBtn!.x + mapBtn!.width / 2, mapBtn!.y + mapBtn!.height / 2]);
+    expect((await world(page)).pets.farm_kangaroo_adult.roomId).toBe('farm_pen');
+    await page.evaluate(() => { const g = window.__game; g.game.commit(g.rules.summonCharacter(g.game.world, 'hero_mila', 'farm_pen')); });
+    await page.click('.roombtn:has-text("Двор")');
+    await expect(page.locator('.travelcard')).toBeVisible();
+    expect(await page.locator('.petchip').count()).toBe(0); // кенгуру в списке поездки нет
+    await page.click('.herochip:has-text("Мила")'); await page.click('.travelcard .pill:not(.plain)');
+    await page.waitForTimeout(400);
+    w = await world(page);
+    expect(w.currentRoomId).toBe('farm_yard');
+    expect([w.pets.farm_kangaroo_adult.roomId, w.pets.farm_kangaroo_joey.roomId]).toEqual(['farm_pen', 'farm_pen']);
+    // уйти с фермы с героем — Льва в списке нет
+    // Лев ходит по ферме вместе с игроком (его взяли в загон) и остаётся в выбранном наряде
+    expect(w.characters.farm_worker_lev).toMatchObject({ roomId: 'farm_pen', costume: 'farmer_harvest' });
+    await page.click('#tomap');
+    await page.evaluate(() => window.__game.map.enter('animals'));
+    await expect(page.locator('.travelcard')).toBeVisible();
+    await expect(page.locator('.herochip', { hasText: 'Фермер Лев' })).toHaveCount(0);
+    await expect(page.locator('.herochip', { hasText: 'Мила' })).toHaveCount(1);
+    await page.click('.travelcard .pill.plain');
+    // перезапуск: Лев один и на ферме, наряд сохранён, кенгуру в загоне, дублей нет
+    await expect(page.locator('.save.saved')).toBeVisible();
+    await page.reload();
+    await page.waitForFunction(() => !!window.__game);
+    w = await world(page);
+    expect(w.characters.farm_worker_lev).toMatchObject({ roomId: 'farm_pen', costume: 'farmer_harvest' });
+    expect(Object.keys(w.characters)).toHaveLength(7); expect(Object.keys(w.pets)).toHaveLength(15);
+    await page.click('#play'); await enterFarm(); await page.click('#tomap'); await enterFarm();
+    w = await world(page);
+    expect(w.characters.farm_worker_lev).toMatchObject({ roomId: 'farm_yard', pose: 'standing', costume: 'farmer_harvest' }); // при входе на ферму Лев уже во дворе
+    expect(Object.keys(w.characters)).toHaveLength(7); expect(Object.keys(w.pets)).toHaveLength(15);
+  });
+}

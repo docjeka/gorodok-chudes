@@ -348,6 +348,25 @@ try {
     await wait(700); await shot(page, 'farm-barn-far');
     await page.click('#tomap'); await wait(500); await page.click('.map-turn.right'); await wait(900); await shot(page, 'farm-map-back');
   }
+  if (scenario === 'farmx') {
+    const page = await open('', { width: 1024, height: 768 });
+    const ev = (fn, arg) => page.evaluate(fn, arg);
+    await ev(() => { const g = window.__game; g.game.commit(g.rules.travel(g.game.world, 'farm_yard', [])); g.scene.setZoom(0.1); });
+    await wait(900); await shot(page, 'farmx-yard');
+    await ev(() => { const g = window.__game; g.game.commit(g.rules.storeFurniture(g.game.world, 'kt_chair1')); g.game.commit(g.rules.unstoreFurniture(g.game.world, 'kt_chair1', 'farm_yard')); g.game.commit(g.rules.moveFurniture(g.game.world, 'kt_chair1', 1120, 800)); });
+    const strip = [];
+    for (const set of ['farmer_work', 'farmer_rain', 'farmer_harvest']) for (const sit of [false, true]) {
+      await ev(([st, s]) => { const g = window.__game; g.game.commit(g.rules.wearSet(g.game.world, 'farm_worker_lev', st)); g.game.commit(s ? g.rules.placeCharacter(g.game.world, 'farm_worker_lev', { furnitureId: 'kt_chair1', slot: 0 }) : g.rules.placeCharacter(g.game.world, 'farm_worker_lev', { x: 860, y: 810 })); }, [set, sit]);
+      await wait(700);
+      const c = await at(page, 'farm_worker_lev', sit ? -70 : -110);
+      const name = `farmx-lev-${set}-${sit ? 'sit' : 'stand'}`;
+      await page.screenshot({ path: `${OUT}/${name}.png`, clip: { x: c[0] - 110, y: c[1] - 150, width: 220, height: 300 } }); strip.push(name);
+    }
+    console.log(strip.join(','));
+    await ev(() => { const g = window.__game; g.game.commit(g.rules.travel(g.game.world, 'farm_pen', [])); g.scene.setZoom(0.1); });
+    await wait(900); await shot(page, 'farmx-pen');
+    await page.mouse.click(...(await at(page, 'farm_kangaroo_adult', -80))); await wait(170); await shot(page, 'farmx-pen-hop');
+  }
   if (scenario === 'six' || scenario === 'all') {
     const page = await open('', { width: 1600, height: 900 });
     await page.evaluate(() => { const g = window.__game; const R = g.rules; const put = [['hero_mila', 330, 860, 'fairy', 'delight'], ['hero_timur', 560, 850, 'pirate', 'silly'], ['hero_yuki', 800, 860, 'casual', 'joy'], ['hero_asya', 1040, 850, 'cat', 'surprise'], ['hero_lev', 1270, 860, 'astronaut', 'calm'], ['hero_nora', 1480, 850, 'princess', 'thinking']];

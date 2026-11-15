@@ -249,4 +249,11 @@ export const en: Record<Key, string> = {
   'prop.farm_eggs': "Eggs",
   'prop.farm_milkcan': "Milk can",
   'prop.farm_can': "Watering can",
+  'room.farm_pen': "Kangaroo pen",
+  'costume.farmer_work': "Overalls",
+  'costume.farmer_rain': "Raincoat",
+  'costume.farmer_harvest': "Harvest vest",
+  'pet.kangaroo': "Kangaroo",
+  'pet.joey': "Joey",
+  'heroes.farm': "lives on the farm",
 };

@@ -1,6 +1,6 @@
 // Типы данных мира. Модель — единственный источник правды; сцена строится из неё.
 
-export const SCHEMA_VERSION = 7;
+export const SCHEMA_VERSION = 8;
 export const ROOM_W = 1600;
 export const ROOM_H = 900;
 export const FLOOR_TOP = 600;
@@ -11,7 +11,7 @@ export const BAG_CAPACITY = 8;
 export const GIFT_CAPACITY = 5;
 
 export type RoomId = 'living' | 'kitchen' | 'bedroom' | 'bathroom'
-  | 'park' | 'park_games' | 'cafe' | 'cafe_bakery' | 'toys' | 'toys_workshop' | 'beach' | 'beach_boats' | 'club' | 'animals' | 'farm_yard' | 'farm_barn';
+  | 'park' | 'park_games' | 'cafe' | 'cafe_bakery' | 'toys' | 'toys_workshop' | 'beach' | 'beach_boats' | 'club' | 'animals' | 'farm_yard' | 'farm_barn' | 'farm_pen';
 export type HandSlot = 'left' | 'right';
 
 /** Владелец предмета. У каждого экземпляра он ровно один. */
@@ -90,7 +90,7 @@ export interface Character {
   costume?: string;
 }
 
-export type PetKind = 'cat' | 'dog' | 'rabbit' | 'capybara' | 'frenchie' | 'wolf' | 'cow' | 'sheep' | 'pig' | 'goat' | 'hen' | 'chick' | 'pony';
+export type PetKind = 'cat' | 'dog' | 'rabbit' | 'capybara' | 'frenchie' | 'wolf' | 'cow' | 'sheep' | 'pig' | 'goat' | 'hen' | 'chick' | 'pony' | 'kangaroo' | 'joey';
 export interface Pet {
   id: string;
   kind: PetKind;

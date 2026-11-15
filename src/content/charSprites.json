@@ -2026,5 +2026,239 @@
    "y": 378
   },
   "faceScale": 1.18
+ },
+ "farm_worker_lev:farmer_work:stand": {
+  "file": "farm_worker_lev_farmer_work_stand.webp",
+  "w": 278,
+  "h": 594,
+  "unit": 2,
+  "origin": {
+   "x": 138,
+   "y": 592
+  },
+  "eyeL": {
+   "x": 99,
+   "y": 165
+  },
+  "eyeR": {
+   "x": 176,
+   "y": 165
+  },
+  "browL": {
+   "x": 99,
+   "y": 139
+  },
+  "browR": {
+   "x": 176,
+   "y": 139
+  },
+  "mouth": {
+   "x": 138,
+   "y": 211
+  },
+  "handL": {
+   "x": 31,
+   "y": 399
+  },
+  "handR": {
+   "x": 243,
+   "y": 399
+  },
+  "faceScale": 1.18
+ },
+ "farm_worker_lev:farmer_work:sit": {
+  "file": "farm_worker_lev_farmer_work_sit.webp",
+  "w": 280,
+  "h": 541,
+  "unit": 2,
+  "origin": {
+   "x": 139,
+   "y": 464
+  },
+  "eyeL": {
+   "x": 101,
+   "y": 164
+  },
+  "eyeR": {
+   "x": 178,
+   "y": 164
+  },
+  "browL": {
+   "x": 101,
+   "y": 138
+  },
+  "browR": {
+   "x": 178,
+   "y": 138
+  },
+  "mouth": {
+   "x": 139,
+   "y": 211
+  },
+  "handL": {
+   "x": 25,
+   "y": 394
+  },
+  "handR": {
+   "x": 253,
+   "y": 393
+  },
+  "faceScale": 1.18
+ },
+ "farm_worker_lev:farmer_rain:stand": {
+  "file": "farm_worker_lev_farmer_rain_stand.webp",
+  "w": 279,
+  "h": 588,
+  "unit": 2,
+  "origin": {
+   "x": 138,
+   "y": 586
+  },
+  "eyeL": {
+   "x": 99,
+   "y": 160
+  },
+  "eyeR": {
+   "x": 176,
+   "y": 160
+  },
+  "browL": {
+   "x": 99,
+   "y": 134
+  },
+  "browR": {
+   "x": 176,
+   "y": 134
+  },
+  "mouth": {
+   "x": 138,
+   "y": 207
+  },
+  "handL": {
+   "x": 29,
+   "y": 395
+  },
+  "handR": {
+   "x": 243,
+   "y": 394
+  },
+  "faceScale": 1.18
+ },
+ "farm_worker_lev:farmer_rain:sit": {
+  "file": "farm_worker_lev_farmer_rain_sit.webp",
+  "w": 281,
+  "h": 538,
+  "unit": 2,
+  "origin": {
+   "x": 140,
+   "y": 463
+  },
+  "eyeL": {
+   "x": 102,
+   "y": 163
+  },
+  "eyeR": {
+   "x": 179,
+   "y": 163
+  },
+  "browL": {
+   "x": 102,
+   "y": 137
+  },
+  "browR": {
+   "x": 179,
+   "y": 137
+  },
+  "mouth": {
+   "x": 140,
+   "y": 210
+  },
+  "handL": {
+   "x": 27,
+   "y": 393
+  },
+  "handR": {
+   "x": 252,
+   "y": 392
+  },
+  "faceScale": 1.18
+ },
+ "farm_worker_lev:farmer_harvest:stand": {
+  "file": "farm_worker_lev_farmer_harvest_stand.webp",
+  "w": 278,
+  "h": 591,
+  "unit": 2,
+  "origin": {
+   "x": 138,
+   "y": 589
+  },
+  "eyeL": {
+   "x": 99,
+   "y": 161
+  },
+  "eyeR": {
+   "x": 176,
+   "y": 161
+  },
+  "browL": {
+   "x": 99,
+   "y": 135
+  },
+  "browR": {
+   "x": 176,
+   "y": 135
+  },
+  "mouth": {
+   "x": 138,
+   "y": 208
+  },
+  "handL": {
+   "x": 33,
+   "y": 397
+  },
+  "handR": {
+   "x": 243,
+   "y": 396
+  },
+  "faceScale": 1.18
+ },
+ "farm_worker_lev:farmer_harvest:sit": {
+  "file": "farm_worker_lev_farmer_harvest_sit.webp",
+  "w": 280,
+  "h": 540,
+  "unit": 2,
+  "origin": {
+   "x": 138,
+   "y": 463
+  },
+  "eyeL": {
+   "x": 100,
+   "y": 163
+  },
+  "eyeR": {
+   "x": 177,
+   "y": 163
+  },
+  "browL": {
+   "x": 100,
+   "y": 137
+  },
+  "browR": {
+   "x": 177,
+   "y": 137
+  },
+  "mouth": {
+   "x": 138,
+   "y": 209
+  },
+  "handL": {
+   "x": 25,
+   "y": 396
+  },
+  "handR": {
+   "x": 252,
+   "y": 395
+  },
+  "faceScale": 1.18
  }
 }

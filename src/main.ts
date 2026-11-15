@@ -2,7 +2,7 @@ import './style.css';
 import { GameAudio } from './audio/audio';
 import { Game } from './game/game';
 import * as rules from './game/rules';
-import { createWorld, repairWorld, validateWorld } from './game/world';
+import { FARMER_SPOT, createWorld, repairWorld, validateWorld } from './game/world';
 import type { RoomId, World } from './game/types';
 import { setLang, t } from './i18n';
 import { Input } from './scene/input';
@@ -14,7 +14,7 @@ import { Hud } from './ui/hud';
 import { Panels } from './ui/panels';
 import { Offline } from './storage/offline';
 import { WorldMap } from './map/globe';
-import { ROOM_GROUPS, groupOf } from './content/furniture';
+import { ROOM_GROUPS, charAllowedIn, groupOf } from './content/furniture';
 
 const stage = document.getElementById('stage')!;
 const ui = document.getElementById('ui')!;
@@ -128,11 +128,16 @@ async function run(kv: KV, initial: World) {
       scene.app.start();
       const cur = game.world.currentRoomId;
       const target = group.includes(cur) ? cur : lastRoom[place.route!] ?? group[0];
+      if (place.route === 'farm') {
+        // при каждом входе на ферму Лев уже во дворе, сбоку от дорожки: тот же самый житель, не копия
+        const lev = game.world.characters.farm_worker_lev;
+        if (lev && lev.roomId !== FARMER_SPOT.roomId) game.update((w) => { Object.assign(w.characters.farm_worker_lev, { roomId: FARMER_SPOT.roomId, x: FARMER_SPOT.x, y: FARMER_SPOT.y, seat: null, pose: 'standing' }); }, true);
+      }
       if (target === 'club') audio.preloadClub();
       if (target === 'club' && !game.world.rooms.club.visited) {
         // первый вход в клуб: три уже существующих героя ждут там — один у пульта, двое на танцполе. Копий нет; потом их можно увести куда угодно.
         game.update((w) => {
-          const all = Object.values(w.characters);
+          const all = Object.values(w.characters).filter((c) => charAllowedIn(c.id, 'club')); // фермер остаётся на ферме
           const pick = [...all.filter((c) => c.roomId === null), ...all.filter((c) => c.roomId !== null && c.roomId !== w.currentRoomId && c.pose !== 'sleeping')].slice(0, 3); // тех, кто сейчас с игроком, не трогаем — их берут с собой
           const spots = [{ x: 1090, y: 740 }, { x: 420, y: 800 }, { x: 700, y: 840 }];
           pick.forEach((c, i) => { c.roomId = 'club'; c.x = spots[i].x; c.y = spots[i].y; c.seat = null; c.pose = 'standing'; c.flipped = i === 0; if (c.emotion === 'sleepy') c.emotion = 'joy'; });

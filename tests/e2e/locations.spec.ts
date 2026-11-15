@@ -219,7 +219,7 @@ test('Парк животных: шесть зверей без копий, мя
   expect(w.currentRoomId).toBe('animals');
   const park = ['pet_capybara', 'pet_cat', 'pet_dog', 'pet_frenchie', 'pet_rabbit', 'pet_wolf'];
   expect(Object.values<any>(w.pets).filter((p) => p.roomId === 'animals').map((p) => p.id).sort()).toEqual(park); // шестеро, без копий; жители фермы остались на ферме
-  expect(Object.keys(w.pets)).toHaveLength(13);
+  expect(Object.keys(w.pets)).toHaveLength(15);
   // мячик: ближайший бодрствующий зверь подбегает и толкает мяч
   const ball = Object.values<any>(w.items).find((i) => i.definitionId === 'pet_rope_ball').instanceId;
   await page.evaluate(() => window.__game.game.update((x: any) => { x.pets.pet_cat.sleeping = true; })); // спящий кот не побежит

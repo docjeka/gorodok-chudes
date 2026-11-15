@@ -1,6 +1,6 @@
 // Игровые взаимодействия: что происходит при нажатии и при отпускании. Связывает правила, сцену и звук.
 import type { GameAudio } from '../audio/audio';
-import { DISCO_BALL, FARM_KINDS, FURNITURE, GRAIN_EATERS, HAY_EATERS, TV_SCENES } from '../content/furniture';
+import { BOUND_CHARS, DISCO_BALL, FARM_KINDS, FURNITURE, PEN_KINDS, GRAIN_EATERS, HAY_EATERS, TV_SCENES } from '../content/furniture';
 import { ITEMS } from '../content/items';
 import { resolveCharDrop, resolveItemDrop, resolvePetDrop, freeFloorSpot, type ItemDrop } from '../game/drop';
 import type { Game } from '../game/game';
@@ -601,7 +601,9 @@ export class Play {
       this.select(sel?.ref === t.ref ? null : { kind: 'char', ref: t.ref });
       this.audio.play('click');
       this.scene.pop(t.ref, 0.05);
-      this.talk?.say(t.ref, 'tap', 120);
+      // фермер машет и иногда говорит своё
+      if (BOUND_CHARS[t.ref]) { this.game.update((x) => { x.characters[t.ref].emotion = 'joy'; }); this.scene.hop(t.ref, 10); this.talk?.say(t.ref, 'farmer', 120); }
+      else this.talk?.say(t.ref, 'tap', 120);
       return;
     }
     if (t.kind === 'pet') {
@@ -612,6 +614,7 @@ export class Play {
       this.scene.setPetMood(t.ref, 'happy', 1500);
       this.scene.burst('heart', { x: pos.x, y: pos.y - 110 }, 3);
       if (!this.petVoice(p.kind)) this.audio.play('pet');
+      if (PEN_KINDS.has(p.kind)) this.scene.hop(t.ref, 46); // один мягкий прыжок и обратно на место
       return;
     }
     if (t.kind === 'item') {

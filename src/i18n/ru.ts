@@ -248,5 +248,12 @@ export const ru = {
   'prop.farm_eggs': "Яйца",
   'prop.farm_milkcan': "Молочный бидон",
   'prop.farm_can': "Лейка",
+  'room.farm_pen': "Загон кенгуру",
+  'costume.farmer_work': "Комбинезон",
+  'costume.farmer_rain': "Дождевик",
+  'costume.farmer_harvest': "Жилет",
+  'pet.kangaroo': "Кенгуру",
+  'pet.joey': "Кенгурёнок",
+  'heroes.farm': "живёт на ферме",
 } as const;
 export type Key = keyof typeof ru;

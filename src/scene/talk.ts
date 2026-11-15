@@ -13,10 +13,10 @@ const DUR = durations as Record<string, number>;
 /** У каждого героя свой тон голоса: одна запись проигрывается с разной скоростью. */
 const RATE: Record<string, number> = { hero_mila: 1.2, hero_timur: 1.06, hero_asya: 1.15, hero_lev: 1.1, hero_nora: 1.18, hero_yuki: 1.13 };
 /** Чей голос у героя: папки assets/voice/girl и assets/voice/boy. Свой тон героя — небольшое изменение скорости. */
-export const VOICE_OF: Record<string, 'girl' | 'boy'> = { hero_mila: 'girl', hero_asya: 'girl', hero_nora: 'girl', hero_yuki: 'girl', hero_timur: 'boy', hero_lev: 'boy' };
+export const VOICE_OF: Record<string, 'girl' | 'boy'> = { hero_mila: 'girl', hero_asya: 'girl', hero_nora: 'girl', hero_yuki: 'girl', hero_timur: 'boy', hero_lev: 'boy', farm_worker_lev: 'boy' };
 declare const __VOICE_SETS__: string[] | undefined;
 const VOICE_SETS: string[] = typeof __VOICE_SETS__ === 'undefined' ? [] : __VOICE_SETS__;
-const OWN_RATE: Record<string, number> = { hero_mila: 1.03, hero_asya: 0.97, hero_nora: 1.06, hero_yuki: 1, hero_timur: 1, hero_lev: 1.05 };
+const OWN_RATE: Record<string, number> = { hero_mila: 1.03, hero_asya: 0.97, hero_nora: 1.06, hero_yuki: 1, hero_timur: 1, hero_lev: 1.05, farm_worker_lev: 0.92 };
 const EVENT_COOLDOWN = 3500; // пауза перед повтором той же реакции у того же героя
 const PAIR_COOLDOWN = 8000; // пауза перед новым разговором той же пары
 const GAP = 280; // тишина между репликами

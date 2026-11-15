@@ -15,7 +15,7 @@ import { createWorld, parseWorld } from '../game/world';
 import type { Character, ItemInst } from '../game/types';
 import { BAG_CAPACITY } from '../game/types';
 import { has, setLang, t, type Key } from '../i18n';
-import { HOUSE_ROOMS } from '../content/furniture';
+import { BOUND_CHARS, HOUSE_ROOMS } from '../content/furniture';
 import { IDEA_KITS } from '../content/ideaKits';
 import { prepareIdea, type PreparedItem } from '../game/rules';
 import type { Play } from '../scene/play';
@@ -168,7 +168,10 @@ export class Panels {
       const card = el('div', 'card' + (here ? ' here' : ''));
       const status = here ? 'heroes.here' : c.roomId ? 'heroes.away' : 'heroes.resting';
       card.innerHTML = `<div class="thumb">${heroThumb(c)}</div><div class="cardname">${c.name}</div><div class="cardsub">${t(status)}</div>`;
+      const bound = !!BOUND_CHARS[c.id]; // фермера нельзя позвать с фермы или убрать на полку
+      if (bound) card.querySelector('.cardsub')!.textContent = t('heroes.farm');
       const main = el('button', 'pill small', t(here ? 'heroes.show' : 'heroes.call'));
+      if (bound && !here) main.disabled = true;
       main.onclick = () => {
         if (!here) { this.game.commit(summonCharacter(this.game.world, c.id, w.currentRoomId), true); this.audio.play('pop'); }
         const cur = this.game.world.characters[c.id];
@@ -177,7 +180,7 @@ export class Panels {
         this.scene.hop(c.id);
       };
       card.append(main);
-      if (c.roomId) {
+      if (c.roomId && !bound) {
         const rest = el('button', 'pill small plain', t('heroes.sendRest'));
         rest.onclick = () => { if (this.play.selection?.ref === c.id) this.play.select(null); this.game.commit(summonCharacter(this.game.world, c.id, null), true); this.audio.play('put'); };
         card.append(rest);

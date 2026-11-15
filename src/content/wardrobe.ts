@@ -64,6 +64,9 @@ export const OUTFIT_SETS: OutfitSetDef[] = [
   { id: 'summer', outfit: o({ dress: ['sundress', 4], shoes: ['sneakers', 1], bag: ['satchel', 0] }) },
   // наряды только с готовыми фигурками (векторный запасной вид — из похожих вещей)
   { id: 'dj', outfit: o({ top: ['sweater', 2], bottom: ['trousers', 2], shoes: ['sneakers', 1] }) },
+  { id: 'farmer_work', outfit: o({ dress: ['overalls', 0], shoes: ['boots', 1] }) },
+  { id: 'farmer_rain', outfit: o({ top: ['raincoat', 0], bottom: ['trousers', 0], shoes: ['boots', 1] }) },
+  { id: 'farmer_harvest', outfit: o({ top: ['sweater', 2], bottom: ['trousers', 2], shoes: ['boots', 0] }) },
   { id: 'confectioner', outfit: o({ top: ['chefcoat', 0], bottom: ['trousers', 1], shoes: ['sneakers', 1], hat: ['chefhat', 0] }) },
 ];
 export const OUTFITS: Record<string, OutfitSetDef> = Object.fromEntries(OUTFIT_SETS.map((s) => [s.id, s]));
@@ -84,9 +87,11 @@ export const PRESET_HEROES: Preset[] = [
   ['hero_nora', 'Нора', L(2, 0, 4, 0, 6, 1, false, 0, true), 'gardener'],
   ['hero_yuki', 'Юки', L(5, 1, 3, 1, 1, 6), 'casual'],
 ];
+/** Постоянный житель фермы — не из набора героев игрока. */
+export const FARMER: Preset = ['farm_worker_lev', 'Фермер Лев', L(1, 2, 1, 2, 7, 5, true), 'farmer_work'];
 
 export function presetCharacter(id: string): Character | null {
-  const p = PRESET_HEROES.find((h) => h[0] === id);
+  const p = [...PRESET_HEROES, FARMER].find((h) => h[0] === id);
   if (!p) return null;
   return {
     id: p[0], name: p[1], preset: true, look: { ...p[2] }, outfit: structuredClone(OUTFITS[p[3]].outfit), costume: p[3],
@@ -98,6 +103,7 @@ export function presetCharacter(id: string): Character | null {
 export const HERO_COSTUMES: Record<string, string[]> = {
   hero_mila: ['summer', 'princess', 'pajama', 'fairy', 'dj'],
   hero_timur: ['casual', 'chef', 'dragon', 'pirate', 'confectioner'],
+  farm_worker_lev: ['farmer_work', 'farmer_rain', 'farmer_harvest'],
   hero_asya: ['artist', 'ballerina', 'winter', 'cat'],
   hero_lev: ['sport', 'astronaut', 'rain', 'pajama'],
   hero_nora: ['gardener', 'summer', 'chef', 'princess'],
