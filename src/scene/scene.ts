@@ -246,9 +246,16 @@ export class Scene {
         if (c && sp) {
           const p = charPos(w, c);
           const k = c.flipped ? -1 : 1;
+          if (o.slot === 'head') {
+            // убор сидит на голове: маска — на глазах, корона и колпак — на макушке
+            const mask = it.definitionId === 'mask';
+            pl.x = p.x + (k * ((sp.eyeL.x + sp.eyeR.x) / 2 - sp.origin.x)) / sp.unit;
+            pl.y = p.y + ((mask ? (sp.eyeL.y + sp.eyeR.y) / 2 : sp.browL.y) - sp.origin.y) / sp.unit + (mask ? ITEMS[it.definitionId].h * 0.5 : -34);
+          } else {
           const hand = o.slot === 'both' ? { x: (sp.handL.x + sp.handR.x) / 2, y: (sp.handL.y + sp.handR.y) / 2 } : o.slot === 'left' ? sp.handL : sp.handR;
           pl.x = p.x + (k * (hand.x - sp.origin.x)) / sp.unit;
           pl.y = p.y + (hand.y - sp.origin.y) / sp.unit + ITEMS[it.definitionId].h * 0.4;
+          }
         }
       }
       const z = o.kind === 'hand' ? (charZ.get(o.characterId) ?? 200) + 0.05 : o.kind === 'surface' ? zOfFurn(o.furnitureId) + 0.6 + o.slot * 0.001 : o.kind === 'furniture' ? zOfFurn(o.furnitureId) + 0.3 + o.slot * 0.001 : 200 + pl.y;
@@ -442,6 +449,25 @@ export class Scene {
   dragEnd() { this.dragging = null; this.hlTarget = null; if (this.world) this.sync(this.world); }
   setHighlight(t: { x: number; y: number; r: number } | null) { this.hlTarget = t; }
   setSelected(ref: string | null) { this.selId = ref; }
+
+  // ---------- вещь «оживает» по нажатию ----------
+  trick(ref: string, kind: 'bounce' | 'roll' | 'fly' | 'wiggle' | 'spin' | 'squash') {
+    const n = this.nodeOf(ref);
+    if (!n || this.animating.has(ref) || this.dragging === ref) return;
+    if (this.reducedMotion) { this.pop(ref, 0.12); return; }
+    this.animating.add(ref);
+    const x0 = n.c.x, y0 = n.c.y, sx = n.c.scale.x, sy = n.c.scale.y;
+    const dur = kind === 'fly' ? 1300 : kind === 'roll' ? 1100 : 800;
+    this.tween(dur, (k) => {
+      const s = Math.sin(k * Math.PI);
+      if (kind === 'bounce') n.c.y = y0 - Math.abs(Math.sin(k * Math.PI * 3)) * 70 * (1 - k * 0.6);
+      else if (kind === 'roll') { n.c.x = x0 + Math.sin(k * Math.PI * 2) * 110; n.c.rotation = Math.sin(k * Math.PI * 4) * 0.06; }
+      else if (kind === 'fly') { n.c.y = y0 - s * 230; n.c.x = x0 + Math.sin(k * Math.PI * 4) * 14; }
+      else if (kind === 'wiggle') n.c.rotation = Math.sin(k * Math.PI * 6) * 0.22 * (1 - k);
+      else if (kind === 'spin') n.c.rotation = k * Math.PI * 2;
+      else n.c.scale.set(sx * (1 + 0.22 * Math.sin(k * Math.PI * 4) * (1 - k)), sy * (1 - 0.22 * Math.sin(k * Math.PI * 4) * (1 - k)));
+    }, () => { n.c.rotation = 0; n.c.scale.set(sx, sy); n.c.position.set(x0, y0); this.animating.delete(ref); if (this.world) this.sync(this.world); });
+  }
 
   // ---------- еда и питьё ----------
   /** Где у героя рот (в координатах комнаты). */

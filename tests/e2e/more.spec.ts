@@ -188,3 +188,22 @@ test('зубная щётка чистит зубы у рта и остаётс�
   const f1 = (await world(page)).furniture.lv_armchair;
   expect(Math.abs(f1.x - f0.x)).toBeGreaterThan(40);
 });
+
+test('вещи оживают по нажатию; корона надевается на голову', async ({ page }) => {
+  await start(page);
+  const spawn = (def: string, x: number) => page.evaluate(([d, px]) => { const g = window.__game; const r = g.rules.spawnItem(g.game.world, d, { kind: 'room', roomId: 'living', x: px, y: 850 }); g.game.commit(r); return r.info.instanceId as string; }, [def, x] as const);
+  const ball = await spawn('ball', 900), crown = await spawn('crown', 1000);
+  await page.waitForTimeout(300);
+  const y0 = (await at(page, ball, 0))[1];
+  await page.mouse.click(...(await at(page, ball, -20)));
+  const ys = await page.evaluate(async (id) => { const n = [...window.__game.scene.nodes.values()].find((x: any) => x.ref === id); const out: number[] = []; for (let i = 0; i < 12; i++) { await new Promise((r) => setTimeout(r, 50)); out.push(n.c.y); } return out; }, ball);
+  expect(Math.max(...ys) - Math.min(...ys)).toBeGreaterThan(15); // мяч прыгает
+  await page.waitForFunction(() => !window.__game.scene.busy);
+  expect(Math.abs((await at(page, ball, 0))[1] - y0)).toBeLessThan(2); // и возвращается на место
+  await page.mouse.click(...(await roomPt(page, 1300, 560)));
+  await drag(page, await at(page, crown, -12), await at(page, 'hero_mila', -200));
+  const w = await world(page);
+  expect(w.items[crown].owner).toMatchObject({ kind: 'hand', characterId: 'hero_mila', slot: 'head' });
+  const cy = (await at(page, crown, 0))[1], hy = (await at(page, 'hero_mila', 0))[1];
+  expect(hy - cy).toBeGreaterThan(120); // корона на макушке, а не в руке
+});

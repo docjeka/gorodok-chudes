@@ -34,14 +34,15 @@ export function petPos(w: World, p: Pet): Pt {
 }
 
 /** Смещение кисти относительно опорной точки героя (без учёта зеркала). */
-export function handOffset(c: Character, slot: HandSlot | 'both'): Pt {
+export function handOffset(c: Character, slot: HandSlot | 'both' | 'head'): Pt {
+  if (slot === 'head') return { x: 0, y: c.pose === 'sitting' ? -190 : -235 };
   const sit = c.pose === 'sitting';
   if (slot === 'both') return sit ? { x: 0, y: -36 } : { x: 0, y: -84 };
   const sx = slot === 'left' ? -1 : 1;
   return sit ? { x: sx * 47, y: -28 } : { x: sx * 47, y: -74 };
 }
 
-export function handPos(w: World, c: Character, slot: HandSlot | 'both'): Pt {
+export function handPos(w: World, c: Character, slot: HandSlot | 'both' | 'head'): Pt {
   const p = charPos(w, c);
   const o = handOffset(c, slot);
   if (c.pose === 'sleeping') return { x: p.x - 90, y: p.y - 30 };

@@ -12,6 +12,11 @@ const BASE = import.meta.env.BASE_URL;
 const DUR = durations as Record<string, number>;
 /** У каждого героя свой тон голоса: одна запись проигрывается с разной скоростью. */
 const RATE: Record<string, number> = { hero_mila: 1.2, hero_timur: 1.06, hero_asya: 1.15, hero_lev: 1.1, hero_nora: 1.18, hero_yuki: 1.13 };
+/** Чей голос у героя: папки assets/voice/girl и assets/voice/boy. Свой тон героя — небольшое изменение скорости. */
+export const VOICE_OF: Record<string, 'girl' | 'boy'> = { hero_mila: 'girl', hero_asya: 'girl', hero_nora: 'girl', hero_yuki: 'girl', hero_timur: 'boy', hero_lev: 'boy' };
+declare const __VOICE_SETS__: string[] | undefined;
+const VOICE_SETS: string[] = typeof __VOICE_SETS__ === 'undefined' ? [] : __VOICE_SETS__;
+const OWN_RATE: Record<string, number> = { hero_mila: 1.03, hero_asya: 0.97, hero_nora: 1.06, hero_yuki: 1, hero_timur: 1, hero_lev: 1.05 };
 const EVENT_COOLDOWN = 3500; // пауза перед повтором той же реакции у того же героя
 const PAIR_COOLDOWN = 8000; // пауза перед новым разговором той же пары
 const GAP = 280; // тишина между репликами
@@ -43,13 +48,15 @@ export class Talk {
     const ctx = this.audio.context;
     if (!ctx || this.loading) return;
     this.loading = true;
-    await Promise.all(LINES.map(async (l) => {
+    const load = async (key: string, path: string) => {
       try {
-        const res = await fetch(`${BASE}assets/voice/${l.id}.mp3`);
-        if (!res.ok) return;
-        this.buffers.set(l.id, await ctx.decodeAudioData(await res.arrayBuffer()));
+        const res = await fetch(`${BASE}assets/voice/${path}.mp3`);
+        if (!res.ok || !(res.headers.get('content-type') ?? 'audio').includes('audio')) return;
+        this.buffers.set(key, await ctx.decodeAudioData(await res.arrayBuffer()));
       } catch { /* без файла реплика покажется только текстом */ }
-    }));
+    };
+    // общий набор и отдельные папки для девочек и мальчиков (если их нет — звучит общий)
+    await Promise.all(LINES.flatMap((l) => [load(l.id, l.id), ...VOICE_SETS.map((g) => load(`${g}/${l.id}`, `${g}/${l.id}`))]));
   }
 
   private pick(event: LineEvent): Line {
@@ -94,9 +101,10 @@ export class Talk {
     const c = w.characters[heroId];
     if (!c || c.roomId !== w.currentRoomId || c.pose === 'sleeping') { this.next(); return; }
     const line = this.pick(event);
-    const rate = RATE[heroId] ?? 1.14;
+    const own = this.buffers.get(`${VOICE_OF[heroId]}/${line.id}`); // запись из папки девочек или мальчиков
+    const rate = own ? OWN_RATE[heroId] ?? 1 : RATE[heroId] ?? 1.14;
     const lang = getLang();
-    const buf = this.buffers.get(line.id);
+    const buf = own ?? this.buffers.get(line.id);
     const ctx = this.audio.context;
     // голос звучит, только если голоса включены, звук не выключен и язык русский (английской озвучки пока нет)
     const withAudio = !!buf && !!ctx && this.audio.running && w.settings.voices !== false && lang === 'ru';

@@ -29,3 +29,4 @@
 | Голос реплик (12 mp3) | синтез Piper 1.8 (MIT), модель ru_RU-irina-medium (huggingface.co/rhasspy/piper-voices) | у набора данных модели лицензия «Unknown» (основа — голос RHVoice) — годится для домашнего использования, **перед любым распространением заменить** своими записями с теми же именами файлов | public/assets/voice |
 | PixiJS 8 | npm | MIT | движок сцены |
 | Музыка и звуки | синтезируются кодом (Web Audio) | свои | src/audio/audio.ts |
+| public/assets/voice/girl, boy | 24 реплики, сгенерированы пользователем в ElevenLabs | права по тарифу пользователя |

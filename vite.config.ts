@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { defineConfig, type Plugin } from 'vite';
 
@@ -27,6 +27,8 @@ function serviceWorker(): Plugin {
 export default defineConfig({
   base: './',
   plugins: [serviceWorker()],
+  // папки с голосами девочек и мальчиков подключаются сами, как только появляются в public/assets/voice
+  define: { __VOICE_SETS__: JSON.stringify(['girl', 'boy'].filter((g) => existsSync(`public/assets/voice/${g}`))) },
   build: { target: 'es2020', chunkSizeWarningLimit: 900 },
   server: { host: '127.0.0.1', port: 5173 },
   test: { include: ['tests/unit/**/*.test.ts'] },

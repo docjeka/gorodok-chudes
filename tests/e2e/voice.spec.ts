@@ -5,7 +5,7 @@ async function start(page: Page) {
   await page.waitForFunction(() => !!window.__game);
   await page.evaluate(() => window.__game.game.update((w: any) => { w.settings.tutorialDone = true; }));
   await page.click('#play');
-  await page.waitForFunction(() => window.__game.talk.loaded === 12, null, { timeout: 15_000 }); // все 12 реплик декодированы
+  await page.waitForFunction(() => window.__game.talk.loaded >= 12, null, { timeout: 15_000 }); // все 12 реплик декодированы
   await page.waitForTimeout(500);
 }
 const at = (page: Page, ref: string, dy = -40) => page.evaluate(([r, d]) => { const g = window.__game; const p = g.scene.nodePos(r as string); const s = g.scene.toScreen({ x: p.x, y: p.y + (d as number) }); return [s.x, s.y] as [number, number]; }, [ref, dy] as const);
@@ -148,7 +148,7 @@ test('после установки голоса работают без сет�
   await page.click('#play').catch(() => undefined); // после перезапуска игра сразу в комнате; звук разблокирует первое нажатие
   await page.mouse.click(...(await roomPt(page, 1000, 300)));
   await page.click('[aria-label="Звук"]'); await page.click('[aria-label="Звук"]');
-  await page.waitForFunction(() => window.__game.talk.loaded === 12, null, { timeout: 15_000 });
+  await page.waitForFunction(() => window.__game.talk.loaded >= 12, null, { timeout: 15_000 });
   await page.mouse.click(...(await at(page, 'hero_mila', -150)));
   await page.waitForFunction(() => window.__game.talk.log.length === 1);
   expect((await log(page))[0]).toMatchObject({ event: 'tap', audio: true });

@@ -21,8 +21,11 @@ export function newId(w: World, prefix: string): string {
 export const itemsWhere = (w: World, pred: (o: Owner, it: ItemInst) => boolean): ItemInst[] =>
   Object.values(w.items).filter((it) => pred(it.owner, it));
 
-export function handItems(w: World, characterId: string): Partial<Record<HandSlot | 'both', ItemInst>> {
-  const out: Partial<Record<HandSlot | 'both', ItemInst>> = {};
+/** Что надевается на голову: корона, колпак, маска. */
+export const HEADWEAR = new Set(['crown', 'partyhat', 'mask']);
+
+export function handItems(w: World, characterId: string): Partial<Record<HandSlot | 'both' | 'head', ItemInst>> {
+  const out: Partial<Record<HandSlot | 'both' | 'head', ItemInst>> = {};
   for (const it of Object.values(w.items)) if (it.owner.kind === 'hand' && it.owner.characterId === characterId) out[it.owner.slot] = it;
   return out;
 }
@@ -90,7 +93,14 @@ export function moveItem(world: World, itemId: string, target: Owner): Result {
       const c = w.characters[target.characterId];
       if (!c || !c.roomId) return fail('no_character');
       const hands = handItems(w, c.id);
-      const busy = (s: HandSlot | 'both') => !!hands[s] && hands[s]!.instanceId !== itemId;
+      const busy = (s: HandSlot | 'both' | 'head') => !!hands[s] && hands[s]!.instanceId !== itemId;
+      if (target.slot === 'head') {
+        if (!HEADWEAR.has(it.definitionId)) return fail('not_headwear');
+        // прежний убор снимается и ложится на пол рядом
+        if (busy('head')) { const p = clampFloor(c.x + 70, Math.max(c.y, 700) + 10); hands.head!.owner = { kind: 'room', roomId: c.roomId, x: p.x, y: p.y }; }
+        it.owner = { kind: 'hand', characterId: c.id, slot: 'head' };
+        return ok(w);
+      }
       if (def.tags.includes('big')) {
         if (busy('left') || busy('right') || busy('both')) return fail('hands_full');
         it.owner = { kind: 'hand', characterId: c.id, slot: 'both' };

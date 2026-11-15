@@ -6,7 +6,7 @@ import { resolveCharDrop, resolveItemDrop, resolvePetDrop, freeFloorSpot, type I
 import type { Game } from '../game/game';
 import { charBox, charPos, clampFloor, dist, itemPlace, petPos, slotPos } from '../game/geometry';
 import {
-  POURS, clone, cook, cookables, drink, feed, fill, moveItem, openGift, patchPet, placeCharacter, placePet, recipeAt, seatTaken, setFurnitureOn,
+  HEADWEAR, POURS, clone, cook, cookables, drink, feed, fill, moveItem, openGift, patchPet, placeCharacter, placePet, recipeAt, seatTaken, setFurnitureOn,
   setRoomStyle, toggleOpen, travel, wake, wearSet, moveFurniture,
 } from '../game/rules';
 import type { Pt, RoomId, World } from '../game/types';
@@ -311,6 +311,28 @@ export class Play {
     this.audio.play('put');
   }
 
+  /** Каждая вещь по нажатию делает что-то своё: мяч прыгает, машинка едет, утка пищит. */
+  private itemTrick(id: string) {
+    const it = this.w.items[id];
+    const def = ITEMS[it.definitionId];
+    const pl = itemPlace(this.w, it);
+    const top = { x: pl.x, y: pl.y - def.h };
+    const T: Record<string, [Parameters<Scene['trick']>[1], Parameters<GameAudio['play']>[0], Parameters<Scene['burst']>[0]?]> = {
+      ball: ['bounce', 'boing'], planet: ['spin', 'whoosh', 'star'], car: ['roll', 'vroom'], sled: ['roll', 'whoosh'],
+      rocket: ['fly', 'whoosh', 'star'], balloon: ['fly', 'squeak'], duck: ['squash', 'squeak'], robot: ['wiggle', 'beep'],
+      teddy: ['squash', 'pet', 'heart'], bunnytoy: ['bounce', 'pet', 'heart'], doll: ['wiggle', 'pet', 'heart'], blocks: ['wiggle', 'put'],
+      snowglobe: ['wiggle', 'sparkle', 'bubble'], starlamp: ['squash', 'light', 'star'], wand: ['spin', 'sparkle', 'star'], crown: ['squash', 'sparkle', 'star'],
+      mask: ['wiggle', 'squeak'], partyhat: ['bounce', 'gift', 'confetti'], pillow: ['squash', 'put'], mittens: ['wiggle', 'put'],
+      wateringcan: ['wiggle', 'water', 'bubble'], flowerpot: ['squash', 'sparkle', 'heart'], soap: ['squash', 'scrub', 'bubble'], towel: ['wiggle', 'put'],
+      toothbrush: ['wiggle', 'scrub', 'bubble'], comb: ['wiggle', 'click'], petbrush: ['wiggle', 'click'], bone: ['spin', 'pet'], kibble: ['wiggle', 'munch', 'crumb'],
+      teapot: ['wiggle', 'water', 'steam'], cocoa: ['squash', 'pop', 'steam'], basket: ['squash', 'put'], giftbox: ['wiggle', 'gift', 'star'], book: ['squash', 'put'],
+    };
+    const tr = T[it.definitionId] ?? (def.tags.includes('tableware') ? ['wiggle', 'clink'] : def.tags.includes('food') || def.tags.includes('ingredient') ? ['squash', 'pop'] : def.tags.includes('costume') ? ['spin', 'sparkle', 'star'] : ['wiggle', 'click']);
+    this.scene.trick(id, tr[0]);
+    this.audio.play(tr[1]);
+    if (tr[2]) this.scene.burst(tr[2], top, 5);
+  }
+
   // ---------- нажатие ----------
   tap(t: Target | null, pt: Pt) {
     const w = this.w;
@@ -328,7 +350,7 @@ export class Play {
       if (sel?.kind === 'item') {
         const b = charBox(w, c);
         const def = ITEMS[w.items[sel.ref]?.definitionId];
-        const head = def && (def.tags.includes('food') || def.tags.includes('care') || !!w.items[sel.ref]?.state.contents);
+        const head = def && (def.tags.includes('food') || def.tags.includes('care') || HEADWEAR.has(def.id) || !!w.items[sel.ref]?.state.contents);
         const at = { x: b.headX, y: head && b.headLine !== null ? b.headLine - 30 : (b.y0 + b.y1) / 2 + 30 };
         this.dropItem(sel.ref, at);
         this.select(null);
@@ -356,8 +378,7 @@ export class Play {
       if (sel?.kind === 'item' && sel.ref !== t.ref && ITEMS[it.definitionId].capacity && !it.state.packed) { this.dropItem(sel.ref, pt, { type: 'into', itemId: t.ref }); this.select(null); return; }
       if (sel?.ref === t.ref) { this.select(null); return; }
       this.select({ kind: 'item', ref: t.ref });
-      this.audio.play('click');
-      this.scene.pop(t.ref, 0.1);
+      this.itemTrick(t.ref);
       if (it.definitionId === 'giftbox' || it.definitionId === 'book' || ITEMS[it.definitionId].capacity) this.ui.openItemMenu(t.ref);
       return;
     }

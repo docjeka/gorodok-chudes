@@ -1,7 +1,7 @@
 # studioigor — Маленький город чудес
 
 PROJECT: Маленький город чудес
-PHASE: 1 — Idea
+PHASE: 2 — Style
 UPDATED: 2026-11-14 16:23
 
 ## Now

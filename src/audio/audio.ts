@@ -1,6 +1,6 @@
 // Звук целиком синтезируется в браузере (Web Audio): файлов и сторонних лицензий нет.
 // Запускается только после действия пользователя и возобновляется при возвращении в приложение.
-export type Sfx = 'scrub' | 'gulp' | 'pour' | 'pop' | 'put' | 'munch' | 'sparkle' | 'door' | 'water' | 'sleep' | 'nope' | 'gift' | 'click' | 'pet' | 'cook' | 'light';
+export type Sfx = 'boing' | 'squeak' | 'beep' | 'vroom' | 'whoosh' | 'clink' | 'scrub' | 'gulp' | 'pour' | 'pop' | 'put' | 'munch' | 'sparkle' | 'door' | 'water' | 'sleep' | 'nope' | 'gift' | 'click' | 'pet' | 'cook' | 'light';
 
 const NOTES = [261.63, 293.66, 329.63, 392.0, 440.0, 523.25, 587.33, 659.25];
 // спокойная зацикленная мелодия: индексы нот, -1 — пауза
@@ -103,6 +103,12 @@ export class GameAudio {
       case 'put': this.tone(300, t, 0.1, 'sine', out, 0.9, 200); break;
       case 'click': this.tone(660, t, 0.06, 'triangle', out, 0.6); break;
       case 'munch': this.noise(t, 0.09, 900); this.noise(t + 0.13, 0.09, 700); break;
+      case 'boing': [0, 0.26, 0.5].forEach((d, i) => this.tone(300 - i * 40, t + d, 0.16, 'sine', out, 0.9 - i * 0.2, 160)); break;
+      case 'squeak': this.tone(900, t, 0.1, 'square', out, 0.25, 1500); this.tone(1400, t + 0.14, 0.14, 'square', out, 0.25, 800); break;
+      case 'beep': [660, 880, 660, 990].forEach((f, i) => this.tone(f, t + i * 0.12, 0.09, 'square', out, 0.22)); break;
+      case 'vroom': this.tone(110, t, 0.9, 'sawtooth', out, 0.3, 240); this.noise(t, 0.9, 500, 0.15); break;
+      case 'whoosh': this.noise(t, 0.9, 1400, 0.3); this.tone(300, t, 0.9, 'sine', out, 0.3, 1200); break;
+      case 'clink': this.tone(1900, t, 0.12, 'triangle', out, 0.5); this.tone(2500, t + 0.03, 0.2, 'sine', out, 0.3); break;
       case 'scrub': [0, 0.16, 0.32, 0.48, 0.64, 0.8].forEach((d, i) => this.noise(t + d, 0.1, i % 2 ? 3200 : 2600, 0.35)); break;
       case 'gulp': [0, 0.22, 0.44].forEach((d) => this.tone(210, t + d, 0.13, 'sine', out, 0.9, 150)); break;
       case 'pour': this.noise(t, 0.55, 2400, 0.3); this.tone(520, t + 0.1, 0.4, 'sine', out, 0.25, 760); break;

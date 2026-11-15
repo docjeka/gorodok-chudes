@@ -164,6 +164,24 @@ describe('напитки', () => {
   });
 });
 
+describe('головные уборы', () => {
+  it('корона надевается на голову, не занимает руки и заменяет прежний убор', () => {
+    let w = createWorld();
+    w = must(spawnItem(w, 'crown', { kind: 'room', roomId: 'living', x: 900, y: 800 }));
+    w = must(spawnItem(w, 'partyhat', { kind: 'room', roomId: 'living', x: 960, y: 800 }));
+    const crown = find(w, 'crown', (o) => o.kind === 'room').instanceId, hat = find(w, 'partyhat', (o) => o.kind === 'room').instanceId;
+    const m = w.characters.hero_mila;
+    expect(resolveItemDrop(w, crown, { x: m.x, y: m.y - 190 }, 'living')).toEqual({ type: 'hand', characterId: 'hero_mila', slot: 'head' });
+    w = must(moveItem(w, crown, { kind: 'hand', characterId: 'hero_mila', slot: 'head' }));
+    expect(w.items[crown].owner).toMatchObject({ kind: 'hand', slot: 'head' });
+    w = must(moveItem(w, hat, { kind: 'hand', characterId: 'hero_mila', slot: 'head' }));
+    expect(w.items[crown].owner.kind).toBe('room');
+    expect(moveItem(w, find(w, 'ball').instanceId, { kind: 'hand', characterId: 'hero_mila', slot: 'head' })).toEqual({ ok: false, reason: 'not_headwear' });
+    expect(validateWorld(w)).toEqual([]);
+    expect(parseWorld(JSON.stringify(w)).ok).toBe(true);
+  });
+});
+
 describe('подарки', () => {
   it('открытие атомарно и не даёт дубликатов при повторе', () => {
     let w = createWorld();

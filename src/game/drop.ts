@@ -3,14 +3,14 @@
 import { FURNITURE } from '../content/furniture';
 import { ITEMS } from '../content/items';
 import { charBox, charPos, clampFloor, dist, itemPlace, petPos, slotPos } from './geometry';
-import { FILLABLE, POURS, handItems, isInside, seatTaken } from './rules';
+import { FILLABLE, HEADWEAR, POURS, handItems, isInside, seatTaken } from './rules';
 import type { HandSlot, Pt, RoomId, World } from './types';
 
 export type ItemDrop =
   | { type: 'feed'; characterId: string }
   | { type: 'care'; characterId: string }
   | { type: 'wear'; characterId: string; setId: string }
-  | { type: 'hand'; characterId: string; slot: HandSlot }
+  | { type: 'hand'; characterId: string; slot: HandSlot | 'head' }
   | { type: 'pet'; petId: string; action: 'feed' | 'play' | 'brush' }
   | { type: 'into'; itemId: string }
   | { type: 'pour'; itemId: string }
@@ -58,6 +58,7 @@ export function resolveItemDrop(w: World, itemId: string, pt: Pt, roomId: RoomId
     if (head && edible && c.pose !== 'sleeping') return { type: 'feed', characterId: c.id };
     if (head && has('care') && it.definitionId !== 'petbrush' && c.pose !== 'sleeping') return { type: 'care', characterId: c.id };
     if (c.pose === 'sleeping' || c.pose === 'bathing') continue;
+    if (HEADWEAR.has(it.definitionId) && pt.y < (b.y0 + b.y1) / 2) return { type: 'hand', characterId: c.id, slot: 'head' }; // убор — на голову
     const p = charPos(w, c);
     const leftSide = (pt.x < p.x) !== c.flipped;
     return { type: 'hand', characterId: c.id, slot: leftSide ? 'left' : 'right' };

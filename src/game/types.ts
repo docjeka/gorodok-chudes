@@ -17,7 +17,7 @@ export type HandSlot = 'left' | 'right';
 export type Owner =
   | { kind: 'room'; roomId: RoomId; x: number; y: number }
   | { kind: 'surface'; furnitureId: string; slot: number }
-  | { kind: 'hand'; characterId: string; slot: HandSlot | 'both' }
+  | { kind: 'hand'; characterId: string; slot: HandSlot | 'both' | 'head' }
   | { kind: 'furniture'; furnitureId: string; slot: number } // внутри мебели-контейнера
   | { kind: 'item'; itemId: string; slot: number } // внутри предмета-контейнера (корзина, коробка)
   | { kind: 'bag'; slot: number } // сумка, путешествует с игроком
