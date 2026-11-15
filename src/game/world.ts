@@ -42,10 +42,27 @@ const LOCATION_SEEDS: [string, Owner][] = [
   ['ball', floor('beach', 600, 800)], ['duck', surf('bc_pier', 1)], ['towel', floor('beach', 1000, 830)], ['wateringcan', floor('beach', 300, 820)],
   ['pillow', surf('bb_bench', 1)], ['towel', surf('bb_rack', 4)], ['sled', surf('bb_rack', 7)], ['book', surf('bb_bench', 3)],
 ];
-const LOCATION_ROOMS: RoomId[] = ['park', 'park_games', 'cafe', 'cafe_bakery', 'toys', 'toys_workshop', 'beach', 'beach_boats', 'club'];
-function seedLocations(world: World): World {
+/** Реквизит из набора «36 предметов»: несколько вещей расставлены для игры, остальные берутся из каталога. */
+const PROP_SEEDS: [string, Owner][] = [
+  ['beach_bucket', floor('beach', 780, 830)], ['beach_float', floor('beach', 1120, 800)], ['beach_sandcastle', floor('beach', 930, 720)],
+  ['club_microphone', floor('club', 620, 840)], ['club_headphones', floor('club', 1240, 850)], ['club_drum', floor('club', 1400, 800)],
+  ['toy_octopus', surf('ty_left', 4)], ['toy_train', surf('ty_left', 8)], ['toy_dinosaur', surf('ty_right', 3)], ['toy_music_box', surf('ty_right', 11)],
+  ['toy_jack_box', surf('tw_bench', 6)], ['toy_ribbon_station', surf('tw_bench', 7)],
+  ['cafe_croissant', surf('cf_sill', 0)], ['cafe_donut', surf('cf_sill', 2)], ['cafe_berry_tart', surf('cf_case', 2)],
+  ['cafe_mixer', surf('cb_table', 7)], ['cafe_rolling_pin', surf('cb_table', 0)], ['cafe_mixing_bowl', surf('cb_table', 3)],
+  ['pet_double_bowl', floor('animals', 700, 850)], ['pet_rope_ball', floor('animals', 560, 800)], ['pet_grooming_brush', floor('animals', 860, 860)], ['pet_picnic_box', floor('animals', 1500, 720)], ['kibble', floor('animals', 760, 800)],
+  ['fair_rings', surf('pg_rings', 1)], ['fair_popcorn', surf('pg_left', 0)], ['fair_cotton_candy', surf('pg_left', 4)], ['fair_plush_prize', surf('pg_right', 0)],
+];
+/** Новые жители Парка животных. Старые питомцы остаются там, где были. */
+const PARK_PETS: World['pets'] = {
+  pet_capybara: { id: 'pet_capybara', kind: 'capybara', roomId: 'animals', x: 620, y: 700, sleeping: false, seat: null, collar: 0, flipped: false },
+  pet_frenchie: { id: 'pet_frenchie', kind: 'frenchie', roomId: 'animals', x: 880, y: 780, sleeping: false, seat: null, collar: 1, flipped: false },
+  pet_wolf: { id: 'pet_wolf', kind: 'wolf', roomId: 'animals', x: 1180, y: 720, sleeping: false, seat: null, collar: 2, flipped: true },
+};
+const LOCATION_ROOMS: RoomId[] = ['animals', 'park', 'park_games', 'cafe', 'cafe_bakery', 'toys', 'toys_workshop', 'beach', 'beach_boats', 'club'];
+function seedLocations(world: World, seeds: [string, Owner][] = [...LOCATION_SEEDS, ...PROP_SEEDS]): World {
   let w = world;
-  for (const [def, owner] of LOCATION_SEEDS) {
+  for (const [def, owner] of seeds) {
     const r = spawnItem(w, def, owner);
     if (!r.ok) continue; // место занято или вещей слишком много — мир игрока важнее раскладки
     w = r.world;
@@ -73,6 +90,7 @@ export function createWorld(lang: 'ru' | 'en' = 'ru'): World {
     pet_cat: { id: 'pet_cat', kind: 'cat', roomId: 'living', x: 1340, y: 800, sleeping: false, seat: null, collar: 0, flipped: false },
     pet_dog: { id: 'pet_dog', kind: 'dog', roomId: 'bedroom', x: 900, y: 830, sleeping: false, seat: null, collar: 1, flipped: false },
     pet_rabbit: { id: 'pet_rabbit', kind: 'rabbit', roomId: 'kitchen', x: 1250, y: 840, sleeping: false, seat: null, collar: 2, flipped: true },
+    ...structuredClone(PARK_PETS),
   };
   for (const [def, owner] of SEEDS) {
     // контейнеры временно открыты, чтобы разложить вещи
@@ -197,7 +215,16 @@ export const MIGRATIONS: Record<number, Migration> = {
     for (const r of LOCATION_ROOMS) raw.rooms[r] = raw.rooms[r] ?? fresh.rooms[r];
     for (const [id, f] of Object.entries(fresh.furniture)) if (!raw.furniture[id]) raw.furniture[id] = f;
     raw.schemaVersion = 3;
-    return seedLocations(raw as World);
+    return seedLocations(raw as World, LOCATION_SEEDS);
+  },
+  // v3: появились Парк животных, три новых питомца и реквизит локаций. Старые питомцы и вещи не дублируются и не переезжают.
+  3: (raw) => {
+    const fresh = createWorld(raw.settings?.lang === 'en' ? 'en' : 'ru');
+    for (const r of LOCATION_ROOMS) raw.rooms[r] = raw.rooms[r] ?? fresh.rooms[r];
+    for (const [id, f] of Object.entries(fresh.furniture)) if (!raw.furniture[id]) raw.furniture[id] = f;
+    for (const [id, p] of Object.entries(PARK_PETS)) if (!raw.pets[id]) raw.pets[id] = structuredClone(p);
+    raw.schemaVersion = 4;
+    return seedLocations(raw as World, PROP_SEEDS);
   },
 };
 
@@ -237,7 +264,7 @@ function checkShape(w: any): string | null {
     if (c.dream !== undefined && !ITEMS[c.dream]) return 'bad_character';
   }
   for (const f of Object.values<any>(w.furniture)) if (!isObj(f) || !FURNITURE[f.definitionId] || !num(f.x) || !num(f.y)) return 'bad_furniture';
-  for (const p of Object.values<any>(w.pets)) if (!isObj(p) || !['cat', 'dog', 'rabbit'].includes(p.kind) || !num(p.x) || !num(p.y)) return 'bad_pet';
+  for (const p of Object.values<any>(w.pets)) if (!isObj(p) || !['cat', 'dog', 'rabbit', 'capybara', 'frenchie', 'wolf'].includes(p.kind) || !num(p.x) || !num(p.y)) return 'bad_pet';
   for (const s of w.savedOutfits) if (!isObj(s) || typeof s.name !== 'string' || s.name.length > 24 || !isObj(s.outfit) || !isValidOutfit(s.outfit)) return 'bad_outfits';
   const st = w.settings;
   if (!['ru', 'en'].includes(st.lang) || !num(st.music) || !num(st.sfx)) return 'bad_settings';

@@ -34,3 +34,5 @@
 | public/assets/rooms/{park,park_games,cafe,cafe_bakery,toys,toys_workshop,beach,beach_boats,club}.webp | фоны локаций от пользователя | авторские, от пользователя |
 | public/assets/furn/carousel.png, djconsole.png | реквизит от пользователя (prop-carousel, prop-dj-console) | авторские, от пользователя |
 | public/assets/music/town.mp3 (Wandering the Clay Path), club.mp3 (The Toybox Groove) | музыка от пользователя | права у пользователя; источник и лицензию не проверял |
+| public/assets/items/{beach_,club_,toy_,cafe_,pet_,fair_}*.png, public/assets/furn/{beach_lounger,…,fair_ticket_machine}.png | набор «36 предметов» от пользователя (gorodok-chudes-props-36.zip) | авторские, от пользователя |
+| public/assets/pets/{capybara,frenchie,wolf}_*.png, public/assets/rooms/animals.webp, public/assets/map/town-back.webp (v3) | рисунки от пользователя | авторские, от пользователя |

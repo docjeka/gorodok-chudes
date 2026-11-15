@@ -22,7 +22,9 @@ export const itemsWhere = (w: World, pred: (o: Owner, it: ItemInst) => boolean):
   Object.values(w.items).filter((it) => pred(it.owner, it));
 
 /** Что надевается на голову: корона, колпак, маска. */
-export const HEADWEAR = new Set(['crown', 'partyhat', 'mask']);
+export const HEADWEAR = new Set(['crown', 'partyhat', 'mask', 'club_headphones']);
+/** Чем можно причесать питомца. */
+export const PET_BRUSHES = new Set(['petbrush', 'comb', 'pet_grooming_brush']);
 
 export function handItems(w: World, characterId: string): Partial<Record<HandSlot | 'both' | 'head', ItemInst>> {
   const out: Partial<Record<HandSlot | 'both' | 'head', ItemInst>> = {};
@@ -226,7 +228,7 @@ export function flipCharacter(world: World, id: string): Result {
 }
 
 /** Переход в другую комнату. С собой — до четырёх героев; вещи в руках остаются в руках, сумка едет сама. */
-export function travel(world: World, roomId: RoomId, characterIds: string[]): Result {
+export function travel(world: World, roomId: RoomId, characterIds: string[], petIds: string[] = []): Result {
   if (!world.rooms[roomId]) return fail('no_room');
   const ids = [...new Set(characterIds)];
   if (ids.length > 4) return fail('too_many_travelers');
@@ -237,6 +239,13 @@ export function travel(world: World, roomId: RoomId, characterIds: string[]): Re
     const p = clampFloor(520 + i * 170, 780 + (i % 2) * 40);
     c.roomId = roomId; c.x = p.x; c.y = p.y; c.seat = null; c.pose = 'standing';
     if (c.emotion === 'sleepy') c.emotion = 'joy';
+  });
+  // питомцев можно взять с собой: они идут рядом и никогда не раздваиваются
+  [...new Set(petIds)].forEach((id, i) => {
+    const p = w.pets[id];
+    if (!p) return;
+    const at = clampFloor(980 + i * 130, 830 - (i % 2) * 50);
+    p.roomId = roomId; p.x = at.x; p.y = at.y; p.seat = null; p.sleeping = false; delete p.inItem;
   });
   w.currentRoomId = roomId;
   return ok(w);

@@ -213,11 +213,52 @@ export class Play {
       case 'floor': {
         this.game.commit(moveItem(w, itemId, { kind: 'room', roomId: this.room, x: d.x, y: d.y }));
         this.audio.play('put');
-        this.petsReact(itemId);
+        if (!this.ballGame(itemId)) this.petsReact(itemId);
         return;
       }
       default: void def; this.audio.play('nope');
     }
+  }
+
+  /** Мячик в Парке животных: ближайший бодрствующий питомец подбегает и толкает мяч носом; бульдог приносит его обратно. */
+  private ballGame(itemId: string): boolean {
+    const it = this.w.items[itemId];
+    if (this.room !== 'animals' || !it || it.owner.kind !== 'room' || !['ball', 'pet_rope_ball'].includes(it.definitionId)) return false;
+    const at = { x: it.owner.x, y: it.owner.y };
+    const pets = Object.values(this.w.pets).filter((p) => p.roomId === 'animals' && !p.sleeping && !p.seat && !p.inItem);
+    if (!pets.length) return true;
+    const pet = pets.reduce((a, b) => (Math.hypot(a.x - at.x, a.y - at.y) <= Math.hypot(b.x - at.x, b.y - at.y) ? a : b));
+    const home = { x: pet.x, y: pet.y };
+    const side = pet.x <= at.x ? -1 : 1; // с какой стороны питомец подбегает к мячу
+    const near = clampFloor(at.x + side * 70, at.y + 6);
+    this.scene.setPetMood(pet.id, 'play', 1200);
+    this.scene.glide(pet.id, near, 650, () => {
+      if (!this.w.pets[pet.id] || !this.w.items[itemId] || this.w.items[itemId].owner.kind !== 'room') { this.scene.sync(this.w); return; }
+      const fetch = pet.kind === 'frenchie';
+      const ballTo = fetch ? clampFloor(home.x + 60, home.y + 10) : clampFloor(at.x - side * 150, at.y);
+      const petTo = fetch ? home : near;
+      this.audio.play('boing');
+      this.scene.burst('heart', { x: near.x, y: near.y - 110 }, 3);
+      this.scene.setPetMood(pet.id, 'happy', 1800);
+      const finish = () => {
+        this.game.update((w) => { const p = w.pets[pet.id]; const b = w.items[itemId]; if (p) { p.x = petTo.x; p.y = petTo.y; p.flipped = false; } if (b && b.owner.kind === 'room') { b.owner.x = ballTo.x; b.owner.y = ballTo.y; } });
+        this.scene.hop(pet.id, 26);
+        this.audio.play('pet');
+      };
+      this.scene.glide(itemId, ballTo, fetch ? 700 : 450, () => undefined);
+      if (fetch) this.scene.glide(pet.id, petTo, 700, finish); else window.setTimeout(finish, 460);
+    });
+    return true;
+  }
+
+  /** Питомца погладили: он прикрывает глаза, над ним сердечко. Ничего не сохраняется — это просто ласка. */
+  petStroke(id: string) {
+    const p = this.w.pets[id];
+    if (!p || p.roomId !== this.room) return;
+    const pos = petPos(this.w, p);
+    if (!p.sleeping) this.scene.setPetMood(id, ['capybara', 'frenchie', 'wolf'].includes(p.kind) ? 'play' : 'happy', 1600);
+    this.scene.burst('heart', { x: pos.x, y: pos.y - 120 }, 2);
+    this.audio.play('pet');
   }
 
   private petAction(petId: string, action: 'feed' | 'play' | 'brush', itemId: string, pt: Pt) {
@@ -313,6 +354,7 @@ export class Play {
     this.game.update((w) => { const p = w.pets[id]; const c = clampFloor(d.x, d.y); p.x = c.x; p.y = c.y; p.seat = null; p.sleeping = false; delete p.inItem; });
     this.scene.hop(id, 14);
     this.audio.play('put');
+    if (this.room === 'animals') this.parkHabits(id);
   }
 
   /** Каждая вещь по нажатию делает что-то своё: мяч прыгает, машинка едет, утка пищит. */
@@ -329,12 +371,48 @@ export class Play {
       mask: ['wiggle', 'squeak'], partyhat: ['bounce', 'gift', 'confetti'], pillow: ['squash', 'put'], mittens: ['wiggle', 'put'],
       wateringcan: ['wiggle', 'water', 'bubble'], flowerpot: ['squash', 'sparkle', 'heart'], soap: ['squash', 'scrub', 'bubble'], towel: ['wiggle', 'put'],
       toothbrush: ['wiggle', 'scrub', 'bubble'], comb: ['wiggle', 'click'], petbrush: ['wiggle', 'click'], bone: ['spin', 'pet'], kibble: ['wiggle', 'munch', 'crumb'],
+      beach_bucket: ['squash', 'put'], beach_float: ['bounce', 'boing'], beach_sandcastle: ['squash', 'sparkle', 'star'], club_microphone: ['wiggle', 'squeak', 'star'], club_headphones: ['wiggle', 'click'], club_drum: ['squash', 'boing'],
+      toy_octopus: ['wiggle', 'pet', 'heart'], toy_train: ['roll', 'vroom', 'steam'], toy_dinosaur: ['roll', 'squeak'], toy_music_box: ['spin', 'gift', 'star'], toy_jack_box: ['bounce', 'boing', 'confetti'], toy_ribbon_station: ['wiggle', 'put'],
+      cafe_mixer: ['wiggle', 'cook'], cafe_rolling_pin: ['roll', 'put'], cafe_mixing_bowl: ['wiggle', 'clink'], pet_double_bowl: ['wiggle', 'clink'], pet_grooming_brush: ['wiggle', 'click'], pet_rope_ball: ['bounce', 'boing'],
+      fair_rings: ['bounce', 'clink'], fair_popcorn: ['squash', 'pop', 'crumb'], fair_cotton_candy: ['wiggle', 'pop'], fair_plush_prize: ['squash', 'pet', 'heart'], pet_picnic_box: ['squash', 'put'],
       teapot: ['wiggle', 'water', 'steam'], cocoa: ['squash', 'pop', 'steam'], basket: ['squash', 'put'], giftbox: ['wiggle', 'gift', 'star'], book: ['squash', 'put'],
     };
     const tr = T[it.definitionId] ?? (def.tags.includes('tableware') ? ['wiggle', 'clink'] : def.tags.includes('food') || def.tags.includes('ingredient') ? ['squash', 'pop'] : def.tags.includes('costume') ? ['spin', 'sparkle', 'star'] : ['wiggle', 'click']);
     this.scene.trick(id, tr[0]);
     this.audio.play(tr[1]);
     if (tr[2]) this.scene.burst(tr[2], top, 5);
+  }
+
+  /** Привычки зверей в парке: капибара у берега идёт к воде отдыхать, волк ищет игрушку по следам. */
+  private parkHabits(id: string) {
+    const p = this.w.pets[id];
+    const pond = this.w.furniture.an_pond;
+    if (p.kind === 'capybara' && pond && pond.roomId === 'animals' && Math.abs(p.x - pond.x) < 330 && p.y < 760) {
+      const shore = { x: Math.max(pond.x - 150, Math.min(pond.x + 170, p.x)), y: pond.y + 100 };
+      this.scene.glide(id, shore, 900, () => {
+        this.game.update((w) => { const c = w.pets[id]; if (c) { c.x = shore.x; c.y = shore.y; } });
+        this.scene.setPetMood(id, 'play', 5000); // глаза прикрыты — отдыхает у воды
+        this.scene.burst('bubble', { x: shore.x, y: shore.y - 30 }, 6);
+        this.audio.play('water');
+      });
+      return;
+    }
+    if (p.kind === 'wolf') {
+      const toys = Object.values(this.w.items).filter((i) => i.owner.kind === 'room' && i.owner.roomId === 'animals' && ITEMS[i.definitionId].tags.includes('toy'));
+      if (!toys.length) return;
+      const toy = toys.reduce((a, b) => (Math.abs((a.owner as { x: number }).x - p.x) >= Math.abs((b.owner as { x: number }).x - p.x) ? a : b)); // самая дальняя — интереснее искать
+      const o = toy.owner as { x: number; y: number };
+      const to = clampFloor(o.x + (p.x < o.x ? -80 : 80), o.y + 4);
+      // следы на земле от волка к игрушке
+      for (let i = 1; i <= 4; i++) window.setTimeout(() => this.scene.burst('crumb', { x: p.x + ((to.x - p.x) * i) / 5, y: p.y + ((to.y - p.y) * i) / 5 - 6 }, 2), i * 160);
+      window.setTimeout(() => this.scene.glide(id, to, 1100, () => {
+        this.game.update((w) => { const c = w.pets[id]; if (c) { c.x = to.x; c.y = to.y; } });
+        this.scene.setPetMood(id, 'happy', 1800);
+        this.scene.pop(toy.instanceId, 0.2);
+        this.scene.burst('star', { x: o.x, y: o.y - 50 }, 6);
+        this.audio.play('sparkle');
+      }), 500);
+    }
   }
 
   // ---------- нажатие ----------
@@ -463,11 +541,11 @@ export class Play {
     ids.forEach((id, i) => setTimeout(() => this.scene.pop(id, 0.25), 80 + i * 110));
   }
 
-  goRoom(roomId: RoomId, withHeroes: string[]) {
+  goRoom(roomId: RoomId, withHeroes: string[], withPets: string[] = []) {
     if (roomId === this.room) return;
     this.select(null);
     this.talk?.stop();
-    this.game.commit(travel(this.w, roomId, withHeroes.slice(0, 4)), true);
+    this.game.commit(travel(this.w, roomId, withHeroes.slice(0, 4), withPets), true);
     this.audio.play('door');
   }
 

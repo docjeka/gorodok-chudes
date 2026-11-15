@@ -453,6 +453,15 @@ export class Scene {
   setHighlight(t: { x: number; y: number; r: number } | null) { this.hlTarget = t; }
   setSelected(ref: string | null) { this.selId = ref; }
 
+  /** Короткая пробежка: объект плавно едет в точку, по дороге слегка подпрыгивая. Мир меняется в done. */
+  glide(ref: string, to: Pt, ms: number, done: () => void) {
+    const n = this.nodeOf(ref);
+    if (!n || this.reducedMotion) { done(); return; }
+    this.animating.add(ref);
+    const x0 = n.c.x, y0 = n.c.y;
+    this.tween(ms, (k) => { const e = k * k * (3 - 2 * k); n.c.position.set(x0 + (to.x - x0) * e, y0 + (to.y - y0) * e - Math.abs(Math.sin(k * Math.PI * 4)) * 10); }, () => { this.animating.delete(ref); done(); });
+  }
+
   // ---------- вещь «оживает» по нажатию ----------
   trick(ref: string, kind: 'bounce' | 'roll' | 'fly' | 'wiggle' | 'spin' | 'squash') {
     const n = this.nodeOf(ref);

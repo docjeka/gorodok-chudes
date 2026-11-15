@@ -147,3 +147,132 @@ test('клуб: герои ждут при первом входе; музыку
   expect((await world(page)).characters).toEqual(kept);
   expect((await music(page)).clubStarts).toBe(3);
 });
+
+const PROPS = ['beach_lounger', 'beach_umbrella', 'beach_bucket', 'beach_float', 'beach_sandcastle', 'beach_rowboat', 'club_speaker', 'club_microphone', 'club_headphones', 'club_drum', 'club_stool', 'club_light', 'toy_octopus', 'toy_train', 'toy_dinosaur', 'toy_music_box', 'toy_jack_box', 'toy_ribbon_station', 'cafe_croissant', 'cafe_donut', 'cafe_berry_tart', 'cafe_mixer', 'cafe_rolling_pin', 'cafe_mixing_bowl', 'pet_double_bowl', 'pet_grooming_brush', 'pet_rope_ball', 'pet_tunnel', 'pet_cushion', 'pet_picnic_box', 'fair_ring_toss', 'fair_rings', 'fair_popcorn', 'fair_cotton_candy', 'fair_plush_prize', 'fair_ticket_machine'];
+const FURN_PROPS = new Set(['beach_lounger', 'beach_umbrella', 'beach_rowboat', 'club_speaker', 'club_stool', 'club_light', 'pet_tunnel', 'pet_cushion', 'fair_ring_toss', 'fair_ticket_machine']);
+const travel = (page: Page, room: string, heroes: string[] = []) => page.evaluate(([r, h]) => { const g = window.__game; g.game.commit(g.rules.travel(g.game.world, r, h)); g.scene.setZoom(0.1); }, [room, heroes] as const);
+
+test('36 предметов: все картинки загружаются, вещи переносятся, на шезлонг садятся, выпечка съедается, всё переживает перезапуск', async ({ page }) => {
+  await open(page);
+  await enter(page, 'beach');
+  // все 36 ассетов отдаются и декодируются
+  const bad = await page.evaluate(async ([ids, furn]) => { const out: string[] = []; for (const id of ids as string[]) { const img = new Image(); img.src = `./assets/${(furn as string[]).includes(id) ? 'furn' : 'items'}/${id}.png`; try { await img.decode(); if (!img.naturalWidth) out.push(id); } catch { out.push(id); } } return out; }, [PROPS, [...FURN_PROPS]] as const);
+  expect(bad).toEqual([]);
+  let w = await world(page);
+  const n0 = Object.keys(w.items).length;
+  // герой садится на шезлонг пальцем
+  await page.evaluate(() => { const g = window.__game; g.game.commit(g.rules.summonCharacter(g.game.world, 'hero_mila', 'beach')); g.game.update((x: any) => { x.characters.hero_mila.x = 900; x.characters.hero_mila.y = 800; }); });
+  await page.waitForTimeout(400);
+  const seatPt = await page.evaluate(() => { const f = window.__game.game.world.furniture.bc_lounger; return { x: f.x - 10, y: f.y - 92 - 70 + 110 }; });
+  await drag(page, await at(page, 'hero_mila', -120), await roomPt(page, seatPt.x, seatPt.y));
+  w = await world(page);
+  expect(w.characters.hero_mila.seat).toMatchObject({ furnitureId: 'bc_lounger' });
+  expect(w.characters.hero_mila.pose).toBe('sitting');
+  // ведёрко — в руку герою
+  const bucket = Object.values<any>(w.items).find((i) => i.definitionId === 'beach_bucket').instanceId;
+  await drag(page, await at(page, bucket, -20), await at(page, 'hero_mila', -60));
+  expect((await world(page)).items[bucket].owner).toMatchObject({ kind: 'hand', characterId: 'hero_mila' });
+  // пончик из каталога кафе съедается у рта
+  await page.evaluate(() => { const g = window.__game; const r = g.rules.spawnItem(g.game.world, 'cafe_donut', { kind: 'room', roomId: 'beach', x: 1000, y: 840 }); g.game.commit(r); (window as any).__donut = r.info.instanceId; });
+  await page.waitForTimeout(300);
+  const donut = await page.evaluate(() => (window as any).__donut as string);
+  await drag(page, await at(page, donut, -15), await at(page, 'hero_mila', -150));
+  await page.waitForFunction(() => !window.__game.scene.busy);
+  expect((await world(page)).items[donut]).toBeUndefined();
+  // наушники надеваются на голову; колечки садятся на стойку
+  await travel(page, 'club', ['hero_mila']);
+  await page.waitForTimeout(500);
+  const phones = Object.values<any>((await world(page)).items).find((i) => i.definitionId === 'club_headphones').instanceId;
+  await drag(page, await at(page, phones, -20), await at(page, 'hero_mila', -200));
+  expect((await world(page)).items[phones].owner).toMatchObject({ kind: 'hand', slot: 'head' });
+  expect((await music(page)).club).toBe(false); // реквизит клуба музыку не включает
+  await page.mouse.click(...(await at(page, 'cl_speaker', -100)));
+  await page.waitForTimeout(300);
+  expect((await music(page)).club).toBe(false);
+  await travel(page, 'park_games');
+  await page.waitForTimeout(500);
+  const rings = Object.values<any>((await world(page)).items).find((i) => i.definitionId === 'fair_rings').instanceId;
+  await drag(page, await at(page, rings, -15), await roomPt(page, 1000, 840));
+  expect((await world(page)).items[rings].owner.kind).toBe('room');
+  const peg = await page.evaluate(() => { const f = window.__game.game.world.furniture.pg_rings; return { x: f.x + 40, y: f.y - 74 }; });
+  await drag(page, await at(page, rings, -15), await roomPt(page, peg.x, peg.y - 20));
+  expect((await world(page)).items[rings].owner).toMatchObject({ kind: 'surface', furnitureId: 'pg_rings', slot: 2 });
+  // перезапуск: ничего не сбросилось и не раздвоилось
+  await expect(page.locator('.save.saved')).toBeVisible();
+  const before = await world(page);
+  await page.reload();
+  await page.waitForFunction(() => !!window.__game);
+  const after = await world(page);
+  expect(after.items).toEqual(before.items);
+  expect(after.characters.hero_mila).toEqual(before.characters.hero_mila);
+  expect(Object.keys(after.items).length).toBe(n0); // +пончик −пончик
+  await page.click('#play'); await enter(page, 'beach'); await page.click('#tomap'); await enter(page, 'beach');
+  expect(Object.keys((await world(page)).items).length).toBe(n0); // повторные входы ничего не добавляют
+});
+
+test('Парк животных: шесть зверей без копий, мячик, поглаживание, пруд; после карты всё на местах', async ({ page }) => {
+  await open(page);
+  await page.click('.map-turn.right');
+  await page.waitForFunction(() => !window.__game.map.turning);
+  await enter(page, 'animals');
+  let w = await world(page);
+  expect(w.currentRoomId).toBe('animals');
+  expect(Object.keys(w.pets).sort()).toEqual(['pet_capybara', 'pet_cat', 'pet_dog', 'pet_frenchie', 'pet_rabbit', 'pet_wolf']);
+  expect(Object.values<any>(w.pets).every((p) => p.roomId === 'animals')).toBe(true);
+  // мячик: ближайший бодрствующий зверь подбегает и толкает мяч
+  const ball = Object.values<any>(w.items).find((i) => i.definitionId === 'pet_rope_ball').instanceId;
+  await page.evaluate(() => window.__game.game.update((x: any) => { x.pets.pet_cat.sleeping = true; })); // спящий кот не побежит
+  await drag(page, await at(page, ball, -15), await roomPt(page, 380, 850));
+  await page.waitForFunction(() => !window.__game.scene.busy);
+  await page.waitForTimeout(700);
+  w = await world(page);
+  const b = w.items[ball].owner;
+  expect(b.kind).toBe('room');
+  expect(Math.abs(b.x - 380)).toBeGreaterThan(60); // мяч откатился
+  expect(Math.abs(w.pets.pet_dog.x - 380)).toBeLessThan(120); // подбежал пёс — он был ближе всех из неспящих
+  expect(w.pets.pet_cat.sleeping).toBe(true);
+  // мяч можно бросать снова: бульдог приносит обратно
+  await page.evaluate(() => window.__game.game.update((x: any) => { x.pets.pet_frenchie.x = 1200; x.pets.pet_frenchie.y = 850; }));
+  await page.waitForTimeout(300);
+  await drag(page, await at(page, ball, -15), await roomPt(page, 1280, 860));
+  await page.waitForFunction(() => !window.__game.scene.busy);
+  await page.waitForTimeout(900);
+  w = await world(page);
+  expect(Math.abs(w.items[ball].owner.x - 1260)).toBeLessThan(40); // мяч лежит у бульдога
+  expect(w.pets.pet_frenchie.x).toBe(1200);
+  // поглаживание: палец водит по зверю — он не переносится, появляется ласка; потянули в сторону — перенос
+  const wolf0 = w.pets.pet_wolf;
+  const [x, y] = await at(page, 'pet_wolf', -55);
+  const moodBefore = await page.evaluate(() => (window.__game.scene as any).petMoods.get('pet_wolf')?.mood ?? 'idle');
+  await page.mouse.move(x, y); await page.mouse.down();
+  for (const dx of [14, -14, 16, -16, 14, -12, 10]) { await page.mouse.move(x + dx, y + 3); await page.waitForTimeout(25); }
+  expect(await page.evaluate(() => (window.__game.scene as any).petMoods.get('pet_wolf')?.mood)).toBe('play'); // глаза прикрыты
+  expect(moodBefore).not.toBe('play');
+  await page.mouse.up(); await page.waitForTimeout(300);
+  expect((await world(page)).pets.pet_wolf).toEqual(wolf0);
+  // пруд: капибару отпустили у берега — она идёт к воде
+  await drag(page, await at(page, 'pet_capybara', -50), await roomPt(page, 420, 700));
+  await page.waitForFunction(() => !window.__game.scene.busy);
+  await page.waitForTimeout(400);
+  w = await world(page);
+  expect(w.pets.pet_capybara.y).toBeLessThan(600);
+  expect(Math.abs(w.pets.pet_capybara.x - w.furniture.an_pond.x)).toBeLessThan(180);
+  // кормление и сон работают как раньше
+  const kibble = Object.values<any>(w.items).find((i) => i.definitionId === 'kibble' && i.owner.roomId === 'animals').instanceId;
+  await drag(page, await at(page, kibble, -12), await at(page, 'pet_frenchie', -50));
+  expect((await world(page)).items[kibble].state.servings).toBe(2);
+  await drag(page, await at(page, 'pet_rabbit', -50), await at(page, 'an_cushion', -40));
+  expect((await world(page)).pets.pet_rabbit).toMatchObject({ sleeping: true, seat: { furnitureId: 'an_cushion' } });
+  // на карту и обратно, затем перезапуск: все там, где оставили
+  await expect(page.locator('.save.saved')).toBeVisible();
+  const kept = await world(page);
+  await page.click('#tomap');
+  expect(await page.evaluate(() => window.__game.map.side)).toBe('back');
+  await enter(page, 'animals');
+  w = await world(page);
+  expect(w.pets).toEqual(kept.pets);
+  expect(w.items).toEqual(kept.items);
+  await page.reload();
+  await page.waitForFunction(() => !!window.__game);
+  expect((await world(page)).pets).toEqual(kept.pets);
+});

@@ -5,6 +5,8 @@ import {
   placeCharacter, removeGarment, spawnItem, takeGiftSet, tidyRoom, travel, wrapGift, newEmptyGift, storeFurniture, moveFurniture,
 } from '../../src/game/rules';
 import { itemPlace } from '../../src/game/geometry';
+import { ITEMS } from '../../src/content/items';
+import { FURNITURE } from '../../src/content/furniture';
 import { resolveItemDrop } from '../../src/game/drop';
 import { K_BACKUP, K_WORLD, MemoryKV, Saver, loadWorld } from '../../src/storage/store';
 import type { World } from '../../src/game/types';
@@ -263,26 +265,36 @@ describe('сохранения', () => {
     for (const f of Object.values<any>(w.furniture)) { delete f.homeX; delete f.homeY; }
     const r = parseWorld(JSON.stringify(w));
     expect(r.ok).toBe(true);
-    if (r.ok) { expect(r.world.schemaVersion).toBe(3); expect(Object.keys(r.world.pets)).toHaveLength(3); }
+    if (r.ok) { expect(r.world.schemaVersion).toBe(4); expect(Object.keys(r.world.pets)).toHaveLength(6); }
   });
-  it('миграция v2 → v3 добавляет локации города и ничего не трогает в домиках', () => {
+  it('миграция v2 → v4 добавляет локации города, Парк животных и трёх новых питомцев и ничего не трогает в домиках', () => {
     let w: any = createWorld();
     const cup = find(w, 'cup', (o) => o.kind === 'surface').instanceId;
     w = must(moveItem(w, cup, { kind: 'hand', characterId: 'hero_mila', slot: 'left' }));
     w = must(wearSet(w, 'hero_mila', 'fairy'));
     w = JSON.parse(JSON.stringify(w));
-    const loc = ['park', 'park_games', 'cafe', 'cafe_bakery', 'toys', 'toys_workshop', 'beach', 'beach_boats', 'club'];
+    const loc = ['park', 'park_games', 'cafe', 'cafe_bakery', 'toys', 'toys_workshop', 'beach', 'beach_boats', 'club', 'animals'];
     const locFurn = new Set(Object.values<any>(w.furniture).filter((f) => loc.includes(f.roomId)).map((f) => f.id));
     for (const [id, it] of Object.entries<any>(w.items)) if ((it.owner.kind === 'room' && loc.includes(it.owner.roomId)) || (it.owner.kind === 'surface' && locFurn.has(it.owner.furnitureId))) delete w.items[id];
     for (const id of locFurn) delete w.furniture[id as string];
     for (const r of loc) delete w.rooms[r];
+    for (const id of ['pet_capybara', 'pet_frenchie', 'pet_wolf']) delete w.pets[id];
     w.schemaVersion = 2;
     const before = JSON.parse(JSON.stringify(w));
     const r = parseWorld(JSON.stringify(w));
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(r.world.schemaVersion).toBe(3);
+    expect(r.world.schemaVersion).toBe(4);
     expect(validateWorld(r.world)).toEqual([]);
+    expect(Object.keys(r.world.pets).sort()).toEqual(['pet_capybara', 'pet_cat', 'pet_dog', 'pet_frenchie', 'pet_rabbit', 'pet_wolf']);
+    for (const id of ['pet_cat', 'pet_dog', 'pet_rabbit']) expect(r.world.pets[id]).toEqual(before.pets[id]); // старые звери остались дома
+    // повторная загрузка ничего не дублирует
+    const again = parseWorld(JSON.stringify(r.world));
+    expect(again.ok && Object.keys(again.world.items).length).toBe(Object.keys(r.world.items).length);
+    // каждый из 36 предметов набора есть в игре: вещью каталога или мебелью
+    const props = ['beach_lounger', 'beach_umbrella', 'beach_bucket', 'beach_float', 'beach_sandcastle', 'beach_rowboat', 'club_speaker', 'club_microphone', 'club_headphones', 'club_drum', 'club_stool', 'club_light', 'toy_octopus', 'toy_train', 'toy_dinosaur', 'toy_music_box', 'toy_jack_box', 'toy_ribbon_station', 'cafe_croissant', 'cafe_donut', 'cafe_berry_tart', 'cafe_mixer', 'cafe_rolling_pin', 'cafe_mixing_bowl', 'pet_double_bowl', 'pet_grooming_brush', 'pet_rope_ball', 'pet_tunnel', 'pet_cushion', 'pet_picnic_box', 'fair_ring_toss', 'fair_rings', 'fair_popcorn', 'fair_cotton_candy', 'fair_plush_prize', 'fair_ticket_machine'];
+    expect(props).toHaveLength(36);
+    for (const id of props) expect(!!ITEMS[id]?.catalog || !!FURNITURE[id], id).toBe(true);
     for (const room of loc) expect(r.world.rooms[room as 'park']).toBeDefined();
     expect(r.world.furniture.cl_dj.definitionId).toBe('djconsole');
     expect(Object.values(r.world.items).some((i) => i.owner.kind === 'surface' && i.owner.furnitureId === 'ty_left')).toBe(true);

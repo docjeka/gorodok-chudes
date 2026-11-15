@@ -3,7 +3,7 @@
 import { FURNITURE } from '../content/furniture';
 import { ITEMS } from '../content/items';
 import { charBox, charPos, clampFloor, dist, itemPlace, petPos, slotPos } from './geometry';
-import { FILLABLE, HEADWEAR, POURS, handItems, isInside, seatTaken } from './rules';
+import { FILLABLE, HEADWEAR, PET_BRUSHES, POURS, handItems, isInside, seatTaken } from './rules';
 import type { HandSlot, Pt, RoomId, World } from './types';
 
 export type ItemDrop =
@@ -56,7 +56,7 @@ export function resolveItemDrop(w: World, itemId: string, pt: Pt, roomId: RoomId
     if (def.wearSet) return { type: 'wear', characterId: c.id, setId: def.wearSet };
     const head = isHead(b, pt);
     if (head && edible && c.pose !== 'sleeping') return { type: 'feed', characterId: c.id };
-    if (head && has('care') && it.definitionId !== 'petbrush' && c.pose !== 'sleeping') return { type: 'care', characterId: c.id };
+    if (head && has('care') && !['petbrush', 'pet_grooming_brush'].includes(it.definitionId) && c.pose !== 'sleeping') return { type: 'care', characterId: c.id };
     if (c.pose === 'sleeping' || c.pose === 'bathing') continue;
     if (HEADWEAR.has(it.definitionId) && pt.y < (b.y0 + b.y1) / 2) return { type: 'hand', characterId: c.id, slot: 'head' }; // убор — на голову
     const p = charPos(w, c);
@@ -69,7 +69,7 @@ export function resolveItemDrop(w: World, itemId: string, pt: Pt, roomId: RoomId
     const pp = petPos(w, p);
     if (Math.abs(pt.x - pp.x) > 70 || pt.y < pp.y - 110 || pt.y > pp.y + 20) continue;
     if (has('petfood')) return { type: 'pet', petId: p.id, action: 'feed' };
-    if (it.definitionId === 'petbrush' || it.definitionId === 'comb') return { type: 'pet', petId: p.id, action: 'brush' };
+    if (PET_BRUSHES.has(it.definitionId)) return { type: 'pet', petId: p.id, action: 'brush' };
     if (has('pettoy')) return { type: 'pet', petId: p.id, action: 'play' };
   }
 

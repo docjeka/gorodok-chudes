@@ -247,8 +247,11 @@ export class Hud {
   askTravel(roomId: RoomId) {
     const w = this.game.world;
     const here = Object.values(w.characters).filter((c) => c.roomId === w.currentRoomId);
-    if (!here.length) { this.play.goRoom(roomId, []); return; }
+    // питомцев можно взять с собой; если в комнате только они, спрашиваем лишь при переходе в другое место города
+    const pets = Object.values(w.pets).filter((p) => p.roomId === w.currentRoomId);
+    if (!here.length && (!pets.length || groupOf(roomId) === groupOf(w.currentRoomId))) { this.play.goRoom(roomId, []); return; }
     const chosen = new Set<string>(this.sel?.kind === 'char' ? [this.sel.ref] : []);
+    const chosenPets = new Set<string>();
     this.travelEl.innerHTML = '';
     const card = h('div', 'travelcard');
     card.append(h('p', '', t('travel.who')));
@@ -263,8 +266,19 @@ export class Hud {
       };
       row.append(b);
     }
+    for (const p of pets) {
+      const b = h('button', 'herochip petchip', `<img src="${import.meta.env.BASE_URL}assets/pets/${p.kind}_idle.png" alt="" width="64" height="64" draggable="false" style="object-fit:contain"><span>${t(('pet.' + p.kind) as Key)}</span>`);
+      b.dataset.pet = p.id;
+      b.setAttribute('aria-pressed', 'false');
+      b.onclick = () => {
+        if (chosenPets.has(p.id)) chosenPets.delete(p.id); else chosenPets.add(p.id);
+        b.classList.toggle('current', chosenPets.has(p.id)); b.setAttribute('aria-pressed', String(chosenPets.has(p.id)));
+        this.audio.play('click');
+      };
+      row.append(b);
+    }
     const go = h('button', 'pill', `<span>${t('travel.go')}: ${t(('room.' + roomId) as Key)}</span>`);
-    go.onclick = () => { this.travelEl.classList.add('hidden'); this.play.goRoom(roomId, [...chosen]); };
+    go.onclick = () => { this.travelEl.classList.add('hidden'); this.play.goRoom(roomId, [...chosen], [...chosenPets]); };
     const cancel = h('button', 'pill plain', t('common.cancel'));
     cancel.onclick = () => this.travelEl.classList.add('hidden');
     const actions = h('div', 'row');

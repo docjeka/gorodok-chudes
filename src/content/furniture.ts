@@ -60,6 +60,20 @@ export const FURNITURE_LIST: FurnitureDef[] = [
   { id: 'loc_pier', category: 'tables', w: 300, h: 40, layer: 'wall', fixed: true, invisible: true, surfaces: row(3, -90, 90, 0) },
   { id: 'loc_rack3x3', category: 'storage', w: 290, h: 260, layer: 'wall', fixed: true, invisible: true, surfaces: [...row(3, -94, 93, -165), ...row(3, -94, 93, -80), ...row(3, -94, 93, 0)] },
   { id: 'loc_bench4', category: 'tables', w: 320, h: 40, layer: 'wall', fixed: true, invisible: true, surfaces: row(4, -128, 85, 0) },
+  { id: 'loc_pond', category: 'decor', w: 380, h: 120, layer: 'wall', fixed: true, invisible: true },
+  // реквизит локаций: обычная мебель — её можно двигать, поворачивать и убирать
+  { id: 'beach_lounger', category: 'seats', w: 300, h: 165, layer: 'floor', seats: [{ x: -10, y: -92, pose: 'sitting' }] },
+  { id: 'beach_umbrella', category: 'decor', w: 250, h: 285, layer: 'floor' },
+  // передний борт лодочки прикрывает ноги сидящих
+  { id: 'beach_rowboat', category: 'seats', w: 380, h: 195, layer: 'floor', seats: [{ x: -85, y: -84, pose: 'sitting' }, { x: 85, y: -84, pose: 'sitting' }], front: { x0: -190, y0: -92, x1: 190, y1: 0 } },
+  { id: 'club_stool', category: 'seats', w: 160, h: 120, layer: 'floor', seats: [{ x: 0, y: -100, pose: 'sitting' }] },
+  { id: 'club_speaker', category: 'decor', w: 115, h: 223, layer: 'floor' },
+  { id: 'club_light', category: 'lighting', w: 135, h: 185, layer: 'floor' },
+  { id: 'pet_tunnel', category: 'toys', w: 250, h: 173, layer: 'floor', petSeats: [{ x: -40, y: -18 }] },
+  { id: 'pet_cushion', category: 'beds', w: 200, h: 140, layer: 'floor', petSeats: [{ x: 0, y: -40 }] },
+  // колечки надеваются на три колышка стойки
+  { id: 'fair_ring_toss', category: 'toys', w: 150, h: 140, layer: 'floor', surfaces: [{ x: -34, y: -78 }, { x: 4, y: -96 }, { x: 40, y: -74 }] },
+  { id: 'fair_ticket_machine', category: 'decor', w: 150, h: 201, layer: 'floor' },
   // отдельные предметы локаций
   // у каждой лошадки своё седло; ближняя часть лошадки рисуется поверх героя, чтобы он сидел верхом, а не перед ней
   { id: 'carousel', category: 'decor', w: 450, h: 591, layer: 'floor', fixed: true, seats: [{ x: -90, y: -150, pose: 'sitting' }, { x: 82, y: -150, pose: 'sitting' }],
@@ -98,14 +112,15 @@ const LAYOUT: Record<RoomId, Place[]> = {
     ['bt_plant', 'plant', 1300, 660, 2], ['bt_mat', 'bathmat', 760, 870], ['bt_stool', 'stool', 1180, 820, 1],
   ],
   park: [['pk_carousel', 'carousel', 861, 582]],
-  park_games: [['pg_left', 'loc_counter5', 397, 457], ['pg_right', 'loc_stall', 1230, 461]],
+  park_games: [['pg_left', 'loc_counter5', 397, 457], ['pg_right', 'loc_stall', 1230, 461], ['pg_rings', 'fair_ring_toss', 820, 730], ['pg_tickets', 'fair_ticket_machine', 110, 700]],
   cafe: [['cf_sill', 'loc_sill5', 780, 448], ['cf_case', 'loc_case', 1410, 505]],
   cafe_bakery: [['cb_oven', 'loc_oven', 285, 483], ['cb_table', 'loc_worktable', 926, 469], ['cb_shelves', 'loc_wallshelves', 1306, 351]],
   toys: [['ty_left', 'loc_shelf3x5', 294, 553], ['ty_right', 'loc_shelf3x5', 1311, 553]],
   toys_workshop: [['tw_bench', 'loc_bench8', 347, 481], ['tw_cubby', 'loc_cubby3x2', 1292, 522]],
-  beach: [['bc_pier', 'loc_pier', 1430, 383]],
-  beach_boats: [['bb_rack', 'loc_rack3x3', 271, 574], ['bb_bench', 'loc_bench4', 1335, 497]],
-  club: [['cl_dj', 'djconsole', 800, 700]],
+  beach: [['bc_pier', 'loc_pier', 1430, 383], ['bc_umbrella', 'beach_umbrella', 330, 720], ['bc_lounger', 'beach_lounger', 540, 760]],
+  beach_boats: [['bb_rack', 'loc_rack3x3', 271, 574], ['bb_bench', 'loc_bench4', 1335, 497], ['bb_boat', 'beach_rowboat', 820, 820]],
+  club: [['cl_dj', 'djconsole', 800, 700], ['cl_speaker', 'club_speaker', 520, 690], ['cl_light', 'club_light', 1090, 690], ['cl_stool', 'club_stool', 300, 820]],
+  animals: [['an_pond', 'loc_pond', 364, 450], ['an_tunnel', 'pet_tunnel', 1000, 760], ['an_cushion', 'pet_cushion', 1330, 820]],
 };
 
 export function initialFurniture(): Record<string, FurnitureInst> {
@@ -126,6 +141,7 @@ export const ROOM_GROUPS: Record<string, RoomId[]> = {
   cafe: ['cafe', 'cafe_bakery'],
   toys: ['toys', 'toys_workshop'],
   beach: ['beach', 'beach_boats'],
+  animals: ['animals'],
 };
 export const ROOM_IDS: RoomId[] = Object.values(ROOM_GROUPS).flat();
 export const HOUSE_ROOMS = new Set<RoomId>(ROOM_GROUPS.houses);

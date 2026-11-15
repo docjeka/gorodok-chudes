@@ -6,3 +6,4 @@ export const setLang = (l: 'ru' | 'en') => { lang = l; document.documentElement.
 export const getLang = () => lang;
 export const t = (key: Key): string => (lang === 'en' ? en[key] : ru[key]) ?? key;
 export type { Key };
+export const has = (key: string): key is Key => key in ru;

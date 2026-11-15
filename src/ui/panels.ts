@@ -14,7 +14,7 @@ import { IDEA_CARDS } from '../content/items';
 import { createWorld, parseWorld } from '../game/world';
 import type { Character, ItemInst } from '../game/types';
 import { BAG_CAPACITY } from '../game/types';
-import { setLang, t, type Key } from '../i18n';
+import { has, setLang, t, type Key } from '../i18n';
 import { HOUSE_ROOMS } from '../content/furniture';
 import type { Play } from '../scene/play';
 import type { Scene } from '../scene/scene';
@@ -218,6 +218,9 @@ export class Panels {
       const grid = el('div', 'grid slots');
       for (const d of ITEM_LIST.filter((x) => x.catalog === this.cat)) {
         const b = el('button', 'slot', itemThumb({ definitionId: d.id, state: {} }));
+        const pk = 'prop.' + d.id;
+        const label = has(pk) ? t(pk) : '';
+        if (label) { b.setAttribute('aria-label', label); b.title = label; b.classList.add('named'); b.insertAdjacentHTML('beforeend', `<small>${label}</small>`); }
         b.onclick = () => {
           const p = this.play.spawnSpot();
           const r = spawnItem(this.game.world, d.id, { kind: 'room', roomId: this.game.world.currentRoomId, x: p.x, y: p.y });

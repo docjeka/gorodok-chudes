@@ -198,6 +198,22 @@ try {
     await page.screenshot({ path: `${OUT}/carousel-outfits.png`, clip: { x: c[0] - 300, y: c[1] - 270, width: 600, height: 520 } });
     console.log('shot carousel');
   }
+  if (scenario === 'props') {
+    const page = await open('', { width: 1024, height: 576 });
+    const go = (room, heroes = []) => page.evaluate(([r, h]) => { const g = window.__game; g.game.commit(g.rules.travel(g.game.world, r, h)); g.scene.setZoom(0.1); }, [room, heroes]);
+    const seat = (hero, furn, slot = 0) => page.evaluate(([h, f, s]) => { const g = window.__game; g.game.commit(g.rules.placeCharacter(g.game.world, h, { furnitureId: f, slot: s })); }, [hero, furn, slot]);
+    await go('beach', ['hero_mila', 'hero_timur']); await seat('hero_mila', 'bc_lounger'); await wait(900); await shot(page, 'props-beach');
+    await go('beach_boats', ['hero_mila', 'hero_timur']); await seat('hero_mila', 'bb_boat', 0); await seat('hero_timur', 'bb_boat', 1); await wait(900); await shot(page, 'props-boat');
+    await go('club', ['hero_mila', 'hero_timur']); await seat('hero_mila', 'cl_dj'); await seat('hero_timur', 'cl_stool'); await wait(900); await shot(page, 'props-club');
+    await go('park_games'); await wait(900); await shot(page, 'props-games');
+    await page.evaluate(() => { const g = window.__game; g.game.update((w) => { for (const p of Object.values(w.pets)) if (['pet_cat', 'pet_dog', 'pet_rabbit'].includes(p.id)) { p.roomId = 'animals'; } w.pets.pet_cat.x = 300; w.pets.pet_cat.y = 830; w.pets.pet_dog.x = 480; w.pets.pet_dog.y = 720; w.pets.pet_rabbit.x = 1380; w.pets.pet_rabbit.y = 700; }); });
+    await go('animals'); await wait(900); await shot(page, 'props-animals');
+    // мячик: бросаем рядом с бульдогом
+    const ball = await find(page, 'pet_rope_ball', 'room');
+    await drag(page, await at(page, ball, -15), await roomPt(page, 1050, 860));
+    await wait(350); await shot(page, 'props-animals-ball-run'); await wait(1800); await shot(page, 'props-animals-ball-done');
+    for (const r of ['toys', 'cafe', 'cafe_bakery']) { await go(r); await wait(700); await shot(page, `props-${r}`); }
+  }
   if (scenario === 'six' || scenario === 'all') {
     const page = await open('', { width: 1600, height: 900 });
     await page.evaluate(() => { const g = window.__game; const R = g.rules; const put = [['hero_mila', 330, 860, 'fairy', 'delight'], ['hero_timur', 560, 850, 'pirate', 'silly'], ['hero_yuki', 800, 860, 'casual', 'joy'], ['hero_asya', 1040, 850, 'cat', 'surprise'], ['hero_lev', 1270, 860, 'astronaut', 'calm'], ['hero_nora', 1480, 850, 'princess', 'thinking']];

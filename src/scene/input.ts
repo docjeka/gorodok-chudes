@@ -4,9 +4,11 @@ import type { Play, Target } from './play';
 import type { Scene } from './scene';
 
 const HOLD_MS = 420; // долгое нажатие на мебель поднимает её
+const PET_PULL = 64; // CSS px от места касания: дальше питомца уже несут
+const PET_STROKE = 70; // столько пути пальца по зверю считается поглаживанием
 const DRAG_THRESHOLD = 9; // CSS px: нажатие не должно случайно двигать вещи
 
-interface Press { pointerId: number; target: Target | null; startX: number; startY: number; lastX: number; lastY: number; grab: Pt; dragging: boolean; panning: boolean }
+interface Press { pointerId: number; target: Target | null; startX: number; startY: number; lastX: number; lastY: number; grab: Pt; dragging: boolean; panning: boolean; path: number; stroking: boolean; strokeAt: number }
 interface Pinch { a: number; b: number; pa: Pt; pb: Pt; d0: number; z0: number; mid: Pt }
 
 export class Input {
@@ -58,7 +60,7 @@ export class Input {
     const hit = this.scene.pick(pt);
     const target: Target | null = hit ? { kind: hit.kind === 'front' ? 'furn' : hit.kind, ref: hit.ref } : null;
     const pos = target ? this.scene.nodePos(target.ref) : null;
-    this.press = { pointerId: e.pointerId, target, startX: e.clientX, startY: e.clientY, lastX: e.clientX, lastY: e.clientY, grab: pos ? { x: pos.x - pt.x, y: pos.y - pt.y } : { x: 0, y: 0 }, dragging: false, panning: false };
+    this.press = { pointerId: e.pointerId, target, startX: e.clientX, startY: e.clientY, lastX: e.clientX, lastY: e.clientY, grab: pos ? { x: pos.x - pt.x, y: pos.y - pt.y } : { x: 0, y: 0 }, dragging: false, panning: false, path: 0, stroking: false, strokeAt: 0 };
     try { this.scene.app.canvas.setPointerCapture(e.pointerId); } catch { /* не критично */ }
     window.clearTimeout(this.hold);
     if (target && !this.play.canDrag(target) && this.play.canLift(target)) {
@@ -86,6 +88,13 @@ export class Input {
     const p = this.press;
     if (!p || p.pointerId !== e.pointerId) return;
     const moved = Math.hypot(e.clientX - p.startX, e.clientY - p.startY);
+    p.path += Math.hypot(e.clientX - p.lastX, e.clientY - p.lastY);
+    // питомец: палец водит по зверю (не уходя далеко от места касания) — это поглаживание; потянул в сторону — перенос
+    if (p.target?.kind === 'pet' && !p.dragging && !p.panning) {
+      if (moved > PET_PULL) { if (!p.stroking && this.play.canDrag(p.target)) { p.dragging = true; this.scene.dragStart(p.target.ref); } else p.panning = true; }
+      else if (p.path > PET_STROKE && performance.now() - p.strokeAt > 900) { p.stroking = true; p.strokeAt = performance.now(); this.play.petStroke(p.target.ref); }
+      if (!p.dragging) { p.lastX = e.clientX; p.lastY = e.clientY; return; }
+    }
     if (!p.dragging && !p.panning && moved > DRAG_THRESHOLD) {
       if (p.target && this.play.canDrag(p.target)) { p.dragging = true; this.scene.dragStart(p.target.ref); }
       else { p.panning = true; window.clearTimeout(this.hold); }
@@ -131,7 +140,7 @@ export class Input {
       this.scene.setHighlight(null);
       if (!(el && this.onDropUi(el, p.target))) this.play.drop(p.target, this.dropPoint(p.target, at));
       this.scene.dragEnd();
-    } else if (!p.panning) {
+    } else if (!p.panning && !p.stroking) {
       this.play.tap(p.target, pt);
     }
   }

@@ -282,5 +282,109 @@
 "cake_slice": {
 "w": 131,
 "h": 88
+},
+"beach_bucket": {
+"w": 130,
+"h": 171
+},
+"beach_float": {
+"w": 208,
+"h": 177
+},
+"beach_sandcastle": {
+"w": 291,
+"h": 281
+},
+"club_microphone": {
+"w": 78,
+"h": 187
+},
+"club_headphones": {
+"w": 187,
+"h": 166
+},
+"club_drum": {
+"w": 213,
+"h": 204
+},
+"toy_octopus": {
+"w": 161,
+"h": 168
+},
+"toy_train": {
+"w": 208,
+"h": 178
+},
+"toy_dinosaur": {
+"w": 213,
+"h": 172
+},
+"toy_music_box": {
+"w": 187,
+"h": 163
+},
+"toy_jack_box": {
+"w": 161,
+"h": 190
+},
+"toy_ribbon_station": {
+"w": 218,
+"h": 159
+},
+"cafe_croissant": {
+"w": 140,
+"h": 106
+},
+"cafe_donut": {
+"w": 125,
+"h": 121
+},
+"cafe_berry_tart": {
+"w": 135,
+"h": 125
+},
+"cafe_mixer": {
+"w": 187,
+"h": 211
+},
+"cafe_rolling_pin": {
+"w": 208,
+"h": 54
+},
+"cafe_mixing_bowl": {
+"w": 172,
+"h": 182
+},
+"pet_double_bowl": {
+"w": 229,
+"h": 107
+},
+"pet_grooming_brush": {
+"w": 151,
+"h": 121
+},
+"pet_rope_ball": {
+"w": 130,
+"h": 128
+},
+"pet_picnic_box": {
+"w": 187,
+"h": 198
+},
+"fair_rings": {
+"w": 161,
+"h": 142
+},
+"fair_popcorn": {
+"w": 125,
+"h": 156
+},
+"fair_cotton_candy": {
+"w": 135,
+"h": 174
+},
+"fair_plush_prize": {
+"w": 156,
+"h": 184
 }
 }

@@ -120,10 +120,17 @@ async function run(kv: KV, initial: World) {
           w.rooms.club.visited = true;
           w.currentRoomId = 'club';
         }, true);
+      } else if (target === 'animals' && !game.world.rooms.animals.visited) {
+        // первый вход в Парк животных: все шестеро зверей встречают игрока. Это те же питомцы, не копии; потом их можно унести обратно.
+        game.update((w) => {
+          const spots: Record<string, [number, number]> = { pet_cat: [300, 830], pet_dog: [480, 720], pet_rabbit: [1380, 700] };
+          for (const [id, [x, y]] of Object.entries(spots)) { const p = w.pets[id]; if (p) { p.roomId = 'animals'; p.x = x; p.y = y; p.seat = null; p.sleeping = false; delete p.inItem; } }
+          w.rooms.animals.visited = true;
+          w.currentRoomId = 'animals';
+        }, true);
       } else if (target !== cur) {
         // в другое место можно взять героев с собой — тем же окошком, что и между комнатами
-        if (Object.values(game.world.characters).some((c) => c.roomId === cur)) theHud.askTravel(target);
-        else play.goRoom(target, []);
+        theHud.askTravel(target); // само решает, спрашивать ли
       }
       scene.sync(game.world);
       theHud.enterRooms();
