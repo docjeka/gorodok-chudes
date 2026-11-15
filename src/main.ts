@@ -9,10 +9,11 @@ import { Input } from './scene/input';
 import { Play } from './scene/play';
 import { Scene } from './scene/scene';
 import { Talk } from './scene/talk';
-import { IdbKV, K_WORLD, MemoryKV, Saver, loadWorld, quarantine, type KV } from './storage/store';
+import { FallbackKV, IdbKV, K_WORLD, LocalKV, MemoryKV, Saver, loadWorld, quarantine, type KV } from './storage/store';
 import { Hud } from './ui/hud';
 import { Panels } from './ui/panels';
 import { Offline } from './storage/offline';
+import { WorldMap } from './map/globe';
 
 const stage = document.getElementById('stage')!;
 const ui = document.getElementById('ui')!;
@@ -40,7 +41,11 @@ function message(text: string, buttons: [string, () => void][]) {
 async function boot() {
   if (!(await acquireTab())) { message(t('tab.busy'), [[t('tab.retry'), () => void boot()]]); return; }
   let kv: KV;
-  try { kv = new IdbKV(); await kv.get(K_WORLD); } catch { kv = new MemoryKV(); } // приватный режим без IndexedDB: играем в памяти
+  // основное хранилище — IndexedDB, запасное — localStorage; если нет ни того ни другого (приватный режим) — играем в памяти
+  let spare: KV | null = null;
+  try { localStorage.setItem('gorodok-chudes:probe', '1'); localStorage.removeItem('gorodok-chudes:probe'); spare = new LocalKV(); } catch { /* нет localStorage */ }
+  try { const idb = new IdbKV(); await idb.get(K_WORLD); kv = spare ? new FallbackKV(idb, spare) : idb; }
+  catch { kv = spare ?? new MemoryKV(); }
   const loaded = await loadWorld(kv).catch(() => ({ status: 'empty' as const }));
   const start = (world: World) => void run(kv, world);
   if (loaded.status === 'ok') start(loaded.world);
@@ -91,13 +96,38 @@ async function run(kv: KV, initial: World) {
   input.onZoomEnd = () => theHud.saveZoom();
   game.subscribe((w) => { scene.reducedMotion = w.settings.reducedMotion; scene.sync(w); if (w.settings.voices === false || w.settings.mute) { /* звук голоса гаснет сразу, пузырёк дочитывается */ } });
   scene.sync(game.world);
+  // «Мой город»: карта-глобус между заставкой и комнатами. Мир при этом не меняется — только экран.
+  const map = new WorldMap(document.body, {
+    enter: (place) => {
+      if (place.route !== 'rooms') return;
+      map.close();
+      scene.app.start();
+      scene.sync(game.world);
+      theHud.enterRooms();
+    },
+    toast: (k) => theHud.toast(k),
+    sound: (n) => audio.play(n),
+    reducedMotion: () => game.world.settings.reducedMotion,
+  });
+  const toMap = () => {
+    input.cancel();
+    talk.stop();
+    play.select(null);
+    if (thePanels.open) thePanels.toggle(thePanels.open);
+    void game.flush();
+    scene.app.stop(); // комнаты не рисуются, пока открыта карта
+    map.open();
+  };
+  hud.onPlay = toMap;
+  hud.onToMap = toMap;
+  game.subscribe(() => map.texts());
   hud.showTitle(true);
   hud.refresh();
   // сохранить перед уходом со страницы
   document.addEventListener('visibilitychange', () => { if (document.hidden) void game.flush(); });
   window.addEventListener('pagehide', () => void game.flush());
   // отладочный доступ для автоматических тестов
-  (window as unknown as { __game: unknown }).__game = { game, scene, play, input, audio, rules, offline, talk };
+  (window as unknown as { __game: unknown }).__game = { game, scene, play, input, audio, rules, offline, talk, map };
 }
 
 void boot();

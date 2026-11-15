@@ -6,7 +6,7 @@ async function start(page: Page, click = true) {
   await page.goto('./');
   await page.waitForFunction(() => !!window.__game);
   await page.evaluate(() => window.__game.game.update((w: any) => { w.settings.tutorialDone = true; })); // обучение проверяется отдельным сценарием
-  if (click) { await page.click('#play'); await page.waitForTimeout(700); }
+  if (click) { await page.click('#play'); await page.evaluate(() => window.__game.map.enter('houses')); await page.waitForTimeout(700); }
 }
 const world = (page: Page) => page.evaluate(() => JSON.parse(JSON.stringify(window.__game.game.world)));
 const at = (page: Page, ref: string, dy = -40) => page.evaluate(([r, d]) => { const g = window.__game; const p = g.scene.nodePos(r as string); const s = g.scene.toScreen({ x: p.x, y: p.y + (d as number) }); return [s.x, s.y] as [number, number]; }, [ref, dy] as const);
@@ -240,7 +240,7 @@ test('10. после подготовки офлайн игра открывае
   await page.reload();
   await page.waitForFunction(() => !!window.__game);
   expect((await world(page)).currentRoomId).toBe('bedroom');
-  await page.click('#play'); // после перезапуска — титульный экран, «Играть» возвращает в последнюю комнату
+  await page.click('#play'); await page.evaluate(() => window.__game.map.enter('houses')); // после перезапуска — титульный экран, «Играть» возвращает в последнюю комнату
   for (const r of ['Кухня', 'Ванная', 'Гостиная']) await goRoom(page, r);
   await page.waitForTimeout(800);
   const failed = await page.evaluate(() => performance.getEntriesByType('resource').filter((e: any) => e.responseStatus >= 400).map((e) => e.name));

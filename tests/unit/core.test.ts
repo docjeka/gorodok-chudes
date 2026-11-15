@@ -309,3 +309,23 @@ describe('сохранения', () => {
     expect(JSON.parse(kv.data.get(K_WORLD)!).revision).toBe(5);
   });
 });
+
+describe('запасное хранилище', () => {
+  it('если основное не пишет, мир уходит в запасное и читается самый свежий', async () => {
+    const { FallbackKV, MemoryKV, Saver, loadWorld } = await import('../../src/storage/store');
+    const main = new MemoryKV(), spare = new MemoryKV();
+    const kv = new FallbackKV(main, spare);
+    const states: string[] = [];
+    const saver = new Saver(kv, (s) => states.push(s), 0);
+    const w1 = { ...createWorld(), revision: 3 };
+    saver.schedule(w1, true); await saver.flush();
+    expect(main.data.has('world')).toBe(true);
+    main.failWrites = true;
+    const w2 = { ...w1, revision: 9, currentRoomId: 'kitchen' as const };
+    saver.schedule(w2, true); await saver.flush();
+    expect(states.includes('error')).toBe(false); // игрок не видит ошибку: запись ушла в запасное
+    expect(saver.state).toBe('saved');
+    const loaded = await loadWorld(kv);
+    expect(loaded.status === 'ok' && loaded.world.currentRoomId).toBe('kitchen');
+  });
+});

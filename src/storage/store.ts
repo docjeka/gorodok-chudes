@@ -19,35 +19,81 @@ export class MemoryKV implements KV {
 
 export class IdbKV implements KV {
   private db: Promise<IDBDatabase>;
-  constructor(name = 'gorodok-chudes') {
-    this.db = new Promise((resolve, reject) => {
-      const req = indexedDB.open(name, 1);
+  constructor(private name = 'gorodok-chudes') { this.db = this.connect(); }
+  private connect(): Promise<IDBDatabase> {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(this.name, 1);
       req.onupgradeneeded = () => { req.result.createObjectStore('kv'); };
-      req.onsuccess = () => resolve(req.result);
+      req.onsuccess = () => {
+        const db = req.result;
+        // планшет мог закрыть соединение, пока игра была свёрнута: в следующий раз откроем заново
+        db.onclose = () => { this.db = this.connect(); };
+        db.onversionchange = () => { db.close(); this.db = this.connect(); };
+        resolve(db);
+      };
       req.onerror = () => reject(req.error);
       req.onblocked = () => reject(new Error('blocked'));
     });
   }
-  async get(key: string): Promise<string | undefined> {
-    const db = await this.db;
-    return new Promise((resolve, reject) => {
+  /** Одна попытка, при сбое — новое соединение и вторая попытка (на iPad соединение теряется после сворачивания). */
+  private async run<T>(job: (db: IDBDatabase) => Promise<T>): Promise<T> {
+    try { return await job(await this.db); }
+    catch {
+      try { (await this.db).close(); } catch { /* уже закрыто */ }
+      this.db = this.connect();
+      return job(await this.db);
+    }
+  }
+  get(key: string): Promise<string | undefined> {
+    return this.run((db) => new Promise((resolve, reject) => {
       const r = db.transaction('kv', 'readonly').objectStore('kv').get(key);
       r.onsuccess = () => resolve(r.result as string | undefined);
       r.onerror = () => reject(r.error);
-    });
+    }));
   }
   set(key: string, value: string) { return this.setMany({ [key]: value }); }
-  async setMany(entries: Record<string, string>): Promise<void> {
-    const db = await this.db;
-    return new Promise((resolve, reject) => {
+  setMany(entries: Record<string, string>): Promise<void> {
+    return this.run((db) => new Promise((resolve, reject) => {
       const tx = db.transaction('kv', 'readwrite');
       const os = tx.objectStore('kv');
       for (const [k, v] of Object.entries(entries)) os.put(v, k);
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
       tx.onabort = () => reject(tx.error ?? new Error('abort'));
-    });
+    }));
   }
+}
+
+const revisionOf = (text: string | undefined): number => { if (!text) return -1; try { return Number((JSON.parse(text) as { revision?: number }).revision) || 0; } catch { return -1; } };
+
+/**
+ * Запасное хранилище: если основное (IndexedDB) не записало, мир пишется во второе (localStorage).
+ * При чтении берётся более свежая запись — по номеру revision.
+ */
+export class FallbackKV implements KV {
+  /** последняя ошибка основного хранилища — для экрана родителей и отчётов */
+  lastPrimaryError: unknown = null;
+  constructor(private primary: KV, private spare: KV) {}
+  async get(key: string): Promise<string | undefined> {
+    let a: string | undefined, b: string | undefined;
+    try { a = await this.primary.get(key); } catch (e) { this.lastPrimaryError = e; }
+    try { b = await this.spare.get(key); } catch { /* запасного может не быть */ }
+    if (a === undefined || b === undefined) return a ?? b;
+    return revisionOf(b) > revisionOf(a) ? b : a;
+  }
+  set(key: string, value: string) { return this.setMany({ [key]: value }); }
+  async setMany(entries: Record<string, string>): Promise<void> {
+    try { await this.primary.setMany(entries); this.lastPrimaryError = null; }
+    catch (e) { this.lastPrimaryError = e; await this.spare.setMany(entries); }
+  }
+}
+
+/** localStorage как простое хранилище строк. */
+export class LocalKV implements KV {
+  constructor(private prefix = 'gorodok-chudes:') {}
+  async get(key: string) { return localStorage.getItem(this.prefix + key) ?? undefined; }
+  async set(key: string, value: string) { localStorage.setItem(this.prefix + key, value); }
+  async setMany(entries: Record<string, string>) { for (const [k, v] of Object.entries(entries)) localStorage.setItem(this.prefix + k, v); }
 }
 
 export const K_WORLD = 'world';
@@ -121,6 +167,8 @@ export class Saver {
         this.lastError = null;
         if (!this.pending) this.setState('saved');
       } catch (e) {
+        // вторая попытка чуть позже: чаще всего это разовый сбой после сворачивания игры
+        try { await new Promise((r) => setTimeout(r, 250)); await this.kv.set(K_WORLD, text); this.lastError = null; if (!this.pending) this.setState('saved'); return; } catch { /* сообщим ниже */ }
         this.lastError = e;
         this.pending = this.pending ?? w; // мир остаётся в памяти, попробуем при следующем действии
         this.setState('error');

@@ -21,7 +21,7 @@ export async function open(query = '', viewport = { width: 1366, height: 1024 })
   await page.goto('http://127.0.0.1:4173/' + query);
   await page.waitForFunction(() => !!window.__game);
   if (!query.includes('tutorial')) await page.evaluate(() => window.__game.game.update((w) => { w.settings.tutorialDone = true; }));
-  await page.click('#play');
+  await page.click('#play'); await page.evaluate(() => window.__game.map.enter('houses'));
   await wait(900);
   return page;
 }
@@ -162,6 +162,20 @@ try {
     await go(await spawn('toothbrush', 760), 'use-04-brushing', 350);
     await go(await spawn('comb', 820), 'use-05-combing', 350);
     await go(await spawn('apple', 880), 'use-06-eating', 200);
+  }
+  if (scenario === 'map') {
+    for (const [wd, ht] of [[1024, 768], [768, 1024], [1280, 720]]) {
+      const ctx = await browser.newContext({ viewport: { width: wd, height: ht }, deviceScaleFactor: 1, hasTouch: true });
+      const page = await ctx.newPage();
+      page.on('pageerror', (e) => errors.push(String(e)));
+      await page.goto('http://127.0.0.1:4173/');
+      await page.waitForFunction(() => !!window.__game);
+      await page.click('#play');
+      await wait(800);
+      await shot(page, `map-front-${wd}x${ht}`);
+      if (wd === 1024) { await page.click('.map-turn.right'); await wait(250); await shot(page, 'map-turning'); await wait(500); await shot(page, 'map-back'); }
+      await ctx.close();
+    }
   }
   if (scenario === 'six' || scenario === 'all') {
     const page = await open('', { width: 1600, height: 900 });

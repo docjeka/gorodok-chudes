@@ -149,5 +149,17 @@ export const ru = {
   'idea.show.t': "Костюмы, корона и волшебная палочка — начинаем!",
   'hud.zoomOut': 'Отдалить: показать всю комнату',
   'hud.zoomIn': 'Приблизить',
+  'map.title': 'Мой город',
+  'map.left': 'Повернуть влево',
+  'map.right': 'Повернуть вправо',
+  'map.soon': 'Скоро',
+  'map.soonToast': 'Это место ещё не открыто. Загляни сюда позже.',
+  'hud.toMap': 'На карту',
+  'place.houses': 'Домики',
+  'place.park': 'Парк аттракционов',
+  'place.club': 'Клуб друзей',
+  'place.cafe': 'Кафе',
+  'place.toys': 'Магазин игрушек',
+  'place.beach': 'Пляж',
 } as const;
 export type Key = keyof typeof ru;

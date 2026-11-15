@@ -30,3 +30,4 @@
 | PixiJS 8 | npm | MIT | движок сцены |
 | Музыка и звуки | синтезируются кодом (Web Audio) | свои | src/audio/audio.ts |
 | public/assets/voice/girl, boy | 24 реплики, сгенерированы пользователем в ElevenLabs | права по тарифу пользователя |
+| public/assets/map/town-front.webp, town-back.webp | рисунки планеты от пользователя (world-map-v2-front/back.png) | авторские, от пользователя |

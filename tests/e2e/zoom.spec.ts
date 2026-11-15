@@ -6,7 +6,7 @@ async function start(page: Page) {
   await page.goto('./');
   await page.waitForFunction(() => !!window.__game);
   await page.evaluate(() => window.__game.game.update((w: any) => { w.settings.tutorialDone = true; }));
-  await page.click('#play');
+  await page.click('#play'); await page.evaluate(() => window.__game.map.enter('houses'));
   await page.waitForTimeout(600);
 }
 const cam = (page: Page) => page.evaluate(() => { const s = window.__game.scene; return { zoom: s.zoom, min: s.minZoom, viewW: s.viewW, viewH: s.viewH }; });

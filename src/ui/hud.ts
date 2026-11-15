@@ -31,6 +31,7 @@ const ICON = {
   prev: '<path d="M24 8L12 20l12 12"/>',
   next: '<path d="M16 8l12 12-12 12"/>',
   flip: '<path d="M20 6v28M14 12L5 20l9 8zM26 12l9 8-9 8z"/>',
+  globe: '<circle cx="20" cy="20" r="14"/><path d="M6 20h28M20 6c-7 8-7 20 0 28M20 6c7 8 7 20 0 28"/>',
   undo: '<path d="M14 10L6 18l8 8M6 18h18a10 10 0 0 1 0 20h-6"/>',
   cook: '<path d="M11 22a7 7 0 0 1 3-13 8 8 0 0 1 12 0 7 7 0 0 1 3 13v8H11zM11 26h18"/>',
   gift: '<path d="M6 16h28v6H6zM9 22h22v12H9zM20 16v18M20 16c-6 0-9-8-4-8s4 8 4 8c0 0 0-8 4-8s2 8-4 8"/>',
@@ -51,10 +52,12 @@ export class Hud {
   private itemBar = h('div', 'itembar hidden');
   private cookLayer = h('div', 'cooklayer');
   private toastEl = h('div', 'toast hidden');
+  private saveWarned = false;
   private saveEl = h('div', 'save');
   private soundBtn = h('button', 'round');
   private undoBtn = h('button', 'round');
   private zoomBtn = h('button', 'round');
+  private mapBtn = h('button', 'round');
   private title = h('div', 'title');
   private travelEl = h('div', 'modal hidden');
   private bubble = h('div', 'bubble hidden');
@@ -70,7 +73,10 @@ export class Hud {
     this.root = host;
     const top = h('div', 'topbar');
     const right = h('div', 'topright');
-    right.append(this.saveEl, this.zoomBtn, this.undoBtn, this.soundBtn);
+    right.append(this.saveEl, this.mapBtn, this.zoomBtn, this.undoBtn, this.soundBtn);
+    this.mapBtn.id = 'tomap';
+    this.mapBtn.innerHTML = icon('globe');
+    this.mapBtn.onclick = () => { this.audio.play('click'); this.onToMap?.(); };
     this.zoomBtn.onclick = () => {
       // кнопка переключает «вся комната целиком» и «крупно»; точнее — двумя пальцами
       const min = this.scene.minZoom;
@@ -101,9 +107,16 @@ export class Hud {
       this.audio.unlock();
       this.audio.play('pop');
       this.title.classList.add('hidden');
-      this.game.update((w) => { w.lastScreen = 'room'; });
-      if (!this.game.world.settings.tutorialDone) this.startTutorial();
+      if (this.onPlay) this.onPlay(); else this.enterRooms();
     };
+  }
+  /** «Играть» ведёт на карту города; если её нет — сразу в комнаты. */
+  onPlay: (() => void) | null = null;
+  onToMap: (() => void) | null = null;
+  /** Вход в комнаты (с карты или сразу): здесь же начинается обучение. */
+  enterRooms() {
+    if (this.game.world.lastScreen !== 'room') this.game.update((w) => { w.lastScreen = 'room'; });
+    if (!this.game.world.settings.tutorialDone && this.tutEl.classList.contains('hidden')) this.startTutorial();
   }
   saveZoom() {
     const z = Math.round(this.scene.zoom * 100) / 100;
@@ -125,7 +138,7 @@ export class Hud {
     this.saveEl.innerHTML = icon(s === 'saved' ? 'ok' : s === 'saving' ? 'dots' : 'warn');
     this.saveEl.title = t(s === 'saved' ? 'save.saved' : s === 'saving' ? 'save.saving' : 'save.error');
     this.saveEl.setAttribute('aria-label', this.saveEl.title);
-    if (s === 'error') this.toast('save.error');
+    if (s === 'error' && !this.saveWarned) { this.saveWarned = true; this.toast('save.error'); } // один раз за игру, дальше — только значок
   }
 
   // ---------- обучение: ненавязчивая рука, которую можно пропустить ----------
@@ -268,6 +281,8 @@ export class Hud {
     this.zoomBtn.setAttribute('aria-label', t(far ? 'hud.zoomIn' : 'hud.zoomOut'));
     this.undoBtn.disabled = !this.game.canUndo();
     this.undoBtn.setAttribute('aria-label', t('hud.undo'));
+    this.mapBtn.setAttribute('aria-label', t('hud.toMap'));
+    this.mapBtn.title = t('hud.toMap');
     const playBtn = this.title.querySelector('#play'); if (playBtn) playBtn.textContent = t('title.play');
     const h1 = this.title.querySelector('h1'); if (h1) h1.textContent = t('app.title');
     this.audio.configure(w.settings);

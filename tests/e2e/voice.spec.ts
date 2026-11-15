@@ -4,7 +4,7 @@ async function start(page: Page) {
   await page.goto('./');
   await page.waitForFunction(() => !!window.__game);
   await page.evaluate(() => window.__game.game.update((w: any) => { w.settings.tutorialDone = true; }));
-  await page.click('#play');
+  await page.click('#play'); await page.evaluate(() => window.__game.map.enter('houses'));
   await page.waitForFunction(() => window.__game.talk.loaded >= 12, null, { timeout: 15_000 }); // все 12 реплик декодированы
   await page.waitForTimeout(500);
 }
@@ -145,7 +145,7 @@ test('после установки голоса работают без сет�
   await context.setOffline(true);
   await page.reload();
   await page.waitForFunction(() => !!window.__game);
-  await page.click('#play').catch(() => undefined); // после перезапуска игра сразу в комнате; звук разблокирует первое нажатие
+  await page.click('#play'); await page.evaluate(() => window.__game.map.enter('houses')); // звук разблокирует первое нажатие
   await page.mouse.click(...(await roomPt(page, 1000, 300)));
   await page.click('[aria-label="Звук"]'); await page.click('[aria-label="Звук"]');
   await page.waitForFunction(() => window.__game.talk.loaded >= 12, null, { timeout: 15_000 });

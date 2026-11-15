@@ -4,7 +4,7 @@ async function start(page: Page, tutorial = false) {
   await page.goto('./');
   await page.waitForFunction(() => !!window.__game);
   if (!tutorial) await page.evaluate(() => window.__game.game.update((w: any) => { w.settings.tutorialDone = true; }));
-  await page.click('#play');
+  await page.click('#play'); await page.evaluate(() => window.__game.map.enter('houses'));
   await page.waitForTimeout(700);
 }
 const world = (page: Page) => page.evaluate(() => JSON.parse(JSON.stringify(window.__game.game.world)));
