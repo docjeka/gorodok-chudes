@@ -104,7 +104,7 @@ test('книга открывается и закрывается; карточ�
   await page.click('text=Закрыть книгу');
   await expect(page.locator('.book')).toBeHidden();
   await page.click('[data-panel="ideas"]');
-  await expect(page.locator('.card.idea')).toHaveCount(6);
+  await expect(page.locator('.card.idea')).toHaveCount(7);
   await page.click('.drawer .round');
   await expect(page.locator('.drawer')).toBeHidden();
 });

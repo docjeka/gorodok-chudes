@@ -138,4 +138,4 @@ export const GIFT_SETS: GiftSetDef[] = [
 ];
 export const GIFTS: Record<string, GiftSetDef> = Object.fromEntries(GIFT_SETS.map((g) => [g.id, g]));
 
-export const IDEA_CARDS = ['breakfast', 'birthday', 'picnic', 'vet', 'winter', 'show'] as const;
+export const IDEA_CARDS = ['breakfast', 'birthday', 'picnic', 'vet', 'winter', 'show', 'party'] as const;

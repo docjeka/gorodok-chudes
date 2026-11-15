@@ -59,11 +59,13 @@ const PARK_PETS: World['pets'] = {
   pet_frenchie: { id: 'pet_frenchie', kind: 'frenchie', roomId: 'animals', x: 880, y: 780, sleeping: false, seat: null, collar: 1, flipped: false },
   pet_wolf: { id: 'pet_wolf', kind: 'wolf', roomId: 'animals', x: 1180, y: 720, sleeping: false, seat: null, collar: 2, flipped: true },
 };
+/** История «Устрой вечеринку»: пустая коробка для подарка ждёт в мастерской (те же вещи, что и раньше, новых картинок нет). */
+const PARTY_SEEDS: [string, Owner][] = [['giftbox', floor('toys_workshop', 820, 830)], ['cupcake', surf('cb_shelves', 2)]];
 const LOCATION_ROOMS: RoomId[] = ['animals', 'park', 'park_games', 'cafe', 'cafe_bakery', 'toys', 'toys_workshop', 'beach', 'beach_boats', 'club'];
-function seedLocations(world: World, seeds: [string, Owner][] = [...LOCATION_SEEDS, ...PROP_SEEDS]): World {
+function seedLocations(world: World, seeds: [string, Owner][] = [...LOCATION_SEEDS, ...PROP_SEEDS, ...PARTY_SEEDS]): World {
   let w = world;
   for (const [def, owner] of seeds) {
-    const r = spawnItem(w, def, owner);
+    const r = spawnItem(w, def, owner, def === 'giftbox' ? { packed: false, paper: 2, bow: 1 } : {});
     if (!r.ok) continue; // место занято или вещей слишком много — мир игрока важнее раскладки
     w = r.world;
     w.items[r.info!.instanceId as string].home = owner;
@@ -225,6 +227,13 @@ export const MIGRATIONS: Record<number, Migration> = {
     for (const [id, p] of Object.entries(PARK_PETS)) if (!raw.pets[id]) raw.pets[id] = structuredClone(p);
     raw.schemaVersion = 4;
     return seedLocations(raw as World, PROP_SEEDS);
+  },
+  // v4: для истории «Устрой вечеринку» в клубе появился столик, в мастерской — пустая коробка для подарка. Больше ничего не меняется.
+  4: (raw) => {
+    const fresh = createWorld(raw.settings?.lang === 'en' ? 'en' : 'ru');
+    if (!raw.furniture.cl_table) raw.furniture.cl_table = fresh.furniture.cl_table;
+    raw.schemaVersion = 5;
+    return seedLocations(raw as World, PARTY_SEEDS);
   },
 };
 

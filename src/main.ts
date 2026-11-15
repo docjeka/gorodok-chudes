@@ -114,20 +114,20 @@ async function run(kv: KV, initial: World) {
         // первый вход в клуб: три уже существующих героя ждут там — один у пульта, двое на танцполе. Копий нет; потом их можно увести куда угодно.
         game.update((w) => {
           const all = Object.values(w.characters);
-          const pick = [...all.filter((c) => c.roomId === null), ...all.filter((c) => c.roomId !== null && c.roomId !== w.currentRoomId && c.pose !== 'sleeping'), ...all.filter((c) => c.roomId === w.currentRoomId)].slice(0, 3);
+          const pick = [...all.filter((c) => c.roomId === null), ...all.filter((c) => c.roomId !== null && c.roomId !== w.currentRoomId && c.pose !== 'sleeping')].slice(0, 3); // тех, кто сейчас с игроком, не трогаем — их берут с собой
           const spots = [{ x: 1090, y: 740 }, { x: 420, y: 800 }, { x: 700, y: 840 }];
           pick.forEach((c, i) => { c.roomId = 'club'; c.x = spots[i].x; c.y = spots[i].y; c.seat = null; c.pose = 'standing'; c.flipped = i === 0; if (c.emotion === 'sleepy') c.emotion = 'joy'; });
           w.rooms.club.visited = true;
-          w.currentRoomId = 'club';
         }, true);
+        theHud.askTravel(target); // героев из прежнего места можно взять с собой
       } else if (target === 'animals' && !game.world.rooms.animals.visited) {
         // первый вход в Парк животных: все шестеро зверей встречают игрока. Это те же питомцы, не копии; потом их можно унести обратно.
         game.update((w) => {
           const spots: Record<string, [number, number]> = { pet_cat: [300, 830], pet_dog: [480, 720], pet_rabbit: [1380, 700] };
           for (const [id, [x, y]] of Object.entries(spots)) { const p = w.pets[id]; if (p) { p.roomId = 'animals'; p.x = x; p.y = y; p.seat = null; p.sleeping = false; delete p.inItem; } }
           w.rooms.animals.visited = true;
-          w.currentRoomId = 'animals';
         }, true);
+        theHud.askTravel(target);
       } else if (target !== cur) {
         // в другое место можно взять героев с собой — тем же окошком, что и между комнатами
         theHud.askTravel(target); // само решает, спрашивать ли
@@ -159,11 +159,15 @@ async function run(kv: KV, initial: World) {
     lastRoom[groupOf(w.currentRoomId)] = w.currentRoomId;
     if (!djSeated(w) || w.settings.mute) audio.setClub(false);
   });
-  window.setInterval(() => {
+  // танцы: пока играет клубный трек, свободные стоящие герои на танцполе танцуют; диджей, сидящие и те, кого несут, — нет
+  const dancers = () => {
     const w = game.world;
-    if (!audio.musicState().club || map.isOpen || w.settings.reducedMotion || input.busy) return;
-    for (const c of Object.values(w.characters)) if (c.roomId === 'club' && c.pose === 'standing') scene.hop(c.id, c.seat ? 5 : 9);
-  }, 1000);
+    if (!audio.musicState().club || map.isOpen || w.currentRoomId !== 'club') return [];
+    return Object.values(w.characters).filter((c) => c.roomId === 'club' && c.pose === 'standing' && !c.seat).map((c) => c.id);
+  };
+  const syncDance = () => scene.setDancers(dancers(), 500); // 120 ударов в минуту — темп клубного трека
+  window.setInterval(syncDance, 200);
+  game.subscribe(syncDance);
   hud.showTitle(true);
   hud.refresh();
   // сохранить перед уходом со страницы

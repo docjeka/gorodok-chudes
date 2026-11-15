@@ -319,11 +319,11 @@ export class Panels {
 
   // ---------- карточки идей: подсказки для историй, не задания ----------
   private renderIdeas() {
-    const pics: Record<string, string[]> = { breakfast: ['bread', 'cheese', 'sandwich'], birthday: ['cake', 'balloon', 'giftbox'], picnic: ['basket', 'apple', 'cookies'], vet: ['teddy', 'pillow', 'teapot'], winter: ['mittens', 'cocoa', 'snowglobe'], show: ['crown', 'wand', 'mask'] };
+    const pics: Record<string, string[]> = { breakfast: ['bread', 'cheese', 'sandwich'], birthday: ['cake', 'balloon', 'giftbox'], picnic: ['basket', 'apple', 'cookies'], vet: ['teddy', 'pillow', 'teapot'], winter: ['mittens', 'cocoa', 'snowglobe'], show: ['crown', 'wand', 'mask'], party: ['cupcake', 'giftbox', 'club_headphones'] };
     const grid = el('div', 'grid gifts');
     for (const id of IDEA_CARDS) {
       const card = el('div', 'card idea');
-      card.innerHTML = `<div class="giftitems">${pics[id].map((d) => itemThumb({ definitionId: d, state: { packed: true } }, 52)).join('')}</div><b>${t(('idea.' + id) as Key)}</b><span>${t(('idea.' + id + '.t') as Key)}</span>`;
+      card.innerHTML = `<div class="giftitems">${(pics[id] ?? []).map((d) => itemThumb({ definitionId: d, state: { packed: true } }, 52)).join('')}</div><b>${t(('idea.' + id) as Key)}</b><span>${t(('idea.' + id + '.t') as Key)}</span>`;
       grid.append(card);
     }
     this.body.append(grid);

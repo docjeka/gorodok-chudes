@@ -182,7 +182,13 @@ export class Play {
         this.game.commit(r);
         this.scene.pop(d.characterId, 0.06);
         this.audio.play('pop');
-        if (it.definitionId === 'giftbox') this.talk?.say(d.characterId, 'gift', 300);
+        if (it.definitionId === 'giftbox') {
+          // подарок вручили: герой улыбается, над ним сердечко; в клубе — своя реплика
+          this.game.update((x) => { const c = x.characters[d.characterId]; if (c) c.emotion = 'delight'; });
+          const b = charBox(this.w, this.w.characters[d.characterId]);
+          this.scene.burst('heart', { x: b.headX, y: (b.headLine ?? b.y0 + 80) - 70 }, 3);
+          this.talk?.say(d.characterId, this.room === 'club' ? 'party' : 'gift', 300);
+        }
         this.ui.tutorialEvent('item_in_hand');
         return;
       }

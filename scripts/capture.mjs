@@ -214,6 +214,43 @@ try {
     await wait(350); await shot(page, 'props-animals-ball-run'); await wait(1800); await shot(page, 'props-animals-ball-done');
     for (const r of ['toys', 'cafe', 'cafe_bakery']) { await go(r); await wait(700); await shot(page, `props-${r}`); }
   }
+  if (scenario === 'party') {
+    const page = await open('', { width: 1024, height: 576 });
+    const ev = (fn, arg) => page.evaluate(fn, arg);
+    // мастерская: игрушка в коробке, бант завязан, коробка у Милы
+    await ev(() => { const g = window.__game; g.game.commit(g.rules.travel(g.game.world, 'toys_workshop', ['hero_mila'])); g.scene.setZoom(0.1); const w = g.game.world; const box = Object.values(w.items).find((i) => i.definitionId === 'giftbox' && i.owner.roomId === 'toys_workshop'); const toy = Object.values(w.items).find((i) => i.definitionId === 'toy_jack_box'); g.game.commit(g.rules.moveItem(g.game.world, toy.instanceId, { kind: 'item', itemId: box.instanceId, slot: 0 })); g.game.commit(g.rules.wrapGift(g.game.world, box.instanceId)); window.__box = box.instanceId; });
+    await wait(700); await shot(page, 'party-1-workshop');
+    await ev(() => { const g = window.__game; g.game.commit(g.rules.moveItem(g.game.world, window.__box, { kind: 'hand', characterId: 'hero_mila', slot: 'left' })); g.game.update((w) => { for (const [id, x, y] of [['hero_lev', 1090, 760], ['hero_nora', 560, 830], ['hero_asya', 980, 850]]) Object.assign(w.characters[id], { roomId: 'club', x, y, pose: 'standing', seat: null }); w.rooms.club.visited = true; }); g.game.commit(g.rules.travel(g.game.world, 'club', ['hero_mila'])); g.game.update((w) => { w.characters.hero_mila.x = 330; w.characters.hero_mila.y = 840; const c = Object.values(w.items).find((i) => i.definitionId === 'cupcake'); c.owner = { kind: 'surface', furnitureId: 'cl_table', slot: 1 }; }); g.scene.setZoom(0.1); });
+    await wait(900);
+    await drag(page, await at(page, await ev(() => window.__box), -40), await at(page, 'hero_nora', -60));
+    await wait(700); await shot(page, 'party-2-gift');
+    await wait(2500);
+    await drag(page, await at(page, 'hero_mila', -120), await roomPt(page, 800, 628));
+    await wait(1300); await shot(page, 'party-3-dj');
+  }
+  if (scenario === 'dance') {
+    const ctx = await browser.newContext({ viewport: { width: 1024, height: 576 }, deviceScaleFactor: 1, hasTouch: true, recordVideo: { dir: `${OUT}/video`, size: { width: 1024, height: 576 } } });
+    const page = await ctx.newPage();
+    await page.goto('http://127.0.0.1:4173/');
+    await page.waitForFunction(() => !!window.__game);
+    await page.evaluate(() => window.__game.game.update((w) => { w.settings.tutorialDone = true; w.rooms.club.visited = true; const put = (id, x, y) => Object.assign(w.characters[id], { roomId: 'club', x, y, pose: 'standing', seat: null }); put('hero_mila', 1150, 840); put('hero_timur', 480, 830); put('hero_lev', 700, 850); w.currentRoomId = 'club'; }));
+    await page.click('#play'); await page.evaluate(() => window.__game.map.enter('club'));
+    await page.evaluate(() => window.__game.scene.setZoom(0.1));
+    await page.waitForFunction(() => window.__game.audio.musicState().loaded[1], null, { timeout: 30000 });
+    await wait(800);
+    const t0 = Date.now();
+    await drag(page, await at(page, 'hero_mila', -120), await roomPt(page, 800, 628)); // Мила — за пульт
+    await page.waitForFunction(() => window.__game.scene.dancing.length === 2);
+    await wait(7000);
+    await drag(page, await at(page, 'hero_lev', -120), await roomPt(page, 300, 720)); // Льва сажаем на пуфик
+    await wait(4500);
+    await drag(page, await at(page, 'hero_mila', -150), await roomPt(page, 1150, 840)); // музыка остановилась
+    await wait(2500);
+    console.log('video seconds', (Date.now() - t0) / 1000);
+    const v = page.video();
+    await ctx.close();
+    console.log('video', await v.path());
+  }
   if (scenario === 'six' || scenario === 'all') {
     const page = await open('', { width: 1600, height: 900 });
     await page.evaluate(() => { const g = window.__game; const R = g.rules; const put = [['hero_mila', 330, 860, 'fairy', 'delight'], ['hero_timur', 560, 850, 'pirate', 'silly'], ['hero_yuki', 800, 860, 'casual', 'joy'], ['hero_asya', 1040, 850, 'cat', 'surprise'], ['hero_lev', 1270, 860, 'astronaut', 'calm'], ['hero_nora', 1480, 850, 'princess', 'thinking']];

@@ -214,5 +214,7 @@ export const ru = {
   'pet.cat': 'Кот',
   'pet.dog': 'Пёс',
   'pet.rabbit': 'Кролик',
+  'idea.party': "Устрой вечеринку",
+  'idea.party.t': "Возьми угощение в пекарне, упакуй игрушку в мастерской и неси всё в Клуб друзей. Кто встанет за пульт?",
 } as const;
 export type Key = keyof typeof ru;

@@ -37,6 +37,8 @@ interface Node {
   id: string; kind: Kind; ref: string; c: Container; body: Sprite; key: string; tex?: Tex;
   parts?: Record<'eyeL' | 'eyeR' | 'browL' | 'browR' | 'mouth', Sprite>; face?: FaceWant; blinkAt: number; blinkUntil: number;
   overlay?: Sprite; overlayKey?: string; pulse: number; liquid?: Graphics; liquidKey?: string;
+  /** место из модели мира: танец качает фигурку вокруг него и ничего не сохраняет */
+  by: number;
 }
 interface Tween { t: number; dur: number; step: (k: number) => void; done?: () => void }
 interface Particle { s: Sprite | Graphics; vx: number; vy: number; g: number; life: number; max: number; spin: number }
@@ -154,13 +156,14 @@ export class Scene {
       seen.add(w.id);
       let n = this.nodes.get(w.id);
       if (!n) {
-        n = { id: w.id, kind: w.kind, ref: w.ref, c: new Container(), body: new Sprite(), key: '', blinkAt: performance.now() + 1500 + Math.random() * 3000, blinkUntil: 0, pulse: 0 };
+        n = { id: w.id, kind: w.kind, ref: w.ref, c: new Container(), body: new Sprite(), key: '', blinkAt: performance.now() + 1500 + Math.random() * 3000, blinkUntil: 0, pulse: 0, by: w.y };
         n.c.addChild(n.body);
         this.layer.addChild(n.c);
         this.nodes.set(w.id, n);
       }
       if ((this.dragging !== w.ref && !this.animating.has(w.ref)) || w.kind === 'front') {
         n.c.position.set(w.x, w.y);
+        n.by = w.y;
         n.c.zIndex = w.z;
         n.c.scale.set(w.flip ? -1 : 1, 1);
         n.c.rotation = w.rot;
@@ -462,6 +465,46 @@ export class Scene {
     this.tween(ms, (k) => { const e = k * k * (3 - 2 * k); n.c.position.set(x0 + (to.x - x0) * e, y0 + (to.y - y0) * e - Math.abs(Math.sin(k * Math.PI * 4)) * 10); }, () => { this.animating.delete(ref); done(); });
   }
 
+  // ---------- танец ----------
+  private dance = new Map<string, { on: boolean; amp: number }>();
+  private danceT0 = 0;
+  private danceBeat = 500;
+  /**
+   * Кто сейчас танцует (герои на танцполе, пока играет клубный трек). Цикл на четыре удара:
+   * качнулся влево → вправо → маленький подскок → мягко приземлился. Фигурка целиком (с лицом) качается вокруг точки у ступней.
+   */
+  setDancers(ids: string[], beatMs = 500) {
+    if (!this.dance.size && ids.length) this.danceT0 = performance.now();
+    this.danceBeat = beatMs;
+    const want = new Set(ids);
+    for (const [id, d] of this.dance) d.on = want.has(id);
+    for (const id of ids) if (!this.dance.has(id)) this.dance.set(id, { on: true, amp: 0 });
+  }
+  get dancing(): string[] { return [...this.dance].filter(([, d]) => d.on).map(([id]) => id); }
+  private danceTick(dt: number, now: number) {
+    if (!this.dance.size) return;
+    const phase = ((now - this.danceT0) / this.danceBeat) % 4;
+    for (const [id, d] of this.dance) {
+      const n = this.nodeOf(id);
+      const held = this.dragging === id || this.animating.has(id);
+      // унесли с танцпола — сразу обычная поза; музыка стихла — движение мягко заканчивается
+      if (!n || held || this.reducedMotion) { if (n && !held) { n.c.rotation = 0; n.c.y = n.by; } else if (n) n.c.rotation = 0; this.dance.delete(id); continue; }
+      d.amp = Math.max(0, Math.min(1, d.amp + (d.on ? dt : -dt) / 240));
+      if (!d.on && d.amp <= 0) { n.c.rotation = 0; n.c.y = n.by; this.dance.delete(id); continue; }
+      // у каждого свой характер: кто-то больше качается, кто-то чаще подпрыгивает — но ритм общий
+      let h = 0; for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) % 997;
+      const sway = 0.045 + (h % 5) * 0.012, hop = 7 + (h % 4) * 3, extraHop = h % 3 === 0;
+      const beat = Math.floor(phase), k = phase - beat, bump = Math.sin(k * Math.PI);
+      let rot = 0, up = 0;
+      if (beat === 0) { rot = -sway * bump; if (extraHop) up = hop * 0.45 * bump; }
+      else if (beat === 1) rot = sway * bump;
+      else if (beat === 2) up = hop * Math.sin(k * Math.PI * 0.5); // подскок
+      else up = hop * (1 - k) * (1 - k); // мягкое приземление
+      n.c.rotation = rot * d.amp;
+      n.c.y = n.by - up * d.amp;
+    }
+  }
+
   // ---------- вещь «оживает» по нажатию ----------
   trick(ref: string, kind: 'bounce' | 'roll' | 'fly' | 'wiggle' | 'spin' | 'squash') {
     const n = this.nodeOf(ref);
@@ -587,12 +630,15 @@ export class Scene {
   private tick(dt: number) {
     const now = performance.now();
     this.night.alpha += (this.nightAlpha - this.night.alpha) * Math.min(1, dt / 180);
+    this.danceTick(dt, now);
     for (let i = this.tweens.length - 1; i >= 0; i--) {
       const t = this.tweens[i];
       t.t += dt;
       const k = Math.min(1, t.t / t.dur);
-      t.step(k);
-      if (k >= 1) { this.tweens.splice(i, 1); t.done?.(); }
+      // вещь могли убрать посреди анимации (подарок открыли, еду съели): такая анимация просто снимается и не останавливает остальные
+      let alive = true;
+      try { t.step(k); } catch { alive = false; }
+      if (k >= 1 || !alive) { const at = this.tweens.indexOf(t); if (at >= 0) this.tweens.splice(at, 1); try { t.done?.(); } catch { /* объект уже удалён */ } }
     }
     for (let i = this.particles.length - 1; i >= 0; i--) {
       const p = this.particles[i];

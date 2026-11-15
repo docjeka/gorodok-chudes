@@ -1,6 +1,6 @@
 // Типы данных мира. Модель — единственный источник правды; сцена строится из неё.
 
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 5;
 export const ROOM_W = 1600;
 export const ROOM_H = 900;
 export const FLOOR_TOP = 600;

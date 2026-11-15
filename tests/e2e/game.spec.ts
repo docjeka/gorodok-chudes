@@ -114,7 +114,7 @@ test('5. подарок открыт и страница сразу переза
   await page.click('.giftcard >> nth=2'); // «Космос»
   await page.waitForTimeout(300);
   expect(await itemCount(page)).toBe(n0 + 6);
-  const box = await find(page, 'giftbox');
+  const box = await page.evaluate(() => (Object.values(window.__game.game.world.items) as any[]).find((i) => i.definitionId === 'giftbox' && i.owner.roomId !== 'toys_workshop').instanceId as string);
   await page.mouse.click(...(await at(page, box, -40)));
   await page.click('.itembar .pill');
   await page.reload(); // сразу, не дожидаясь значка сохранения
@@ -122,7 +122,7 @@ test('5. подарок открыт и страница сразу переза
   const w = await world(page);
   expect(Object.keys(w.items).length).toBe(n0 + 5);
   expect(w.openedGiftIds).toEqual(['space']);
-  expect((Object.values(w.items) as any[]).filter((i) => i.definitionId === 'giftbox')).toHaveLength(0);
+  expect((Object.values(w.items) as any[]).filter((i) => i.definitionId === 'giftbox' && i.owner.roomId !== 'toys_workshop')).toHaveLength(0);
   expect((Object.values(w.items) as any[]).filter((i) => i.definitionId === 'costume_astronaut' && i.owner.kind === 'room')).toHaveLength(1);
 });
 

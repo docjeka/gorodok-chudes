@@ -56,7 +56,7 @@ export class Talk {
       } catch { /* без файла реплика покажется только текстом */ }
     };
     // общий набор и отдельные папки для девочек и мальчиков (если их нет — звучит общий)
-    await Promise.all(LINES.flatMap((l) => [load(l.id, l.id), ...VOICE_SETS.map((g) => load(`${g}/${l.id}`, `${g}/${l.id}`))]));
+    await Promise.all(LINES.filter((l) => !l.text).flatMap((l) => [load(l.id, l.id), ...VOICE_SETS.map((g) => load(`${g}/${l.id}`, `${g}/${l.id}`))]));
   }
 
   private pick(event: LineEvent): Line {

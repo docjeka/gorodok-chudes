@@ -51,7 +51,7 @@ describe('владение предметами', () => {
   it('большая коробка занимает обе руки', () => {
     let w = createWorld();
     w = must(takeGiftSet(w, 'space', 'living', { x: 800, y: 800 }));
-    const box = find(w, 'giftbox');
+    const box = find(w, 'giftbox', (o) => o.roomId !== 'toys_workshop');
     const cup = find(w, 'cup', (o) => o.kind === 'surface');
     w = must(moveItem(w, cup.instanceId, { kind: 'hand', characterId: 'hero_mila', slot: 'left' }));
     expect(moveItem(w, box.instanceId, { kind: 'hand', characterId: 'hero_mila', slot: 'left' }).ok).toBe(false);
@@ -188,7 +188,7 @@ describe('подарки', () => {
   it('открытие атомарно и не даёт дубликатов при повторе', () => {
     let w = createWorld();
     w = must(takeGiftSet(w, 'cozy', 'living', { x: 800, y: 800 }));
-    const box = find(w, 'giftbox').instanceId;
+    const box = find(w, 'giftbox', (o) => o.roomId !== 'toys_workshop').instanceId;
     const n = Object.keys(w.items).length;
     const opened = must(openGift(w, box));
     expect(Object.keys(opened.items).length).toBe(n - 1);
@@ -203,7 +203,7 @@ describe('подарки', () => {
   it('свой подарок: вещи действительно переходят в коробку и возвращаются', () => {
     let w = createWorld();
     w = must(newEmptyGift(w, 'living', { x: 700, y: 800 }, 1, 1, 'Миле'));
-    const box = find(w, 'giftbox').instanceId;
+    const box = find(w, 'giftbox', (o) => o.roomId !== 'toys_workshop').instanceId;
     expect(wrapGift(w, box)).toEqual({ ok: false, reason: 'empty_gift' });
     const ball = find(w, 'ball').instanceId;
     w = must(moveItem(w, ball, { kind: 'item', itemId: box, slot: 0 }));
@@ -265,9 +265,9 @@ describe('сохранения', () => {
     for (const f of Object.values<any>(w.furniture)) { delete f.homeX; delete f.homeY; }
     const r = parseWorld(JSON.stringify(w));
     expect(r.ok).toBe(true);
-    if (r.ok) { expect(r.world.schemaVersion).toBe(4); expect(Object.keys(r.world.pets)).toHaveLength(6); }
+    if (r.ok) { expect(r.world.schemaVersion).toBe(5); expect(Object.keys(r.world.pets)).toHaveLength(6); }
   });
-  it('миграция v2 → v4 добавляет локации города, Парк животных и трёх новых питомцев и ничего не трогает в домиках', () => {
+  it('миграция v2 → v5 добавляет локации города, Парк животных и трёх новых питомцев и ничего не трогает в домиках', () => {
     let w: any = createWorld();
     const cup = find(w, 'cup', (o) => o.kind === 'surface').instanceId;
     w = must(moveItem(w, cup, { kind: 'hand', characterId: 'hero_mila', slot: 'left' }));
@@ -284,8 +284,10 @@ describe('сохранения', () => {
     const r = parseWorld(JSON.stringify(w));
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(r.world.schemaVersion).toBe(4);
+    expect(r.world.schemaVersion).toBe(5);
     expect(validateWorld(r.world)).toEqual([]);
+    expect(r.world.furniture.cl_table.roomId).toBe('club');
+    expect(Object.values(r.world.items).filter((i) => i.definitionId === 'giftbox' && i.owner.kind === 'room' && i.owner.roomId === 'toys_workshop')).toHaveLength(1);
     expect(Object.keys(r.world.pets).sort()).toEqual(['pet_capybara', 'pet_cat', 'pet_dog', 'pet_frenchie', 'pet_rabbit', 'pet_wolf']);
     for (const id of ['pet_cat', 'pet_dog', 'pet_rabbit']) expect(r.world.pets[id]).toEqual(before.pets[id]); // старые звери остались дома
     // повторная загрузка ничего не дублирует
@@ -303,6 +305,22 @@ describe('сохранения', () => {
     expect(r.world.characters).toEqual(before.characters);
     for (const [id, f] of Object.entries<any>(before.furniture)) expect(r.world.furniture[id]).toEqual(f);
     expect(r.world.characters.hero_mila.costume).toBe('fairy');
+  });
+  it('миграция v4 → v5: столик в клубе и одна коробка в мастерской, без дублей при повторной загрузке', () => {
+    const w: any = JSON.parse(JSON.stringify(createWorld()));
+    delete w.furniture.cl_table;
+    for (const [id, it] of Object.entries<any>(w.items)) if ((it.definitionId === 'giftbox' && it.owner.roomId === 'toys_workshop') || (it.definitionId === 'cupcake' && it.owner.furnitureId === 'cb_shelves')) delete w.items[id];
+    w.schemaVersion = 4;
+    const before = JSON.parse(JSON.stringify(w));
+    const r = parseWorld(JSON.stringify(w));
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.world.schemaVersion).toBe(5);
+    expect(validateWorld(r.world)).toEqual([]);
+    expect(Object.keys(r.world.items).length).toBe(Object.keys(before.items).length + 2);
+    for (const [id, it] of Object.entries<any>(before.items)) expect(r.world.items[id]).toEqual(it);
+    const again = parseWorld(JSON.stringify(r.world));
+    expect(again.ok && Object.keys(again.world.items).length).toBe(Object.keys(r.world.items).length);
   });
   it('повреждённый импорт отклоняется с причиной', () => {
     const good = createWorld();

@@ -215,4 +215,6 @@ export const en: Record<Key, string> = {
   'pet.cat': 'Cat',
   'pet.dog': 'Dog',
   'pet.rabbit': 'Rabbit',
+  'idea.party': "Throw a party",
+  'idea.party.t': "Take a treat from the bakery, wrap a toy in the workshop and bring them to the Friends club. Who will be the DJ?",
 };

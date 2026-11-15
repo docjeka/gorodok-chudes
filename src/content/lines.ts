@@ -1,7 +1,8 @@
 // Короткие реплики героев. Текст показывается в пузырьке, звук лежит в public/assets/voice/<id>.mp3.
 // Формулировки без рода: у героев игры пол не задаётся.
-export type LineEvent = 'tap' | 'hello' | 'reply' | 'food' | 'sit' | 'gift';
-export interface Line { id: string; event: LineEvent; ru: string; en: string }
+export type LineEvent = 'tap' | 'hello' | 'reply' | 'food' | 'sit' | 'gift' | 'party';
+/** text: true — готовой озвучки нет, реплика показывается только текстом в пузырьке. */
+export interface Line { id: string; event: LineEvent; ru: string; en: string; text?: boolean }
 
 export const LINES: Line[] = [
   { id: 'tap1', event: 'tap', ru: 'Привет! Поиграем?', en: 'Hi! Shall we play?' },
@@ -16,4 +17,6 @@ export const LINES: Line[] = [
   { id: 'sit1', event: 'sit', ru: 'Ух, как мягко!', en: 'Ooh, so soft!' },
   { id: 'sit2', event: 'sit', ru: 'Посижу немножко.', en: 'I will sit for a bit.' },
   { id: 'gift1', event: 'gift', ru: 'Ого, подарок! Спасибо!', en: 'Wow, a gift! Thank you!' },
+  // подарок вручили в Клубе друзей
+  { id: 'party1', event: 'party', ru: 'Это мне? Спасибо!', en: 'Is this for me? Thank you!', text: true },
 ];

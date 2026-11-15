@@ -119,7 +119,7 @@ const LAYOUT: Record<RoomId, Place[]> = {
   toys_workshop: [['tw_bench', 'loc_bench8', 347, 481], ['tw_cubby', 'loc_cubby3x2', 1292, 522]],
   beach: [['bc_pier', 'loc_pier', 1430, 383], ['bc_umbrella', 'beach_umbrella', 330, 720], ['bc_lounger', 'beach_lounger', 540, 760]],
   beach_boats: [['bb_rack', 'loc_rack3x3', 271, 574], ['bb_bench', 'loc_bench4', 1335, 497], ['bb_boat', 'beach_rowboat', 820, 820]],
-  club: [['cl_dj', 'djconsole', 800, 700], ['cl_speaker', 'club_speaker', 520, 690], ['cl_light', 'club_light', 1090, 690], ['cl_stool', 'club_stool', 300, 820]],
+  club: [['cl_dj', 'djconsole', 800, 700], ['cl_speaker', 'club_speaker', 520, 690], ['cl_light', 'club_light', 1090, 690], ['cl_stool', 'club_stool', 300, 820], ['cl_table', 'coffeetable', 1330, 840]],
   animals: [['an_pond', 'loc_pond', 364, 450], ['an_tunnel', 'pet_tunnel', 1000, 760], ['an_cushion', 'pet_cushion', 1330, 820]],
 };
 
