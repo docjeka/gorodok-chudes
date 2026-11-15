@@ -195,6 +195,7 @@ function checkShape(w: any): string | null {
   if (!Array.isArray(w.savedOutfits) || w.savedOutfits.length > 40) return 'bad_outfits';
   for (const it of Object.values<any>(w.items)) {
     if (!isObj(it) || typeof it.instanceId !== 'string' || typeof it.definitionId !== 'string' || !isObj(it.owner) || !isObj(it.state)) return 'bad_item';
+    if (it.state.contents !== undefined && !['water', 'milk', 'tea'].includes(it.state.contents)) return 'bad_item';
     if (it.state.card !== undefined && (typeof it.state.card !== 'string' || it.state.card.length > 60)) return 'bad_item';
     if (it.state.mix !== undefined && !(Array.isArray(it.state.mix) && it.state.mix.length <= 4 && it.state.mix.every((m: unknown) => typeof m === 'string' && !!ITEMS[m as string]))) return 'bad_item';
   }

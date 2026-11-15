@@ -5,7 +5,7 @@ import { GIFTS, ITEMS, RECIPES } from '../content/items';
 import { GARMENTS, OUTFITS, presetCharacter } from '../content/wardrobe';
 import { charPos, clampFloor, itemPlace, petPos } from './geometry';
 import type {
-  Character, HandSlot, ItemInst, Look, Outfit, Owner, Pt, Recipe, Result, RoomId, World, GarmentSlot, Emotion,
+  Character, HandSlot, ItemInst, Liquid, Look, Outfit, Owner, Pt, Recipe, Result, RoomId, World, GarmentSlot, Emotion,
 } from './types';
 import { BAG_CAPACITY, GIFT_CAPACITY, MAX_CUSTOM_HEROES, MAX_ITEMS } from './types';
 
@@ -112,6 +112,7 @@ export function moveItem(world: World, itemId: string, target: Owner): Result {
       if (slot === null) return fail('surface_full');
       it.owner = { kind: 'surface', furnitureId: f.id, slot };
       if (fd.tap === 'water' && it.state.dirty) it.state.dirty = false;
+      if (fd.tap === 'water' && FILLABLE.has(it.definitionId) && !it.state.contents) it.state.contents = 'water'; // под краном чашка наполняется
       return ok(w);
     }
     case 'furniture': {
@@ -343,6 +344,32 @@ export function wearSet(world: World, id: string, setId: string): Result {
   const r = setOutfit(world, id, s.outfit);
   if (r.ok) r.world.characters[id].costume = setId;
   return r;
+}
+
+// ---------- Напитки ----------
+
+/** Во что можно налить. */
+export const FILLABLE = new Set(['cup', 'glass']);
+/** Из чего можно налить и что получится. Сам источник не расходуется. */
+export const POURS: Record<string, Liquid> = { milk: 'milk', teapot: 'tea' };
+
+export function fill(world: World, itemId: string, liquid: Liquid): Result {
+  const w = clone(world);
+  const it = w.items[itemId];
+  if (!it || !FILLABLE.has(it.definitionId)) return fail('not_fillable');
+  it.state.contents = liquid;
+  delete it.state.dirty;
+  return ok(w);
+}
+
+/** Выпить налитое: чашка остаётся, но пустая. */
+export function drink(world: World, itemId: string): Result {
+  const w = clone(world);
+  const it = w.items[itemId];
+  if (!it?.state.contents) return fail('empty');
+  const liquid = it.state.contents;
+  delete it.state.contents;
+  return ok(w, { liquid });
 }
 
 // ---------- Еда и рецепты ----------

@@ -125,3 +125,66 @@ test('волшебная ночь: в темноте окно ночное, сп
   expect(info.window).toBe('F:window_night');
   expect(info.glow).toBeGreaterThanOrEqual(4); // свечение ночника и облачко сна с картинкой
 });
+
+test('чашку можно наполнить и выпить: герой пьёт, чашка остаётся в руке пустой; яблоко съедается у рта', async ({ page }) => {
+  await start(page);
+  await page.evaluate(() => window.__game.game.update((w: any) => { Object.assign(w.characters.hero_mila, { roomId: 'kitchen', x: 700, y: 840 }); }));
+  await go(page, 'kitchen');
+  const cup = await page.evaluate(() => { const g = window.__game; const r = g.rules.spawnItem(g.game.world, 'cup', { kind: 'room', roomId: 'kitchen', x: 900, y: 850 }); g.game.commit(r); return r.info.instanceId as string; });
+  await page.waitForTimeout(300);
+  // под кран
+  await drag(page, await at(page, cup, -15), await roomPt(page, 1010, 440));
+  let w = await world(page);
+  expect(w.items[cup].owner).toMatchObject({ kind: 'surface', furnitureId: 'kt_sink' });
+  expect(w.items[cup].state.contents).toBe('water');
+  expect(await page.evaluate((id) => !![...window.__game.scene.nodes.values()].find((n: any) => n.ref === id).liquid, cup)).toBe(true); // вода видна в чашке
+  // ко рту
+  await drag(page, await at(page, cup, -15), await at(page, 'hero_mila', -200));
+  expect(await page.evaluate(() => window.__game.scene.busy)).toBe(true); // идёт анимация питья, чашка не исчезла
+  expect((await world(page)).items[cup].state.contents).toBe('water');
+  await page.waitForFunction(() => !window.__game.scene.busy);
+  w = await world(page);
+  expect(w.items[cup].state.contents).toBeUndefined();
+  expect(w.items[cup].owner).toMatchObject({ kind: 'hand', characterId: 'hero_mila' });
+  // молоко из пакета в ту же чашку
+  await page.mouse.click(...(await roomPt(page, 235, 420))); // холодильник
+  const milk = await page.evaluate(() => (Object.values(window.__game.game.world.items) as any[]).find((i) => i.definitionId === 'milk').instanceId as string);
+  await drag(page, await at(page, milk, -25), await at(page, cup, -20));
+  w = await world(page);
+  expect(w.items[cup].state.contents).toBe('milk');
+  expect(w.items[milk].owner.kind).toBe('furniture'); // пакет вернулся на место и не израсходован
+  // яблоко: съедается у рта, а не пропадает сразу
+  const apple = await page.evaluate(() => (Object.values(window.__game.game.world.items) as any[]).find((i) => i.definitionId === 'apple').instanceId as string);
+  await drag(page, await at(page, apple, -18), await at(page, 'hero_mila', -200));
+  expect((await world(page)).items[apple]).toBeDefined();
+  await page.waitForFunction(() => !window.__game.scene.busy);
+  expect((await world(page)).items[apple]).toBeUndefined();
+  expect((await world(page)).characters.hero_mila.emotion).toBe('delight');
+});
+
+test('зубная щётка чистит зубы у рта и остаётся в руке; мебель двигается долгим нажатием', async ({ page }) => {
+  await start(page);
+  const brush = await page.evaluate(() => { const g = window.__game; const r = g.rules.spawnItem(g.game.world, 'toothbrush', { kind: 'room', roomId: 'living', x: 900, y: 850 }); g.game.commit(r); return r.info.instanceId as string; });
+  await page.waitForTimeout(300);
+  await drag(page, await at(page, brush, -20), await at(page, 'hero_mila', -200));
+  expect(await page.evaluate(() => window.__game.scene.busy)).toBe(true);
+  const rot = await page.evaluate(async (id) => { await new Promise((r) => setTimeout(r, 500)); return [...window.__game.scene.nodes.values()].find((n: any) => n.ref === id).c.rotation as number; }, brush);
+  expect(Math.abs(rot)).toBeGreaterThan(1); // щётка повернулась боком ко рту
+  await page.waitForFunction(() => !window.__game.scene.busy);
+  const w = await world(page);
+  expect(w.items[brush].owner).toMatchObject({ kind: 'hand', characterId: 'hero_mila' });
+  expect(w.characters.hero_mila.emotion).toBe('delight');
+
+  // короткий перенос мебель не двигает, долгое нажатие — поднимает
+  const f0 = w.furniture.lv_armchair;
+  const from = await at(page, 'lv_armchair', -90);
+  await drag(page, from, [from[0] - 150, from[1]]);
+  expect((await world(page)).furniture.lv_armchair.x).toBe(f0.x);
+  await page.evaluate(() => window.__game.scene.setZoom(window.__game.scene.zoom)); // камера могла сдвинуться
+  const a = await at(page, 'lv_armchair', -90);
+  await page.mouse.move(a[0], a[1]); await page.mouse.down(); await page.waitForTimeout(650);
+  for (let i = 1; i <= 8; i++) await page.mouse.move(a[0] - (120 * i) / 8, a[1]);
+  await page.mouse.up(); await page.waitForTimeout(400);
+  const f1 = (await world(page)).furniture.lv_armchair;
+  expect(Math.abs(f1.x - f0.x)).toBeGreaterThan(40);
+});

@@ -26,6 +26,8 @@ const ICON = {
   bathroom: '<path d="M5 20h30v3a8 8 0 0 1-8 8H13a8 8 0 0 1-8-8zM10 20V9a3 3 0 0 1 6 0M12 31l-2 4M28 31l2 4"/>',
   sound: '<path d="M6 16v8h6l8 7V9l-8 7zM26 14a8 8 0 0 1 0 12M30 10a14 14 0 0 1 0 20"/>',
   mute: '<path d="M6 16v8h6l8 7V9l-8 7zM26 15l8 10M34 15l-8 10"/>',
+  zoomOut: '<circle cx="17" cy="17" r="10"/><path d="M25 25l9 9M12 17h10"/>',
+  zoomIn: '<circle cx="17" cy="17" r="10"/><path d="M25 25l9 9M12 17h10M17 12v10"/>',
   prev: '<path d="M24 8L12 20l12 12"/>',
   next: '<path d="M16 8l12 12-12 12"/>',
   flip: '<path d="M20 6v28M14 12L5 20l9 8zM26 12l9 8-9 8z"/>',
@@ -52,6 +54,7 @@ export class Hud {
   private saveEl = h('div', 'save');
   private soundBtn = h('button', 'round');
   private undoBtn = h('button', 'round');
+  private zoomBtn = h('button', 'round');
   private title = h('div', 'title');
   private travelEl = h('div', 'modal hidden');
   private bubble = h('div', 'bubble hidden');
@@ -67,7 +70,15 @@ export class Hud {
     this.root = host;
     const top = h('div', 'topbar');
     const right = h('div', 'topright');
-    right.append(this.saveEl, this.undoBtn, this.soundBtn);
+    right.append(this.saveEl, this.zoomBtn, this.undoBtn, this.soundBtn);
+    this.zoomBtn.onclick = () => {
+      // кнопка переключает «вся комната целиком» и «крупно»; точнее — двумя пальцами
+      const min = this.scene.minZoom;
+      const far = this.scene.zoom <= min + 0.02;
+      this.scene.setZoom(far ? (min < 0.98 ? 1 : 1.4) : min);
+      this.audio.play('click');
+      this.saveZoom();
+    };
     top.append(this.rooms, right);
     host.append(this.tutEl, this.bookEl, top, this.cookLayer, this.bubble, this.charBar, this.itemBar, this.toastEl, this.travelEl, this.title);
     this.toastEl.setAttribute('role', 'status');
@@ -94,6 +105,12 @@ export class Hud {
       if (!this.game.world.settings.tutorialDone) this.startTutorial();
     };
   }
+  saveZoom() {
+    const z = Math.round(this.scene.zoom * 100) / 100;
+    if (this.game.world.settings.zoom !== z) this.game.update((w) => { w.settings.zoom = z; });
+    else this.refresh();
+  }
+
   showTitle(show: boolean) { this.title.classList.toggle('hidden', !show); }
 
   toast(key: string) {
@@ -246,6 +263,9 @@ export class Hud {
     this.soundBtn.innerHTML = icon(w.settings.mute ? 'mute' : 'sound');
     this.soundBtn.setAttribute('aria-label', t('hud.sound'));
     this.soundBtn.setAttribute('aria-pressed', String(!w.settings.mute));
+    const far = this.scene.zoom <= this.scene.minZoom + 0.02;
+    this.zoomBtn.innerHTML = icon(far ? 'zoomIn' : 'zoomOut');
+    this.zoomBtn.setAttribute('aria-label', t(far ? 'hud.zoomIn' : 'hud.zoomOut'));
     this.undoBtn.disabled = !this.game.canUndo();
     this.undoBtn.setAttribute('aria-label', t('hud.undo'));
     const playBtn = this.title.querySelector('#play'); if (playBtn) playBtn.textContent = t('title.play');

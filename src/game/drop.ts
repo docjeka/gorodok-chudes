@@ -3,7 +3,7 @@
 import { FURNITURE } from '../content/furniture';
 import { ITEMS } from '../content/items';
 import { charBox, charPos, clampFloor, dist, itemPlace, petPos, slotPos } from './geometry';
-import { handItems, isInside, seatTaken } from './rules';
+import { FILLABLE, POURS, handItems, isInside, seatTaken } from './rules';
 import type { HandSlot, Pt, RoomId, World } from './types';
 
 export type ItemDrop =
@@ -13,6 +13,8 @@ export type ItemDrop =
   | { type: 'hand'; characterId: string; slot: HandSlot }
   | { type: 'pet'; petId: string; action: 'feed' | 'play' | 'brush' }
   | { type: 'into'; itemId: string }
+  | { type: 'pour'; itemId: string }
+  | { type: 'water'; itemId: string }
   | { type: 'surface'; furnitureId: string; slot: number }
   | { type: 'furniture'; furnitureId: string; slot: number }
   | { type: 'floor'; x: number; y: number }
@@ -26,15 +28,34 @@ export function resolveItemDrop(w: World, itemId: string, pt: Pt, roomId: RoomId
   if (!it || !def) return { type: 'reject' };
   const has = (t: string) => def.tags.includes(t as never);
 
+  // 0. налить: пакет молока или чайник над чашкой или стаканом (даже если чашку держит герой)
+  if (POURS[it.definitionId]) {
+    for (const cup of Object.values(w.items)) {
+      if (!FILLABLE.has(cup.definitionId) || cup.instanceId === itemId) continue;
+      const pl = itemPlace(w, cup);
+      if (pl.roomId === roomId && pl.visible && dist(pt, { x: pl.x, y: pl.y - 20 }) < 58) return { type: 'pour', itemId: cup.instanceId };
+    }
+  }
+
+  // 0б. полить: лейка над цветочным горшком
+  if (it.definitionId === 'wateringcan') {
+    for (const pot of Object.values(w.items)) {
+      if (pot.definitionId !== 'flowerpot') continue;
+      const pl = itemPlace(w, pot);
+      if (pl.roomId === roomId && pl.visible && dist(pt, { x: pl.x, y: pl.y - 30 }) < 62) return { type: 'water', itemId: pot.instanceId };
+    }
+  }
+
   // 1. герои: сверху вниз по глубине (ближний к зрителю — первым)
   const chars = Object.values(w.characters).filter((c) => c.roomId === roomId).sort((a, b) => charPos(w, b).y - charPos(w, a).y);
   for (const c of chars) {
     const b = charBox(w, c);
     if (pt.x < b.x0 || pt.x > b.x1 || pt.y < b.y0 || pt.y > b.y1) continue;
-    if (it.owner.kind === 'hand' && it.owner.characterId === c.id && !(has('food') && isHead(b, pt))) continue; // уронили на самого себя — ищем дальше
+    const edible = has('food') || !!it.state.contents; // еда или чашка, в которую что-то налито
+    if (it.owner.kind === 'hand' && it.owner.characterId === c.id && !(edible && isHead(b, pt))) continue; // уронили на самого себя — ищем дальше
     if (def.wearSet) return { type: 'wear', characterId: c.id, setId: def.wearSet };
     const head = isHead(b, pt);
-    if (head && has('food') && c.pose !== 'sleeping') return { type: 'feed', characterId: c.id };
+    if (head && edible && c.pose !== 'sleeping') return { type: 'feed', characterId: c.id };
     if (head && has('care') && it.definitionId !== 'petbrush' && c.pose !== 'sleeping') return { type: 'care', characterId: c.id };
     if (c.pose === 'sleeping' || c.pose === 'bathing') continue;
     const p = charPos(w, c);

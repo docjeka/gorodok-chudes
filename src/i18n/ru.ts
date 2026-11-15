@@ -147,5 +147,7 @@ export const ru = {
   'idea.winter.t': "Надень шапки и свари какао.",
   'idea.show': "Спектакль",
   'idea.show.t': "Костюмы, корона и волшебная палочка — начинаем!",
+  'hud.zoomOut': 'Отдалить: показать всю комнату',
+  'hud.zoomIn': 'Приблизить',
 } as const;
 export type Key = keyof typeof ru;

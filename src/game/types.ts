@@ -23,6 +23,8 @@ export type Owner =
   | { kind: 'bag'; slot: number } // сумка, путешествует с игроком
   | { kind: 'lost' }; // корзина найденных вещей
 
+export type Liquid = 'water' | 'milk' | 'tea';
+
 export interface ItemInst {
   instanceId: string;
   definitionId: string;
@@ -32,6 +34,8 @@ export interface ItemInst {
   state: {
     servings?: number;
     dirty?: boolean;
+    /** что налито в чашку или стакан */
+    contents?: Liquid;
     /** для подарочной коробки */
     packed?: boolean;
     giftSetId?: string;
@@ -125,6 +129,8 @@ export interface Settings {
   tutorialDone: boolean;
   /** голоса героев; в старых сохранениях поля нет — считается включённым */
   voices?: boolean;
+  /** масштаб комнаты: 1 — по высоте экрана, меньше — отдалить, больше — приблизить */
+  zoom?: number;
 }
 
 export interface World {

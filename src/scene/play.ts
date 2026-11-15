@@ -6,7 +6,7 @@ import { resolveCharDrop, resolveItemDrop, resolvePetDrop, freeFloorSpot, type I
 import type { Game } from '../game/game';
 import { charBox, charPos, clampFloor, dist, itemPlace, petPos, slotPos } from '../game/geometry';
 import {
-  clone, cook, cookables, feed, moveItem, openGift, patchPet, placeCharacter, placePet, recipeAt, seatTaken, setFurnitureOn,
+  POURS, clone, cook, cookables, drink, feed, fill, moveItem, openGift, patchPet, placeCharacter, placePet, recipeAt, seatTaken, setFurnitureOn,
   setRoomStyle, toggleOpen, travel, wake, wearSet, moveFurniture,
 } from '../game/rules';
 import type { Pt, RoomId, World } from '../game/types';
@@ -44,7 +44,11 @@ export class Play {
   /** Можно ли тащить объект в текущем режиме. */
   canDrag(t: Target): boolean {
     if (this.decorate) return t.kind === 'furn' && FURNITURE[this.w.furniture[t.ref]?.definitionId]?.layer !== undefined;
-    return t.kind !== 'furn'; // в обычном режиме мебель защищена от случайного движения
+    return t.kind !== 'furn'; // в обычном режиме мебель защищена от случайного движения: её поднимают долгим нажатием
+  }
+  /** Долгое нажатие на мебель поднимает её и в обычной игре. */
+  canLift(t: Target): boolean { return t.kind === 'furn' && !!this.w.furniture[t.ref]?.roomId; }
+  lifted(t: Target) { this.select(null); this.scene.pop(t.ref, 0.06); this.audio.play('pop'); try { navigator.vibrate?.(15); } catch { /* нет вибрации */ }
   }
 
   // ---------- подсветка цели во время переноса ----------
@@ -65,7 +69,7 @@ export class Play {
       case 'feed': case 'care': { const b = charBox(w, w.characters[d.characterId]); return { x: b.headX, y: b.headLine === null ? b.y0 + 60 : b.headLine - 50, r: 62 }; }
       case 'hand': case 'wear': { const p = charPos(w, w.characters[d.characterId]); const sit = w.characters[d.characterId].pose === 'sitting'; return { x: p.x, y: p.y - (sit ? 40 : 90), r: 58 }; }
       case 'pet': { const p = petPos(w, w.pets[d.petId]); return { x: p.x, y: p.y - 50, r: 60 }; }
-      case 'into': { const pl = itemPlace(w, w.items[d.itemId]); return { x: pl.x, y: pl.y - 30, r: 52 }; }
+      case 'into': case 'pour': case 'water': { const pl = itemPlace(w, w.items[d.itemId]); return { x: pl.x, y: pl.y - 30, r: 52 }; }
       case 'surface': { const f = w.furniture[d.furnitureId]; const s = slotPos(f, FURNITURE[f.definitionId].surfaces![d.slot]); return { x: s.x, y: s.y - 22, r: 36 }; }
       case 'furniture': { const f = w.furniture[d.furnitureId]; const fd = FURNITURE[f.definitionId]; return { x: f.x, y: f.y - fd.h / 2, r: Math.min(fd.w, fd.h) * 0.42 }; }
       default: return null;
@@ -88,27 +92,77 @@ export class Play {
     const fail = (key: string) => { this.ui.toast(key); this.audio.play('nope'); };
     switch (d.type) {
       case 'feed': {
-        const r = feed(w, itemId);
-        if (!r.ok) return fail('toast.notFood');
-        const silly = it.definitionId === 'wonderdish';
-        r.world.characters[d.characterId].emotion = silly ? 'silly' : 'delight';
-        r.world.characters[d.characterId].dream = it.definitionId;
-        this.game.commit(r);
-        const b = charBox(this.w, this.w.characters[d.characterId]);
-        this.scene.burst('crumb', { x: b.headX, y: (b.headLine ?? b.y0 + 80) - 20 }, 6);
-        this.scene.pop(d.characterId, 0.08);
-        this.audio.play('munch');
-        this.talk?.say(d.characterId, 'food', 550);
+        // сначала проверяем, что это можно съесть или выпить; сам мир меняется после анимации
+        const drinking = !!it.state.contents;
+        const asDrink = drinking || def.tags.includes('drink');
+        if (!(drinking ? drink(w, itemId) : feed(w, itemId)).ok) return fail('toast.notFood');
+        const heroId = d.characterId;
+        const b0 = charBox(w, w.characters[heroId]);
+        const mouth = this.scene.mouthPos(heroId) ?? { x: b0.headX, y: (b0.headLine ?? b0.y0 + 80) - 30 };
+        this.audio.play('pop');
+        setTimeout(() => this.audio.play(asDrink ? 'gulp' : 'munch'), 260);
+        this.scene.consume(itemId, mouth, asDrink ? 'drink' : 'eat', () => {
+          const cur = this.w;
+          const r = drinking ? drink(cur, itemId) : feed(cur, itemId);
+          if (!r.ok || !r.world.characters[heroId]) return;
+          let next = r.world;
+          // что осталось (чашка, тарелка, недоеденное) — герой держит в руке, если она свободна
+          if (next.items[itemId]) { const held = moveItem(next, itemId, { kind: 'hand', characterId: heroId, slot: 'right' }); if (held.ok) next = held.world; }
+          next.characters[heroId].emotion = it.definitionId === 'wonderdish' ? 'silly' : 'delight';
+          next.characters[heroId].dream = it.definitionId;
+          this.game.commit({ ok: true, world: next });
+          this.scene.burst(asDrink ? 'bubble' : 'crumb', { x: mouth.x, y: mouth.y + 6 }, asDrink ? 4 : 6);
+          this.scene.pop(heroId, 0.08);
+          this.talk?.say(heroId, 'food', 350);
+        });
+        return;
+      }
+      case 'pour': {
+        const liquid = POURS[it.definitionId];
+        if (!liquid || !this.game.commit(fill(w, d.itemId, liquid))) return fail('toast.cant');
+        const pl = itemPlace(this.w, this.w.items[d.itemId]);
+        this.scene.pop(d.itemId, 0.18);
+        this.scene.burst('bubble', { x: pl.x, y: pl.y - 44 }, 5);
+        this.audio.play('pour');
         return;
       }
       case 'care': {
-        const cur = clone(w);
-        cur.characters[d.characterId].emotion = 'joy';
-        const held = moveItem(cur, itemId, { kind: 'hand', characterId: d.characterId, slot: 'right' });
-        this.game.commit(held.ok ? held : { ok: true, world: cur });
-        const b = charBox(this.w, this.w.characters[d.characterId]);
-        this.scene.burst(it.definitionId === 'soap' ? 'bubble' : 'star', { x: b.headX, y: (b.headLine ?? b.y0 + 80) - 60 }, 7);
-        this.audio.play('sparkle');
+        // щётка чистит зубы у рта, расчёска причёсывает, полотенце вытирает, мыло пенится
+        const heroId = d.characterId, id = it.definitionId;
+        const b0 = charBox(w, w.characters[heroId]);
+        const mouth = this.scene.mouthPos(heroId) ?? { x: b0.headX, y: (b0.headLine ?? b0.y0 + 80) - 30 };
+        const top = this.scene.headTop(heroId) ?? { x: mouth.x, y: mouth.y - 70 };
+        const at = id === 'toothbrush' ? mouth : id === 'comb' ? { x: top.x, y: top.y + 18 } : { x: mouth.x, y: mouth.y - 24 };
+        const motion = id === 'toothbrush' ? 'scrub' : id === 'comb' ? 'stroke' : 'rub';
+        const fx = id === 'toothbrush' || id === 'soap' ? 'bubble' : 'star';
+        this.audio.play('pop');
+        setTimeout(() => this.audio.play(id === 'comb' ? 'sparkle' : 'scrub'), 240);
+        const foam = id === 'comb' ? 0 : window.setInterval(() => this.scene.burst(fx, { x: at.x, y: at.y }, 2), 260);
+        this.scene.consume(itemId, at, motion, () => {
+          window.clearInterval(foam);
+          const cur = clone(this.w);
+          if (!cur.characters[heroId] || !cur.items[itemId]) return;
+          cur.characters[heroId].emotion = id === 'toothbrush' ? 'delight' : 'joy';
+          const held = moveItem(cur, itemId, { kind: 'hand', characterId: heroId, slot: 'right' });
+          this.game.commit(held.ok ? held : { ok: true, world: cur });
+          this.scene.burst('star', { x: at.x, y: at.y - 20 }, 8);
+          this.scene.pop(heroId, 0.08);
+          this.audio.play('sparkle');
+        });
+        return;
+      }
+      case 'water': {
+        const pl = itemPlace(w, w.items[d.itemId]);
+        const potId = d.itemId;
+        this.audio.play('pour');
+        const rain = window.setInterval(() => this.scene.burst('bubble', { x: pl.x, y: pl.y - 70 }, 2), 220);
+        this.scene.consume(itemId, { x: pl.x + 70, y: pl.y - 120 }, 'tilt', () => {
+          window.clearInterval(rain);
+          this.scene.sync(this.w); // лейка возвращается туда, где была
+          this.scene.pop(potId, 0.25);
+          this.scene.burst('heart', { x: pl.x, y: pl.y - 70 }, 5);
+          this.audio.play('sparkle');
+        });
         return;
       }
       case 'wear': {
@@ -139,10 +193,11 @@ export class Play {
         return;
       }
       case 'surface': {
-        const wasDirty = it.state.dirty;
+        const wasDirty = it.state.dirty, wasEmpty = !it.state.contents;
         const r = moveItem(w, itemId, { kind: 'surface', furnitureId: d.furnitureId, slot: d.slot });
         if (!this.game.commit(r)) return fail('toast.full');
         this.audio.play('put');
+        if (wasEmpty && this.w.items[itemId]?.state.contents) { const pl = itemPlace(this.w, this.w.items[itemId]); this.scene.burst('bubble', { x: pl.x, y: pl.y - 44 }, 6); this.scene.pop(itemId, 0.15); this.audio.play('pour'); }
         if (wasDirty && !this.w.items[itemId]?.state.dirty) { const pl = itemPlace(this.w, this.w.items[itemId]); this.scene.burst('bubble', { x: pl.x, y: pl.y - 20 }, 8); this.audio.play('water'); }
         return;
       }
@@ -273,7 +328,7 @@ export class Play {
       if (sel?.kind === 'item') {
         const b = charBox(w, c);
         const def = ITEMS[w.items[sel.ref]?.definitionId];
-        const head = def && (def.tags.includes('food') || def.tags.includes('care'));
+        const head = def && (def.tags.includes('food') || def.tags.includes('care') || !!w.items[sel.ref]?.state.contents);
         const at = { x: b.headX, y: head && b.headLine !== null ? b.headLine - 30 : (b.y0 + b.y1) / 2 + 30 };
         this.dropItem(sel.ref, at);
         this.select(null);

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createWorld, parseWorld, repairWorld, validateWorld } from '../../src/game/world';
 import {
-  applyGarment, cook, deleteCharacter, feed, handItems, isValidOutfit, moveItem, openGift, addCustomCharacter,
+  applyGarment, cook, drink, fill, deleteCharacter, feed, handItems, isValidOutfit, moveItem, openGift, addCustomCharacter,
   placeCharacter, removeGarment, spawnItem, takeGiftSet, tidyRoom, travel, wrapGift, newEmptyGift, storeFurniture, moveFurniture,
 } from '../../src/game/rules';
 import { itemPlace } from '../../src/game/geometry';
@@ -134,6 +134,33 @@ describe('еда', () => {
     w = must(cook(w, 'kt_stove'));
     expect(find(w, 'wonderdish').state.mix).toEqual(['banana', 'cheese']);
     expect(cook(w, 'kt_stove').ok).toBe(false);
+  });
+});
+
+describe('напитки', () => {
+  it('чашка наполняется под краном и из пакета молока; выпитое исчезает, чашка остаётся', () => {
+    let w = createWorld();
+    const cup = find(w, 'cup', (o) => o.kind === 'surface').instanceId;
+    expect(drink(w, cup)).toEqual({ ok: false, reason: 'empty' });
+    w = must(moveItem(w, cup, { kind: 'surface', furnitureId: 'kt_sink', slot: 0 }));
+    expect(w.items[cup].state.contents).toBe('water');
+    // полная чашка над головой героя — «выпить», пустая — просто в руку
+    w = must(moveItem(w, cup, { kind: 'room', roomId: 'living', x: 500, y: 800 }));
+    const head = { x: w.characters.hero_mila.x, y: w.characters.hero_mila.y - 190 };
+    expect(resolveItemDrop(w, cup, head, 'living').type).toBe('feed');
+    const r = drink(w, cup); w = must(r);
+    expect(r.ok && r.info!.liquid).toBe('water');
+    expect(w.items[cup].state.contents).toBeUndefined();
+    expect(w.items[cup].definitionId).toBe('cup');
+    expect(resolveItemDrop(w, cup, head, 'living').type).toBe('hand');
+    w = must(fill(w, cup, 'milk'));
+    expect(w.items[cup].state.contents).toBe('milk');
+    expect(fill(w, find(w, 'ball').instanceId, 'milk')).toEqual({ ok: false, reason: 'not_fillable' });
+    // молоко над чашкой — «налить»
+    w = must(spawnItem(w, 'milk', { kind: 'room', roomId: 'living', x: 900, y: 800 }));
+    const milk = find(w, 'milk', (o) => o.kind === 'room').instanceId;
+    expect(resolveItemDrop(w, milk, { x: 500, y: 780 }, 'living')).toEqual({ type: 'pour', itemId: cup });
+    expect(parseWorld(JSON.stringify(w)).ok).toBe(true);
   });
 });
 

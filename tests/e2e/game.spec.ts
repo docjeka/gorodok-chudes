@@ -99,7 +99,8 @@ test('4. бутерброд: ингредиенты расходуются, по
   expect(sandwich.state.servings).toBe(2);
   expect(Object.keys(w.items).length).toBe(n0 - 2);
   expect((Object.values(w.items) as any[]).some((i) => i.definitionId === 'bread')).toBe(false);
-  for (let i = 0; i < 2; i++) await drag(page, await at(page, sandwich.instanceId, -15), await at(page, 'hero_mila', -200));
+  for (let i = 0; i < 2; i++) { await drag(page, await at(page, sandwich.instanceId, -15), await at(page, 'hero_mila', -200)); await page.waitForFunction(() => !window.__game.scene.busy); await page.waitForTimeout(150); }
+  expect((await world(page)).items[sandwich.instanceId].owner).toMatchObject({ kind: 'hand', characterId: 'hero_mila' }); // тарелка осталась в руке
   w = await world(page);
   expect(w.items[sandwich.instanceId].definitionId).toBe('plate');
   expect(w.characters.hero_mila.emotion).toBe('delight');

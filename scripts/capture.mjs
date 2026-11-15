@@ -128,6 +128,41 @@ try {
     await page.click('[data-panel="gifts"]'); await wait(400);
     await shot(page, 'panel-gifts');
   }
+  if (scenario === 'panels') {
+    for (const [wd, ht] of [[1024, 768], [768, 1024], [1180, 820], [800, 1280], [1280, 800], [960, 600]]) {
+      const page = await open('', { width: wd, height: ht });
+      for (const id of ['heroes', 'things']) {
+        await page.click(`[data-panel="${id}"]`);
+        if (id === 'things') await page.click('.tab:nth-child(2)');
+        await shot(page, `panel-${id}-${wd}x${ht}`);
+        const r = await page.evaluate(() => { const d = document.querySelector('.drawer').getBoundingClientRect(); const b = document.querySelector('.drawer-body'); const cards = [...b.querySelectorAll('.card,.slot,.pill,.tab')].filter((e) => { const q = e.getBoundingClientRect(); return q.right > d.right - 4 || q.left < d.left; }).length; return { d: [d.left, d.top, d.right, d.bottom].map(Math.round), vw: innerWidth, vh: innerHeight, sw: b.scrollWidth, cw: b.clientWidth, sh: b.scrollHeight, ch: b.clientHeight, out: cards }; });
+        console.log(wd, ht, id, JSON.stringify(r));
+        await page.click(`[data-panel="${id}"]`);
+      }
+      await page.context().close();
+    }
+  }
+  if (scenario === 'use') {
+    const page = await open('', { width: 1024, height: 768 });
+    const spawn = (def, x) => page.evaluate(([d, px]) => { const g = window.__game; const r = g.rules.spawnItem(g.game.world, d, { kind: 'room', roomId: 'living', x: px, y: 850 }); g.game.commit(r); return r.info.instanceId; }, [def, x]);
+    const cup = await spawn('cup', 700);
+    await page.evaluate((id) => window.__game.game.commit(window.__game.rules.fill(window.__game.game.world, id, 'milk')), cup);
+    await shot(page, 'use-01-cup-full');
+    const go = async (id, name, delay) => {
+      const from = await at(page, id, -8), to = await at(page, 'hero_mila', -200);
+      await page.mouse.move(from[0], from[1]); await page.mouse.down();
+      for (let i = 1; i <= 8; i++) await page.mouse.move(from[0] + ((to[0] - from[0]) * i) / 8, from[1] + ((to[1] - from[1]) * i) / 8);
+      await page.mouse.up(); await wait(delay);
+      const h = await at(page, 'hero_mila', -120);
+      await page.screenshot({ path: `${OUT}/${name}.png`, clip: { x: h[0] - 150, y: h[1] - 170, width: 300, height: 300 } }); console.log('shot', name);
+      await page.waitForFunction(() => !window.__game.scene.busy); await wait(300);
+    };
+    await go(cup, 'use-02-drinking', 200);
+    await shot(page, 'use-03-cup-in-hand');
+    await go(await spawn('toothbrush', 760), 'use-04-brushing', 350);
+    await go(await spawn('comb', 820), 'use-05-combing', 350);
+    await go(await spawn('apple', 880), 'use-06-eating', 200);
+  }
   if (scenario === 'six' || scenario === 'all') {
     const page = await open('', { width: 1600, height: 900 });
     await page.evaluate(() => { const g = window.__game; const R = g.rules; const put = [['hero_mila', 330, 860, 'fairy', 'delight'], ['hero_timur', 560, 850, 'pirate', 'silly'], ['hero_yuki', 800, 860, 'casual', 'joy'], ['hero_asya', 1040, 850, 'cat', 'surprise'], ['hero_lev', 1270, 860, 'astronaut', 'calm'], ['hero_nora', 1480, 850, 'princess', 'thinking']];

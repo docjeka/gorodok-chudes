@@ -5,7 +5,7 @@
   color: var(--ink);
 }
 * { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; background: #f3e6d3; overflow: hidden; overscroll-behavior: none; }
+html, body { margin: 0; height: 100%; width: 100%; position: fixed; inset: 0; background: #f3e6d3; overflow: hidden; overscroll-behavior: none; touch-action: pan-x pan-y; }
 #stage { position: fixed; inset: 0; }
 /* внутри игрового полотна нет выделения, прокрутки и перетаскивания картинок браузером */
 #stage canvas { display: block; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-user-drag: none; }
@@ -62,7 +62,7 @@ button:disabled { opacity: 0.4; cursor: default; }
 .drawer { position: absolute; right: max(10px, env(safe-area-inset-right)); top: 82px; bottom: max(12px, env(safe-area-inset-bottom)); width: min(400px, calc(100% - 100px)); background: var(--cream); border: 4px solid var(--ink); border-radius: 28px; box-shadow: var(--shadow); display: flex; flex-direction: column; overflow: hidden; }
 .drawer-head { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px 6px 18px; }
 .drawer-head h2 { margin: 0; font-size: 24px; }
-.drawer-body { overflow-y: auto; padding: 6px 14px 16px; display: flex; flex-direction: column; gap: 12px; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
+.drawer-body { flex: 1 1 auto; min-height: 0; overflow-x: hidden; overflow-y: auto; padding: 6px 14px 16px; display: flex; flex-direction: column; gap: 12px; -webkit-overflow-scrolling: touch; touch-action: pan-y; }
 .round.small { width: 48px; height: 48px; box-shadow: none; }
 .grid { display: grid; gap: 10px; }
 .grid.heroes { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }

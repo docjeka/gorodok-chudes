@@ -148,4 +148,6 @@ export const en: Record<Key, string> = {
   'idea.winter.t': "Put on hats and make cocoa.",
   'idea.show': "A show",
   'idea.show.t': "Costumes, a crown and a magic wand — let us begin!",
+  'hud.zoomOut': 'Zoom out: show the whole room',
+  'hud.zoomIn': 'Zoom in',
 };

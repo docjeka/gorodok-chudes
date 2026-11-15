@@ -86,6 +86,9 @@ async function run(kv: KV, initial: World) {
   input.onDropUi = (el, target) => (el.dataset.drop === 'bag' && target.kind === 'item' ? thePanels.dropToBag(target.ref) : false);
   void offline.start();
   scene.reducedMotion = world.settings.reducedMotion;
+  scene.zoom = world.settings.zoom ?? 1;
+  scene.layout();
+  input.onZoomEnd = () => theHud.saveZoom();
   game.subscribe((w) => { scene.reducedMotion = w.settings.reducedMotion; scene.sync(w); if (w.settings.voices === false || w.settings.mute) { /* звук голоса гаснет сразу, пузырёк дочитывается */ } });
   scene.sync(game.world);
   hud.showTitle(true);

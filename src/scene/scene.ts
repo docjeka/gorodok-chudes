@@ -30,11 +30,13 @@ interface FaceWant { eyes: number; brows: number; emotion: Character['emotion'];
 interface Want {
   id: string; kind: Kind; ref: string; x: number; y: number; z: number; flip: boolean; rot: number;
   key: string; load: () => Promise<Tex>; face?: FaceWant; overlay?: { key: string; load: () => Promise<Tex> };
+  /** налитое в чашку: цвет и место «зеркала» жидкости */
+  liquid?: { color: number; x: number; y: number; rx: number };
 }
 interface Node {
   id: string; kind: Kind; ref: string; c: Container; body: Sprite; key: string; tex?: Tex;
   parts?: Record<'eyeL' | 'eyeR' | 'browL' | 'browR' | 'mouth', Sprite>; face?: FaceWant; blinkAt: number; blinkUntil: number;
-  overlay?: Sprite; overlayKey?: string; pulse: number;
+  overlay?: Sprite; overlayKey?: string; pulse: number; liquid?: Graphics; liquidKey?: string;
 }
 interface Tween { t: number; dur: number; step: (k: number) => void; done?: () => void }
 interface Particle { s: Sprite | Graphics; vx: number; vy: number; g: number; life: number; max: number; spin: number }
@@ -60,8 +62,11 @@ export class Scene {
   private roomId: RoomId | null = null;
   private bgKey = '';
   scale = 1;
+  zoom = 1;
   camX = 0;
+  camY = 0;
   viewW = ROOM_W;
+  viewH = ROOM_H;
   dragging: string | null = null;
   reducedMotion = false;
   debug = new URLSearchParams(location.search).get('debug') === 'anchors';
@@ -69,6 +74,7 @@ export class Scene {
   private hlTarget: { x: number; y: number; r: number } | null = null;
   private selId: string | null = null;
   private talking = new Set<string>();
+  private animating = new Set<string>();
   private talkFrame = 0;
 
   async init(host: HTMLElement) {
@@ -86,19 +92,37 @@ export class Scene {
   }
 
   // ---------- камера и координаты ----------
+  /** Наименьший масштаб: вся комната целиком помещается на экране. */
+  get minZoom() { return Math.min(1, (this.app.screen.width / ROOM_W) / (this.app.screen.height / ROOM_H)); }
+  readonly maxZoom = 1.8;
   layout() {
     const W = this.app.screen.width, H = this.app.screen.height;
-    this.scale = H / ROOM_H;
+    this.zoom = Math.max(this.minZoom, Math.min(this.maxZoom, this.zoom));
+    this.scale = (H / ROOM_H) * this.zoom;
     this.viewW = W / this.scale;
+    this.viewH = H / this.scale;
     this.root.scale.set(this.scale);
-    this.panBy(0);
+    this.panBy(0, 0);
   }
-  /** В портретной ориентации комната шире экрана — её можно прокручивать. */
-  panBy(dxScreen: number) {
-    const W = this.app.screen.width;
-    if (this.viewW >= ROOM_W) { this.camX = 0; this.root.x = (W - ROOM_W * this.scale) / 2; return; }
-    this.camX = Math.max(0, Math.min(ROOM_W - this.viewW, this.camX - dxScreen / this.scale));
-    this.root.x = -this.camX * this.scale;
+  /** Прокрутка комнаты, когда она не помещается на экране целиком. Если помещается — стоит по центру. */
+  panBy(dxScreen: number, dyScreen = 0) {
+    const W = this.app.screen.width, H = this.app.screen.height;
+    if (this.viewW >= ROOM_W) { this.camX = 0; this.root.x = (W - ROOM_W * this.scale) / 2; }
+    else { this.camX = Math.max(0, Math.min(ROOM_W - this.viewW, this.camX - dxScreen / this.scale)); this.root.x = -this.camX * this.scale; }
+    if (this.viewH >= ROOM_H) { this.camY = 0; this.root.y = (H - ROOM_H * this.scale) / 2; }
+    else { this.camY = Math.max(0, Math.min(ROOM_H - this.viewH, this.camY - dyScreen / this.scale)); this.root.y = -this.camY * this.scale; }
+  }
+  /** Отдалить или приблизить. focal — точка экрана, которая остаётся под пальцами. */
+  setZoom(z: number, focal?: { x: number; y: number }) {
+    const r = this.app.canvas.getBoundingClientRect();
+    const f = focal ?? { x: r.left + r.width / 2, y: r.top + r.height * 0.7 };
+    const before = this.toRoom(f.x, f.y);
+    this.zoom = z;
+    this.layout();
+    const after = this.toRoom(f.x, f.y);
+    this.camX += before.x - after.x;
+    this.camY += before.y - after.y;
+    this.panBy(0, 0);
   }
   centerOn(x: number) { if (this.viewW < ROOM_W) { this.camX = x - this.viewW / 2; this.panBy(0); } }
   /** Единственная функция перевода экран → комната. */
@@ -116,7 +140,7 @@ export class Scene {
     this.world = world;
     const roomId = world.currentRoomId;
     const room = world.rooms[roomId];
-    if (roomId !== this.roomId) { this.roomId = roomId; this.camX = Math.max(0, (ROOM_W - this.viewW) / 2); this.panBy(0); this.clearFx(); }
+    if (roomId !== this.roomId) { this.roomId = roomId; this.camX = Math.max(0, (ROOM_W - this.viewW) / 2); this.camY = Math.max(0, ROOM_H - this.viewH); this.panBy(0, 0); this.clearFx(); }
     const bgKey = `room${room.wallpaper % 4}`;
     if (bgKey !== this.bgKey) {
       this.bgKey = bgKey;
@@ -134,7 +158,7 @@ export class Scene {
         this.layer.addChild(n.c);
         this.nodes.set(w.id, n);
       }
-      if (this.dragging !== w.ref || w.kind === 'front') {
+      if ((this.dragging !== w.ref && !this.animating.has(w.ref)) || w.kind === 'front') {
         n.c.position.set(w.x, w.y);
         n.c.zIndex = w.z;
         n.c.scale.set(w.flip ? -1 : 1, 1);
@@ -148,6 +172,7 @@ export class Scene {
       } else if (n.tex) n.tex.used = performance.now();
       this.syncFace(n, w.face);
       this.syncOverlay(n, w.overlay);
+      this.syncLiquid(n, w.liquid);
     }
     for (const [id, n] of this.nodes) if (!seen.has(id)) { n.c.destroy({ children: true }); this.nodes.delete(id); }
     this.syncGlow(world, roomId);
@@ -227,7 +252,9 @@ export class Scene {
         }
       }
       const z = o.kind === 'hand' ? (charZ.get(o.characterId) ?? 200) + 0.05 : o.kind === 'surface' ? zOfFurn(o.furnitureId) + 0.6 + o.slot * 0.001 : o.kind === 'furniture' ? zOfFurn(o.furnitureId) + 0.3 + o.slot * 0.001 : 200 + pl.y;
-      out.push({ id: 'i:' + it.instanceId, kind: 'item', ref: it.instanceId, x: pl.x, y: pl.y, z, flip: false, rot: 0, ...this.itemTex(it) });
+      const LIQ: Record<string, number> = { water: 0x8fd0f5, milk: 0xffffff, tea: 0xc98c4f };
+      const liquid = it.state.contents ? (it.definitionId === 'glass' ? { color: LIQ[it.state.contents], x: 0, y: -45, rx: 10 } : { color: LIQ[it.state.contents], x: -5, y: -40, rx: 13 }) : undefined;
+      out.push({ id: 'i:' + it.instanceId, kind: 'item', ref: it.instanceId, x: pl.x, y: pl.y, z, flip: false, rot: 0, liquid, ...this.itemTex(it) });
     }
     return out;
   }
@@ -317,6 +344,20 @@ export class Scene {
     void o.load().then((t) => { if (n.overlayKey !== o.key || s.destroyed) return; s.texture = t.texture; s.position.set(TV_SCREEN.x0, TV_SCREEN.y0); s.width = TV_SCREEN.x1 - TV_SCREEN.x0; s.height = TV_SCREEN.y1 - TV_SCREEN.y0; });
   }
 
+  private syncLiquid(n: Node, l: Want['liquid']) {
+    const key = l ? `${l.color}:${l.x}:${l.y}:${l.rx}` : '';
+    if (n.liquidKey === key) return;
+    n.liquidKey = key;
+    n.liquid?.destroy();
+    n.liquid = undefined;
+    if (!l) return;
+    const g = new Graphics();
+    g.ellipse(l.x, l.y, l.rx, l.rx * 0.34).fill({ color: l.color }).stroke({ color: 0x5a4a5c, width: 1.5, alpha: 0.5 });
+    g.ellipse(l.x - l.rx * 0.3, l.y - 0.6, l.rx * 0.3, l.rx * 0.1).fill({ color: 0xffffff, alpha: 0.7 });
+    n.c.addChild(g);
+    n.liquid = g;
+  }
+
   /** Волшебная ночь: в темноте светятся ночники, а спящим снятся сны. */
   private syncGlow(w: World, roomId: RoomId) {
     for (const ch of this.glow.removeChildren()) ch.destroy();
@@ -355,14 +396,14 @@ export class Scene {
     const list = [...this.nodes.values()].sort((a, b) => b.c.zIndex - a.c.zIndex);
     let exact: Node | null = null;
     for (const n of list) {
-      if (!n.tex || n.ref === opts.except) continue;
+      if (!n.tex || n.ref === opts.except || this.animating.has(n.ref)) continue;
       if (this.hitNode(n, pt)) { exact = n; break; }
     }
     if (exact && (exact.kind === 'item' || exact.kind === 'pet' || exact.kind === 'char')) return { kind: exact.kind, ref: exact.ref };
     // рядом с маленьким предметом — выбираем его, если точное попадание пришлось на мебель или пустое место
     let near: { n: Node; d: number } | null = null;
     for (const n of list) {
-      if (n.kind !== 'item' || !n.tex || n.ref === opts.except) continue;
+      if (n.kind !== 'item' || !n.tex || n.ref === opts.except || this.animating.has(n.ref)) continue;
       const def = this.world && ITEMS[this.world.items[n.ref]?.definitionId];
       if (!def) continue;
       const d = Math.hypot(pt.x - n.c.x, pt.y - (n.c.y - def.h / 2));
@@ -401,6 +442,45 @@ export class Scene {
   dragEnd() { this.dragging = null; this.hlTarget = null; if (this.world) this.sync(this.world); }
   setHighlight(t: { x: number; y: number; r: number } | null) { this.hlTarget = t; }
   setSelected(ref: string | null) { this.selId = ref; }
+
+  // ---------- еда и питьё ----------
+  /** Где у героя рот (в координатах комнаты). */
+  mouthPos(ref: string): Pt | null {
+    const c = this.world?.characters[ref];
+    const n = this.nodeOf(ref);
+    if (!c || !n) return null;
+    const sp = c.costume ? CHAR_SPRITES[`${c.id}:${c.costume}:${c.pose === 'sitting' ? 'sit' : 'stand'}`] : undefined;
+    if (sp) return { x: n.c.x + ((c.flipped ? -1 : 1) * (sp.mouth.x - sp.origin.x)) / sp.unit, y: n.c.y + (sp.mouth.y - sp.origin.y) / sp.unit };
+    return { x: n.c.x, y: n.c.y - (c.pose === 'sitting' ? 115 : 162) };
+  }
+  get busy() { return this.animating.size > 0; }
+  /**
+   * Вещь подлетает ко рту: еду герой откусывает, из чашки пьёт (чашка наклоняется).
+   * Пока идёт анимация, вещь нельзя схватить; состояние мира меняется в done.
+   */
+  consume(ref: string, mouth: Pt, kind: 'eat' | 'drink' | 'scrub' | 'stroke' | 'rub' | 'tilt', done: () => void) {
+    const n = this.nodeOf(ref);
+    if (!n || !n.tex) { done(); return; }
+    this.animating.add(ref);
+    const h = n.tex.oy * n.tex.upp;
+    const x0 = n.c.x, y0 = n.c.y;
+    const off: Record<typeof kind, [number, number]> = { eat: [0, h * 0.55], drink: [16, h * 0.75], scrub: [h * 0.88, 8], stroke: [0, h * 0.5], rub: [0, h * 0.5], tilt: [-34, -8] };
+    const tx = mouth.x + off[kind][0], ty = mouth.y + off[kind][1];
+    const dur = kind === 'eat' || kind === 'drink' ? 560 : 1000;
+    n.c.zIndex = 1e6 - 1;
+    n.c.scale.set(1);
+    this.tween(240, (k) => { const e = 1 - (1 - k) * (1 - k); n.c.position.set(x0 + (tx - x0) * e, y0 + (ty - y0) * e); }, () => {
+      this.tween(dur, (k) => {
+        const sw = Math.sin(k * Math.PI * 6);
+        if (kind === 'drink') n.c.rotation = -Math.sin(k * Math.PI) * 0.55; // наклон чашки ко рту
+        else if (kind === 'eat') n.c.scale.set(1 - 0.2 * Math.abs(Math.sin(k * Math.PI * 2)) - 0.12 * k);
+        else if (kind === 'scrub') { n.c.rotation = -1.25; n.c.position.set(tx + sw * 9, ty); } // щётка лежит боком и ходит туда-сюда
+        else if (kind === 'stroke') n.c.position.set(tx + Math.sin(k * Math.PI * 3) * 26, ty + Math.abs(Math.sin(k * Math.PI * 3)) * 16); // расчёска по волосам
+        else if (kind === 'rub') n.c.position.set(tx + Math.cos(k * Math.PI * 6) * 14, ty + sw * 12); // круги по лицу
+        else n.c.rotation = -Math.sin(k * Math.PI) * 0.7; // лейка наклоняется
+      }, () => { n.c.rotation = 0; n.c.scale.set(1); this.animating.delete(ref); done(); });
+    });
+  }
 
   // ---------- речь ----------
   setTalking(ref: string, on: boolean) {

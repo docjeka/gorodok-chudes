@@ -1,6 +1,6 @@
 // Звук целиком синтезируется в браузере (Web Audio): файлов и сторонних лицензий нет.
 // Запускается только после действия пользователя и возобновляется при возвращении в приложение.
-export type Sfx = 'pop' | 'put' | 'munch' | 'sparkle' | 'door' | 'water' | 'sleep' | 'nope' | 'gift' | 'click' | 'pet' | 'cook' | 'light';
+export type Sfx = 'scrub' | 'gulp' | 'pour' | 'pop' | 'put' | 'munch' | 'sparkle' | 'door' | 'water' | 'sleep' | 'nope' | 'gift' | 'click' | 'pet' | 'cook' | 'light';
 
 const NOTES = [261.63, 293.66, 329.63, 392.0, 440.0, 523.25, 587.33, 659.25];
 // спокойная зацикленная мелодия: индексы нот, -1 — пауза
@@ -103,6 +103,9 @@ export class GameAudio {
       case 'put': this.tone(300, t, 0.1, 'sine', out, 0.9, 200); break;
       case 'click': this.tone(660, t, 0.06, 'triangle', out, 0.6); break;
       case 'munch': this.noise(t, 0.09, 900); this.noise(t + 0.13, 0.09, 700); break;
+      case 'scrub': [0, 0.16, 0.32, 0.48, 0.64, 0.8].forEach((d, i) => this.noise(t + d, 0.1, i % 2 ? 3200 : 2600, 0.35)); break;
+      case 'gulp': [0, 0.22, 0.44].forEach((d) => this.tone(210, t + d, 0.13, 'sine', out, 0.9, 150)); break;
+      case 'pour': this.noise(t, 0.55, 2400, 0.3); this.tone(520, t + 0.1, 0.4, 'sine', out, 0.25, 760); break;
       case 'sparkle': [0, 1, 2].forEach((i) => this.tone(880 + i * 220, t + i * 0.07, 0.18, 'sine', out, 0.6)); break;
       case 'door': this.tone(180, t, 0.16, 'triangle', out, 0.8, 240); break;
       case 'water': this.noise(t, 0.9, 1800, 0.35); break;
