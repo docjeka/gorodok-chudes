@@ -284,6 +284,48 @@ try {
     await page.mouse.click(...(await roomPt(page, 799, 181))); await wait(2000);
     const v = page.video(); await ctx.close(); console.log('video', await v.path());
   }
+  if (scenario === 'frame') {
+    const base = process.argv[3] ?? 'http://127.0.0.1:4173/', tag = process.argv[4] ?? 'after';
+    for (const [wd, ht] of [[1024, 768], [1280, 720]]) {
+      const ctx = await browser.newContext({ viewport: { width: wd, height: ht }, deviceScaleFactor: 1, hasTouch: true });
+      const page = await ctx.newPage();
+      await page.goto(base);
+      await page.waitForFunction(() => !!window.__game);
+      await page.evaluate(() => window.__game.game.update((w) => { w.settings.tutorialDone = true; }));
+      await page.click('#play'); await page.evaluate(() => window.__game.map.enter('houses'));
+      for (const room of ['park_games', 'club', 'cafe', 'living']) {
+        await page.evaluate((r) => { const g = window.__game; if (g.game.world.currentRoomId !== r) g.game.commit(g.rules.travel(g.game.world, r, r === 'park_games' ? ['hero_mila', 'hero_timur'] : [])); g.scene.setZoom(1); }, room);
+        await wait(800); await page.screenshot({ path: `${OUT}/frame-${tag}-${room}-${wd}x${ht}-default.png` });
+        await page.evaluate(() => window.__game.scene.setZoom(0.1));
+        await wait(500); await page.screenshot({ path: `${OUT}/frame-${tag}-${room}-${wd}x${ht}-far.png` });
+      }
+      await ctx.close();
+    }
+    console.log('frames', tag);
+  }
+  if (scenario === 'bowl') {
+    const ctx = await browser.newContext({ viewport: { width: 1024, height: 768 }, deviceScaleFactor: 1, hasTouch: true, recordVideo: { dir: `${OUT}/video-bowl`, size: { width: 1024, height: 768 } } });
+    const page = await ctx.newPage();
+    await page.goto('http://127.0.0.1:4173/');
+    await page.waitForFunction(() => !!window.__game);
+    await page.evaluate(() => window.__game.game.update((w) => { w.settings.tutorialDone = true; w.rooms.animals.visited = true; w.furniture.an_tunnel.roomId = null; w.pets.pet_frenchie.x = 1100; w.pets.pet_frenchie.y = 760; w.pets.pet_capybara.x = 1300; w.pets.pet_wolf.x = 1450; for (const it of Object.values(w.items)) { if (it.definitionId === 'pet_double_bowl') it.owner = { kind: 'room', roomId: 'animals', x: 760, y: 840 }; if (it.definitionId === 'pet_food_bag') it.owner = { kind: 'room', roomId: 'animals', x: 520, y: 850 }; if (['kibble', 'pet_rope_ball', 'pet_grooming_brush'].includes(it.definitionId)) it.owner = { kind: 'room', roomId: 'animals', x: 1500, y: 860 }; } w.currentRoomId = 'animals'; }));
+    await page.evaluate(() => { const g = window.__game; const r = g.rules.spawnItem(g.game.world, 'teapot', { kind: 'room', roomId: 'animals', x: 640, y: 780 }); g.game.commit(r); window.__pot = r.info.instanceId; });
+    await page.click('#play'); await page.evaluate(() => window.__game.map.enter('animals'));
+    await page.evaluate(() => window.__game.scene.setZoom(1.25, { x: 512, y: 700 })); await wait(1200);
+    const bowl = await find(page, 'pet_double_bowl', 'room'), bag = await find(page, 'pet_food_bag', 'room'), pot = await page.evaluate(() => window.__pot);
+    const half = async (dx) => { const p = await at(page, bowl, -30); return [p[0] + dx, p[1]]; };
+    const idle = () => page.waitForFunction(() => !window.__game.scene.busy);
+    await drag(page, await at(page, bag, -40), await half(16)); await idle(); await wait(900);
+    await drag(page, await at(page, pot, -25), await half(-16)); await idle(); await wait(900);
+    await page.screenshot({ path: `${OUT}/bowl-full.png` });
+    await drag(page, await at(page, 'pet_frenchie', -50), await roomPt(page, 880, 840)); await wait(2600);
+    await drag(page, await at(page, 'pet_frenchie', -50), await roomPt(page, 1100, 760)); await wait(500);
+    await drag(page, await at(page, 'pet_frenchie', -50), await roomPt(page, 880, 840)); await wait(2600);
+    await drag(page, await at(page, 'pet_frenchie', -50), await roomPt(page, 1100, 760)); await wait(500);
+    await drag(page, await at(page, bag, -40), await half(16)); await idle(); await wait(600);
+    await drag(page, await at(page, pot, -25), await half(-16)); await idle(); await wait(1200);
+    const v = page.video(); await ctx.close(); console.log('video', await v.path());
+  }
   if (scenario === 'six' || scenario === 'all') {
     const page = await open('', { width: 1600, height: 900 });
     await page.evaluate(() => { const g = window.__game; const R = g.rules; const put = [['hero_mila', 330, 860, 'fairy', 'delight'], ['hero_timur', 560, 850, 'pirate', 'silly'], ['hero_yuki', 800, 860, 'casual', 'joy'], ['hero_asya', 1040, 850, 'cat', 'surprise'], ['hero_lev', 1270, 860, 'astronaut', 'calm'], ['hero_nora', 1480, 850, 'princess', 'thinking']];

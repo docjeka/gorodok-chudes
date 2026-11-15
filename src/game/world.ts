@@ -61,8 +61,10 @@ const PARK_PETS: World['pets'] = {
 };
 /** История «Устрой вечеринку»: пустая коробка для подарка ждёт в мастерской (те же вещи, что и раньше, новых картинок нет). */
 const PARTY_SEEDS: [string, Owner][] = [['giftbox', floor('toys_workshop', 820, 830)], ['cupcake', surf('cb_shelves', 2)]];
+/** Мешок корма для двойной миски — один, в Парке животных (ещё можно взять в каталоге). */
+const FEED_SEEDS: [string, Owner][] = [['pet_food_bag', floor('animals', 620, 860)]];
 const LOCATION_ROOMS: RoomId[] = ['animals', 'park', 'park_games', 'cafe', 'cafe_bakery', 'toys', 'toys_workshop', 'beach', 'beach_boats', 'club'];
-function seedLocations(world: World, seeds: [string, Owner][] = [...LOCATION_SEEDS, ...PROP_SEEDS, ...PARTY_SEEDS]): World {
+function seedLocations(world: World, seeds: [string, Owner][] = [...LOCATION_SEEDS, ...PROP_SEEDS, ...PARTY_SEEDS, ...FEED_SEEDS]): World {
   let w = world;
   for (const [def, owner] of seeds) {
     const r = spawnItem(w, def, owner, def === 'giftbox' ? { packed: false, paper: 2, bow: 1 } : {});
@@ -235,6 +237,8 @@ export const MIGRATIONS: Record<number, Migration> = {
     raw.schemaVersion = 5;
     return seedLocations(raw as World, PARTY_SEEDS);
   },
+  // v5: появился мешок корма. Старые миски остаются как были (пустые половины), ничего не удаляется.
+  5: (raw) => { raw.schemaVersion = 6; return seedLocations(raw as World, FEED_SEEDS); },
 };
 
 export function migrate(raw: any): any {
@@ -263,6 +267,7 @@ function checkShape(w: any): string | null {
   for (const it of Object.values<any>(w.items)) {
     if (!isObj(it) || typeof it.instanceId !== 'string' || typeof it.definitionId !== 'string' || !isObj(it.owner) || !isObj(it.state)) return 'bad_item';
     if (it.state.contents !== undefined && !['water', 'milk', 'tea'].includes(it.state.contents)) return 'bad_item';
+    if ((it.state.water !== undefined && typeof it.state.water !== 'boolean') || (it.state.kibble !== undefined && typeof it.state.kibble !== 'boolean')) return 'bad_item';
     if (it.state.card !== undefined && (typeof it.state.card !== 'string' || it.state.card.length > 60)) return 'bad_item';
     if (it.state.mix !== undefined && !(Array.isArray(it.state.mix) && it.state.mix.length <= 4 && it.state.mix.every((m: unknown) => typeof m === 'string' && !!ITEMS[m as string]))) return 'bad_item';
   }

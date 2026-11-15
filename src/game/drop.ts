@@ -3,7 +3,7 @@
 import { FURNITURE } from '../content/furniture';
 import { ITEMS } from '../content/items';
 import { charBox, charPos, clampFloor, dist, itemPlace, petPos, slotPos } from './geometry';
-import { FILLABLE, HEADWEAR, PET_BRUSHES, POURS, handItems, isInside, seatTaken } from './rules';
+import { FILLABLE, HEADWEAR, PET_BRUSHES, isWaterSource, POURS, handItems, isInside, seatTaken } from './rules';
 import type { HandSlot, Pt, RoomId, World } from './types';
 
 export type ItemDrop =
@@ -14,6 +14,7 @@ export type ItemDrop =
   | { type: 'pet'; petId: string; action: 'feed' | 'play' | 'brush' }
   | { type: 'into'; itemId: string }
   | { type: 'pour'; itemId: string }
+  | { type: 'bowl'; itemId: string; half: 'water' | 'kibble' }
   | { type: 'water'; itemId: string }
   | { type: 'surface'; furnitureId: string; slot: number }
   | { type: 'furniture'; furnitureId: string; slot: number }
@@ -27,6 +28,15 @@ export function resolveItemDrop(w: World, itemId: string, pt: Pt, roomId: RoomId
   const def = it && ITEMS[it.definitionId];
   if (!it || !def) return { type: 'reject' };
   const has = (t: string) => def.tags.includes(t as never);
+
+  // 0а. двойная миска: мешок корма — в правую половину, вода — в левую
+  if (it.definitionId === 'pet_food_bag' || isWaterSource(it)) {
+    for (const bowl of Object.values(w.items)) {
+      if (bowl.definitionId !== 'pet_double_bowl' || bowl.instanceId === itemId) continue;
+      const pl = itemPlace(w, bowl);
+      if (pl.roomId === roomId && pl.visible && Math.abs(pt.x - pl.x) < 80 && pt.y > pl.y - 120 && pt.y < pl.y + 30) return { type: 'bowl', itemId: bowl.instanceId, half: it.definitionId === 'pet_food_bag' ? 'kibble' : 'water' };
+    }
+  }
 
   // 0. налить: пакет молока или чайник над чашкой или стаканом (даже если чашку держит герой)
   if (POURS[it.definitionId]) {

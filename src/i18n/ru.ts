@@ -218,5 +218,7 @@ export const ru = {
   'idea.party.t': "Возьми угощение в пекарне, упакуй игрушку в мастерской и неси всё в Клуб друзей. Кто встанет за пульт?",
   'costume.dj': 'Диджей',
   'costume.confectioner': 'Кондитер',
+  'toast.bowlFull': 'В этой половине миски уже есть порция.',
+  'prop.pet_food_bag': 'Мешок корма',
 } as const;
 export type Key = keyof typeof ru;

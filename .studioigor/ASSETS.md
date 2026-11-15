@@ -37,3 +37,4 @@
 | public/assets/items/{beach_,club_,toy_,cafe_,pet_,fair_}*.png, public/assets/furn/{beach_lounger,…,fair_ticket_machine}.png | набор «36 предметов» от пользователя (gorodok-chudes-props-36.zip) | авторские, от пользователя |
 | public/assets/pets/{capybara,frenchie,wolf}_*.png, public/assets/rooms/animals.webp, public/assets/map/town-back.webp (v3) | рисунки от пользователя | авторские, от пользователя |
 | public/assets/chars/hero_mila_dj_*.webp, hero_timur_confectioner_*.webp | лист ref-extra-mila-dj-timur-confectioner.png от пользователя, нарезан scripts/chars.py | авторские, от пользователя |
+| public/assets/items/pet_double_bowl.png (пустая), pet_food_bag.png | рисунки от пользователя | авторские, от пользователя |

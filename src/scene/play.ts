@@ -6,7 +6,7 @@ import { resolveCharDrop, resolveItemDrop, resolvePetDrop, freeFloorSpot, type I
 import type { Game } from '../game/game';
 import { charBox, charPos, clampFloor, dist, itemPlace, petPos, slotPos } from '../game/geometry';
 import {
-  HEADWEAR, POURS, clone, cook, cookables, drink, feed, fill, moveItem, openGift, patchPet, placeCharacter, placePet, recipeAt, seatTaken, setFurnitureOn,
+  HEADWEAR, POURS, clone, emptyBowl, fillBowl, cook, cookables, drink, feed, fill, moveItem, openGift, patchPet, placeCharacter, placePet, recipeAt, seatTaken, setFurnitureOn,
   setRoomStyle, toggleOpen, travel, wake, wearSet, moveFurniture,
 } from '../game/rules';
 import type { Pt, RoomId, World } from '../game/types';
@@ -71,7 +71,7 @@ export class Play {
       case 'feed': case 'care': { const b = charBox(w, w.characters[d.characterId]); return { x: b.headX, y: b.headLine === null ? b.y0 + 60 : b.headLine - 50, r: 62 }; }
       case 'hand': case 'wear': { const p = charPos(w, w.characters[d.characterId]); const sit = w.characters[d.characterId].pose === 'sitting'; return { x: p.x, y: p.y - (sit ? 40 : 90), r: 58 }; }
       case 'pet': { const p = petPos(w, w.pets[d.petId]); return { x: p.x, y: p.y - 50, r: 60 }; }
-      case 'into': case 'pour': case 'water': { const pl = itemPlace(w, w.items[d.itemId]); return { x: pl.x, y: pl.y - 30, r: 52 }; }
+      case 'into': case 'pour': case 'water': case 'bowl': { const pl = itemPlace(w, w.items[d.itemId]); return { x: pl.x, y: pl.y - 30, r: 52 }; }
       case 'surface': { const f = w.furniture[d.furnitureId]; const s = slotPos(f, FURNITURE[f.definitionId].surfaces![d.slot]); return { x: s.x, y: s.y - 22, r: 36 }; }
       case 'furniture': { const f = w.furniture[d.furnitureId]; const fd = FURNITURE[f.definitionId]; return { x: f.x, y: f.y - fd.h / 2, r: Math.min(fd.w, fd.h) * 0.42 }; }
       default: return null;
@@ -116,6 +116,25 @@ export class Play {
           this.scene.burst(asDrink ? 'bubble' : 'crumb', { x: mouth.x, y: mouth.y + 6 }, asDrink ? 4 : 6);
           this.scene.pop(heroId, 0.08);
           this.talk?.say(heroId, 'food', 350);
+        });
+        return;
+      }
+      case 'bowl': {
+        // мешок корма сыплет гранулы в правую половину; вода из кувшина или чашки — в левую
+        const r = fillBowl(w, d.itemId, d.half);
+        if (!r.ok) return fail('toast.bowlFull');
+        const pl = itemPlace(w, w.items[d.itemId]);
+        const at = { x: pl.x + (d.half === 'kibble' ? 24 : -24), y: pl.y - 40 };
+        this.audio.play(d.half === 'kibble' ? 'crunch' : 'pour');
+        const drops = window.setInterval(() => this.scene.burst(d.half === 'kibble' ? 'crumb' : 'bubble', { x: at.x, y: at.y - 20 }, 2), 160);
+        this.scene.consume(itemId, { x: at.x + (d.half === 'kibble' ? 40 : -40), y: at.y - 95 }, 'tilt', () => {
+          window.clearInterval(drops);
+          let next = fillBowl(this.w, d.itemId, d.half);
+          // чашка или стакан отдают свою воду; кувшин и мешок многоразовые
+          if (next.ok && d.half === 'water' && this.w.items[itemId]?.state.contents) { const dr = drink(next.world, itemId); if (dr.ok) next = dr; }
+          this.game.commit(next);
+          this.scene.sync(this.w); // мешок или кувшин возвращаются туда, откуда их взяли
+          this.scene.pop(d.itemId, 0.14);
         });
         return;
       }
@@ -257,6 +276,51 @@ export class Play {
     return true;
   }
 
+  /** время, до которого питомцы молчат: один голос за раз и пауза между повторами */
+  private petQuietUntil = 0;
+  /** сколько раз и каким голосом отвечали питомцы — для проверок */
+  petVoiceLog: string[] = [];
+  /** Зверь отвечает своим голосом. Не звучит поверх реплики героя и чаще, чем раз в пару секунд. */
+  petVoice(kind: string): boolean {
+    const now = performance.now();
+    if (now < this.petQuietUntil || this.talk?.speaking) return false;
+    const voice = ({ cat: 'meow', dog: 'woof', frenchie: 'frenchie', wolf: 'howl', capybara: 'whistle', rabbit: 'sniff' } as const)[kind as 'cat'];
+    if (!voice) return false;
+    this.petQuietUntil = now + 2200;
+    this.petVoiceLog.push(voice);
+    this.audio.play(voice);
+    return true;
+  }
+
+  /** Питомец у двойной миски: ест корм (правая половина) или пьёт воду (левая). Порция исчезает только в конце и только если зверя не унесли. */
+  private bowlMeal(petId: string): boolean {
+    const p = this.w.pets[petId];
+    if (!p || p.seat || p.sleeping) return false;
+    const bowls = Object.values(this.w.items).filter((i) => i.definitionId === 'pet_double_bowl' && (i.state.kibble || i.state.water)).map((i) => ({ i, pl: itemPlace(this.w, i) })).filter((b) => b.pl.roomId === this.room && b.pl.visible && Math.hypot(b.pl.x - p.x, b.pl.y - p.y) < 150);
+    if (!bowls.length) return false;
+    const { i: bowl, pl } = bowls[0];
+    const half = bowl.state.kibble ? 'kibble' : 'water';
+    // зверь встаёт сбоку от нужной половины и поворачивается к ней
+    const side = half === 'kibble' ? 1 : -1;
+    const spot = clampFloor(pl.x + side * 95, Math.max(pl.y + 4, 640));
+    this.game.update((w) => { const c = w.pets[petId]; c.x = spot.x; c.y = spot.y; c.flipped = side < 0; });
+    this.scene.setPetMood(petId, 'eat', 1500);
+    this.audio.play(half === 'kibble' ? 'crunch' : 'lap');
+    this.scene.burst(half === 'kibble' ? 'crumb' : 'bubble', { x: pl.x + side * 24, y: pl.y - 44 }, 4);
+    window.setTimeout(() => {
+      const c = this.w.pets[petId], b = this.w.items[bowl.instanceId];
+      // унесли питомца или миску — порция остаётся
+      if (!c || !b || c.roomId !== this.room || c.x !== spot.x || c.y !== spot.y || c.seat || this.scene.dragging === petId) return;
+      const bp = itemPlace(this.w, b);
+      if (bp.roomId !== this.room || Math.abs(bp.x - pl.x) > 2 || Math.abs(bp.y - pl.y) > 2) return;
+      if (!this.game.commit(emptyBowl(this.w, bowl.instanceId, half))) return;
+      this.scene.setPetMood(petId, 'happy', 1500);
+      this.scene.burst('heart', { x: spot.x, y: spot.y - 110 }, 2);
+      this.scene.hop(petId, 16);
+    }, 1450);
+    return true;
+  }
+
   /** Питомца погладили: он прикрывает глаза, над ним сердечко. Ничего не сохраняется — это просто ласка. */
   petStroke(id: string) {
     const p = this.w.pets[id];
@@ -360,6 +424,7 @@ export class Play {
     this.game.update((w) => { const p = w.pets[id]; const c = clampFloor(d.x, d.y); p.x = c.x; p.y = c.y; p.seat = null; p.sleeping = false; delete p.inItem; });
     this.scene.hop(id, 14);
     this.audio.play('put');
+    if (this.bowlMeal(id)) return;
     if (this.room === 'animals') this.parkHabits(id);
   }
 
@@ -464,7 +529,7 @@ export class Play {
       const pos = petPos(w, p);
       this.scene.setPetMood(t.ref, 'happy', 1500);
       this.scene.burst('heart', { x: pos.x, y: pos.y - 110 }, 3);
-      this.audio.play('pet');
+      if (!this.petVoice(p.kind)) this.audio.play('pet');
       return;
     }
     if (t.kind === 'item') {

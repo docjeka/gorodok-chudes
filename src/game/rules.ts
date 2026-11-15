@@ -651,3 +651,26 @@ export function patchPet(world: World, id: string, patch: { collar?: number; sle
 }
 
 export const charactersIn = (w: World, roomId: RoomId): Character[] => Object.values(w.characters).filter((c) => c.roomId === roomId);
+
+// ---------- двойная миска: вода слева, корм справа ----------
+export type BowlHalf = 'water' | 'kibble';
+/** Наполнить половину миски. В уже полную половину повторно насыпать или налить нельзя. */
+export function fillBowl(world: World, bowlId: string, half: BowlHalf): Result {
+  const w = clone(world);
+  const b = w.items[bowlId];
+  if (!b || b.definitionId !== 'pet_double_bowl') return fail('not_bowl');
+  if (b.state[half]) return fail('bowl_full');
+  b.state[half] = true;
+  return ok(w);
+}
+/** Питомец доел корм или допил воду: пустеет только эта половина, миска остаётся. */
+export function emptyBowl(world: World, bowlId: string, half: BowlHalf): Result {
+  const w = clone(world);
+  const b = w.items[bowlId];
+  if (!b || b.definitionId !== 'pet_double_bowl') return fail('not_bowl');
+  if (!b.state[half]) return fail('bowl_empty');
+  delete b.state[half];
+  return ok(w, { half });
+}
+/** Чем можно налить воду в миску: кувшин-чайник или чашка/стакан, в которых что-то налито. */
+export const isWaterSource = (it: ItemInst): boolean => it.definitionId === 'teapot' || (FILLABLE.has(it.definitionId) && !!it.state.contents);

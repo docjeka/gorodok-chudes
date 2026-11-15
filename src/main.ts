@@ -67,7 +67,23 @@ async function run(kv: KV, initial: World) {
   setLang(world.settings.lang);
   const audio = new GameAudio();
   const scene = new Scene();
+  // фактический размер игровой области: на iPad после поворота и в установленной игре размеры окна запаздывают, поэтому перепроверяем несколько раз
+  const fit = () => {
+    const vv = window.visualViewport;
+    const w = Math.round(vv?.width ?? window.innerWidth), h = Math.round(vv?.height ?? window.innerHeight);
+    if (w < 50 || h < 50) return;
+    document.documentElement.style.setProperty('--app-w', `${w}px`);
+    document.documentElement.style.setProperty('--app-h', `${h}px`);
+    scene.fit(w, h);
+  };
+  const refit = () => { fit(); for (const ms of [120, 400, 1000, 2000]) window.setTimeout(fit, ms); };
+  document.documentElement.style.setProperty('--app-w', `${Math.round(window.visualViewport?.width ?? window.innerWidth)}px`);
+  document.documentElement.style.setProperty('--app-h', `${Math.round(window.visualViewport?.height ?? window.innerHeight)}px`);
   await scene.init(stage);
+  for (const ev of ['resize', 'orientationchange', 'pageshow']) window.addEventListener(ev, refit);
+  window.visualViewport?.addEventListener('resize', refit);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) refit(); });
+  refit();
   let hud: Hud | null = null;
   const saver = new Saver(kv, (s) => hud?.setSave(s));
   const game = new Game(world, saver);

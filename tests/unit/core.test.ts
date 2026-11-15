@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createWorld, parseWorld, repairWorld, validateWorld } from '../../src/game/world';
 import {
-  applyGarment, cook, drink, fill, wearSet, deleteCharacter, feed, handItems, isValidOutfit, moveItem, openGift, addCustomCharacter,
+  applyGarment, cook, drink, emptyBowl, fill, fillBowl, wearSet, deleteCharacter, feed, handItems, isValidOutfit, moveItem, openGift, addCustomCharacter,
   placeCharacter, removeGarment, spawnItem, takeGiftSet, tidyRoom, travel, wrapGift, newEmptyGift, storeFurniture, moveFurniture,
 } from '../../src/game/rules';
 import { itemPlace } from '../../src/game/geometry';
@@ -184,6 +184,41 @@ describe('головные уборы', () => {
   });
 });
 
+describe('двойная миска', () => {
+  it('половины наполняются и пустеют независимо; повторно в полную не насыпать; старое сохранение получает один мешок', () => {
+    let w = createWorld();
+    const bowl = find(w, 'pet_double_bowl').instanceId, bag = find(w, 'pet_food_bag').instanceId;
+    const pl = itemPlace(w, w.items[bowl]);
+    expect(resolveItemDrop(w, bag, { x: pl.x + 20, y: pl.y - 30 }, 'animals')).toEqual({ type: 'bowl', itemId: bowl, half: 'kibble' });
+    expect(emptyBowl(w, bowl, 'kibble')).toEqual({ ok: false, reason: 'bowl_empty' });
+    w = must(fillBowl(w, bowl, 'kibble'));
+    expect(fillBowl(w, bowl, 'kibble')).toEqual({ ok: false, reason: 'bowl_full' });
+    expect(w.items[bowl].state).toMatchObject({ kibble: true });
+    expect(w.items[bowl].state.water).toBeUndefined();
+    w = must(fillBowl(w, bowl, 'water'));
+    w = must(emptyBowl(w, bowl, 'kibble'));
+    expect(w.items[bowl].state.kibble).toBeUndefined();
+    expect(w.items[bowl].state.water).toBe(true);
+    expect(w.items[bag]).toBeDefined(); // мешок многоразовый
+    // вода: пустая чашка не источник, полная — источник
+    w = must(spawnItem(w, 'cup', { kind: 'room', roomId: 'animals', x: 900, y: 800 }));
+    const cup = find(w, 'cup', (o) => o.roomId === 'animals').instanceId;
+    expect(resolveItemDrop(w, cup, { x: pl.x - 20, y: pl.y - 30 }, 'animals').type).not.toBe('bowl');
+    w = must(fill(w, cup, 'water'));
+    expect(resolveItemDrop(w, cup, { x: pl.x - 20, y: pl.y - 30 }, 'animals')).toEqual({ type: 'bowl', itemId: bowl, half: 'water' });
+    expect(parseWorld(JSON.stringify(w)).ok).toBe(true);
+    // сохранение прошлой версии: миска остаётся, мешок появляется один раз
+    const old: any = JSON.parse(JSON.stringify(createWorld()));
+    for (const [id, it] of Object.entries<any>(old.items)) if (it.definitionId === 'pet_food_bag') delete old.items[id];
+    old.schemaVersion = 5;
+    const r = parseWorld(JSON.stringify(old));
+    expect(r.ok && Object.values(r.world.items).filter((i) => i.definitionId === 'pet_food_bag')).toHaveLength(1);
+    expect(r.ok && Object.values(r.world.items).filter((i) => i.definitionId === 'pet_double_bowl')).toHaveLength(1);
+    const again = r.ok ? parseWorld(JSON.stringify(r.world)) : r;
+    expect(again.ok && Object.values(again.world.items).filter((i) => i.definitionId === 'pet_food_bag')).toHaveLength(1);
+  });
+});
+
 describe('подарки', () => {
   it('открытие атомарно и не даёт дубликатов при повторе', () => {
     let w = createWorld();
@@ -265,9 +300,9 @@ describe('сохранения', () => {
     for (const f of Object.values<any>(w.furniture)) { delete f.homeX; delete f.homeY; }
     const r = parseWorld(JSON.stringify(w));
     expect(r.ok).toBe(true);
-    if (r.ok) { expect(r.world.schemaVersion).toBe(5); expect(Object.keys(r.world.pets)).toHaveLength(6); }
+    if (r.ok) { expect(r.world.schemaVersion).toBe(6); expect(Object.keys(r.world.pets)).toHaveLength(6); }
   });
-  it('миграция v2 → v5 добавляет локации города, Парк животных и трёх новых питомцев и ничего не трогает в домиках', () => {
+  it('миграция v2 → v6 добавляет локации города, Парк животных и трёх новых питомцев и ничего не трогает в домиках', () => {
     let w: any = createWorld();
     const cup = find(w, 'cup', (o) => o.kind === 'surface').instanceId;
     w = must(moveItem(w, cup, { kind: 'hand', characterId: 'hero_mila', slot: 'left' }));
@@ -284,7 +319,7 @@ describe('сохранения', () => {
     const r = parseWorld(JSON.stringify(w));
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(r.world.schemaVersion).toBe(5);
+    expect(r.world.schemaVersion).toBe(6);
     expect(validateWorld(r.world)).toEqual([]);
     expect(r.world.furniture.cl_table.roomId).toBe('club');
     expect(Object.values(r.world.items).filter((i) => i.definitionId === 'giftbox' && i.owner.kind === 'room' && i.owner.roomId === 'toys_workshop')).toHaveLength(1);
@@ -306,18 +341,18 @@ describe('сохранения', () => {
     for (const [id, f] of Object.entries<any>(before.furniture)) expect(r.world.furniture[id]).toEqual(f);
     expect(r.world.characters.hero_mila.costume).toBe('fairy');
   });
-  it('миграция v4 → v5: столик в клубе и одна коробка в мастерской, без дублей при повторной загрузке', () => {
+  it('миграция v4 → v6: столик в клубе и одна коробка в мастерской, без дублей при повторной загрузке', () => {
     const w: any = JSON.parse(JSON.stringify(createWorld()));
     delete w.furniture.cl_table;
-    for (const [id, it] of Object.entries<any>(w.items)) if ((it.definitionId === 'giftbox' && it.owner.roomId === 'toys_workshop') || (it.definitionId === 'cupcake' && it.owner.furnitureId === 'cb_shelves')) delete w.items[id];
+    for (const [id, it] of Object.entries<any>(w.items)) if ((it.definitionId === 'giftbox' && it.owner.roomId === 'toys_workshop') || (it.definitionId === 'cupcake' && it.owner.furnitureId === 'cb_shelves') || it.definitionId === 'pet_food_bag') delete w.items[id];
     w.schemaVersion = 4;
     const before = JSON.parse(JSON.stringify(w));
     const r = parseWorld(JSON.stringify(w));
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(r.world.schemaVersion).toBe(5);
+    expect(r.world.schemaVersion).toBe(6);
     expect(validateWorld(r.world)).toEqual([]);
-    expect(Object.keys(r.world.items).length).toBe(Object.keys(before.items).length + 2);
+    expect(Object.keys(r.world.items).length).toBe(Object.keys(before.items).length + 3); // коробка, капкейк и мешок корма
     for (const [id, it] of Object.entries<any>(before.items)) expect(r.world.items[id]).toEqual(it);
     const again = parseWorld(JSON.stringify(r.world));
     expect(again.ok && Object.keys(again.world.items).length).toBe(Object.keys(r.world.items).length);

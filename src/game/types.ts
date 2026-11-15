@@ -1,6 +1,6 @@
 // Типы данных мира. Модель — единственный источник правды; сцена строится из неё.
 
-export const SCHEMA_VERSION = 5;
+export const SCHEMA_VERSION = 6;
 export const ROOM_W = 1600;
 export const ROOM_H = 900;
 export const FLOOR_TOP = 600;
@@ -43,6 +43,9 @@ export interface ItemInst {
     paper?: number;
     bow?: number;
     card?: string;
+    /** двойная миска для зверей: налита ли вода (левая половина) и насыпан ли корм (правая) */
+    water?: boolean;
+    kibble?: boolean;
     /** чудо-блюдо: из чего собрано */
     mix?: string[];
   };

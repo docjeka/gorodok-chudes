@@ -1,6 +1,6 @@
 // Эффекты синтезируются в браузере (Web Audio); музыка — два локальных файла (фон города и трек DJ-пульта).
 // Запускается только после действия пользователя и возобновляется при возвращении в приложение.
-export type Sfx = 'boing' | 'squeak' | 'beep' | 'vroom' | 'whoosh' | 'clink' | 'scrub' | 'gulp' | 'pour' | 'pop' | 'put' | 'munch' | 'sparkle' | 'door' | 'water' | 'sleep' | 'nope' | 'gift' | 'click' | 'pet' | 'cook' | 'light';
+export type Sfx = 'meow' | 'woof' | 'frenchie' | 'howl' | 'whistle' | 'sniff' | 'crunch' | 'lap' | 'boing' | 'squeak' | 'beep' | 'vroom' | 'whoosh' | 'clink' | 'scrub' | 'gulp' | 'pour' | 'pop' | 'put' | 'munch' | 'sparkle' | 'door' | 'water' | 'sleep' | 'nope' | 'gift' | 'click' | 'pet' | 'cook' | 'light';
 
 const NOTES = [261.63, 293.66, 329.63, 392.0, 440.0, 523.25, 587.33, 659.25];
 
@@ -183,6 +183,15 @@ export class GameAudio {
       case 'put': this.tone(300, t, 0.1, 'sine', out, 0.9, 200); break;
       case 'click': this.tone(660, t, 0.06, 'triangle', out, 0.6); break;
       case 'munch': this.noise(t, 0.09, 900); this.noise(t + 0.13, 0.09, 700); break;
+      // голоса питомцев — негромкие, 0,5–1,3 с, у каждого свой рисунок
+      case 'meow': this.tone(620, t, 0.22, 'triangle', out, 0.5, 930); this.tone(930, t + 0.2, 0.42, 'triangle', out, 0.5, 520); this.tone(1240, t, 0.5, 'sine', out, 0.12, 1040); break;
+      case 'woof': [0, 0.3].forEach((d) => { this.tone(330, t + d, 0.13, 'sawtooth', out, 0.38, 170); this.noise(t + d, 0.09, 700, 0.3); }); break;
+      case 'frenchie': this.tone(430, t, 0.1, 'sawtooth', out, 0.34, 240); this.noise(t, 0.07, 900, 0.25); [0.3, 0.46, 0.6].forEach((d, i) => this.noise(t + d, 0.09, 260 + i * 40, 0.4)); break;
+      case 'howl': this.tone(360, t, 0.45, 'sine', out, 0.42, 600); this.tone(600, t + 0.42, 0.75, 'sine', out, 0.42, 520); this.tone(720, t, 1.1, 'sine', out, 0.08, 1040); break;
+      case 'whistle': [0, 0.2, 0.42].forEach((d, i) => this.tone(1750 + i * 120, t + d, 0.14, 'sine', out, 0.26, 2250 + i * 120)); break;
+      case 'sniff': [0, 0.17, 0.34, 0.6].forEach((d, i) => this.noise(t + d, 0.07, 1500 + (i % 2) * 500, 0.22)); break;
+      case 'crunch': [0, 0.22, 0.44, 0.7, 0.92].forEach((d, i) => this.noise(t + d, 0.06, 1100 + (i % 3) * 300, 0.3)); break;
+      case 'lap': [0, 0.24, 0.48, 0.72].forEach((d) => this.tone(520, t + d, 0.07, 'sine', out, 0.3, 300)); break;
       case 'boing': [0, 0.26, 0.5].forEach((d, i) => this.tone(300 - i * 40, t + d, 0.16, 'sine', out, 0.9 - i * 0.2, 160)); break;
       case 'squeak': this.tone(900, t, 0.1, 'square', out, 0.25, 1500); this.tone(1400, t + 0.14, 0.14, 'square', out, 0.25, 800); break;
       case 'beep': [660, 880, 660, 990].forEach((f, i) => this.tone(f, t + i * 0.12, 0.09, 'square', out, 0.22)); break;

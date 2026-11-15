@@ -219,4 +219,6 @@ export const en: Record<Key, string> = {
   'idea.party.t': "Take a treat from the bakery, wrap a toy in the workshop and bring them to the Friends club. Who will be the DJ?",
   'costume.dj': 'DJ',
   'costume.confectioner': 'Pastry Chef',
+  'toast.bowlFull': 'This half of the bowl is already full.',
+  'prop.pet_food_bag': 'Bag of pet food',
 };

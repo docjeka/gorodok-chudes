@@ -1,5 +1,5 @@
 // Сцена PixiJS. Она ничего не хранит сама: каждый раз строится из модели мира (sync).
-import { Application, Container, Graphics, Sprite, Texture } from 'pixi.js';
+import { Application, Container, Graphics, Rectangle, Sprite, Texture } from 'pixi.js';
 import { heart, star, ci, type Art, shade } from '../art/base';
 import { characterArt } from '../art/character';
 import { browArt, eyeArt, eyeStateFor, faceInk, mouthArt } from '../art/face';
@@ -32,11 +32,13 @@ interface Want {
   key: string; load: () => Promise<Tex>; face?: FaceWant; overlay?: { key: string; load: () => Promise<Tex> };
   /** налитое в чашку: цвет и место «зеркала» жидкости */
   liquid?: { color: number; x: number; y: number; rx: number };
+  /** двойная миска: вода слева и гранулы справа — отдельными слоями */
+  bowl?: { water: boolean; kibble: boolean };
 }
 interface Node {
   id: string; kind: Kind; ref: string; c: Container; body: Sprite; key: string; tex?: Tex;
   parts?: Record<'eyeL' | 'eyeR' | 'browL' | 'browR' | 'mouth', Sprite>; face?: FaceWant; blinkAt: number; blinkUntil: number;
-  overlay?: Sprite; overlayKey?: string; pulse: number; liquid?: Graphics; liquidKey?: string;
+  overlay?: Sprite; overlayKey?: string; pulse: number; liquid?: Graphics; liquidKey?: string; bowlG?: Graphics; bowlKey?: string;
   /** место из модели мира: танец качает фигурку вокруг него и ничего не сохраняет */
   by: number;
 }
@@ -49,6 +51,8 @@ export class Scene {
   app = new Application();
   root = new Container();
   private bg = new Sprite();
+  /** продолжение фона вверх (небо или стена), когда экран выше комнаты */
+  private bgTop = new Sprite();
   private layer = new Container();
   private night = new Graphics();
   private glow = new Container();
@@ -86,7 +90,8 @@ export class Scene {
   private talkFrame = 0;
 
   async init(host: HTMLElement) {
-    await this.app.init({ resizeTo: host, background: 0xf3e6d3, antialias: true, resolution: Math.min(window.devicePixelRatio || 1, 2), autoDensity: true, preference: 'webgl' });
+    // размер холста задаёт fit(): по фактической видимой области, а не по устаревшим размерам окна (после поворота iPad они запаздывают)
+    await this.app.init({ width: Math.max(1, host.clientWidth), height: Math.max(1, host.clientHeight), background: 0xf3e6d3, antialias: true, resolution: Math.min(window.devicePixelRatio || 1, 2), autoDensity: true, preference: 'webgl' });
     host.appendChild(this.app.canvas);
     this.app.canvas.style.touchAction = 'none';
     this.layer.sortableChildren = true;
@@ -96,7 +101,7 @@ export class Scene {
     const ballMask = new Graphics().circle(DISCO_BALL.x, DISCO_BALL.y, DISCO_BALL.r).fill({ color: 0xffffff });
     this.clubBall.mask = ballMask; // контур и крепление шара остаются с фона: анимация только внутри круга
     this.club.addChild(this.clubGlints, ballMask, this.clubBall);
-    this.root.addChild(this.bg, this.club, this.layer, this.night, this.glow, this.fx, this.hl, this.debugG);
+    this.root.addChild(this.bgTop, this.bg, this.club, this.layer, this.night, this.glow, this.fx, this.hl, this.debugG);
     this.app.stage.addChild(this.root);
     this.app.renderer.on('resize', () => this.layout());
     this.layout();
@@ -107,6 +112,12 @@ export class Scene {
   /** Наименьший масштаб: вся комната целиком помещается на экране. */
   get minZoom() { return Math.min(1, (this.app.screen.width / ROOM_W) / (this.app.screen.height / ROOM_H)); }
   readonly maxZoom = 1.8;
+  /** Холст ровно по видимой области; фон, герои, вещи и зоны нажатия считаются от одного и того же масштаба и смещения. */
+  fit(w: number, h: number) {
+    if (w < 1 || h < 1) return;
+    if (Math.abs(this.app.screen.width - w) < 0.5 && Math.abs(this.app.screen.height - h) < 0.5) return;
+    this.app.renderer.resize(w, h); // вызовет layout()
+  }
   layout() {
     const W = this.app.screen.width, H = this.app.screen.height;
     this.zoom = Math.max(this.minZoom, Math.min(this.maxZoom, this.zoom));
@@ -121,7 +132,8 @@ export class Scene {
     const W = this.app.screen.width, H = this.app.screen.height;
     if (this.viewW >= ROOM_W) { this.camX = 0; this.root.x = (W - ROOM_W * this.scale) / 2; }
     else { this.camX = Math.max(0, Math.min(ROOM_W - this.viewW, this.camX - dxScreen / this.scale)); this.root.x = -this.camX * this.scale; }
-    if (this.viewH >= ROOM_H) { this.camY = 0; this.root.y = (H - ROOM_H * this.scale) / 2; }
+    // комната ниже экрана (отдалили на 4:3): пол прижат к нижнему краю, сверху продолжается небо или стена
+    if (this.viewH >= ROOM_H) { this.camY = 0; this.root.y = H - ROOM_H * this.scale; }
     else { this.camY = Math.max(0, Math.min(ROOM_H - this.viewH, this.camY - dyScreen / this.scale)); this.root.y = -this.camY * this.scale; }
   }
   /** Отдалить или приблизить. focal — точка экрана, которая остаётся под пальцами. */
@@ -157,7 +169,7 @@ export class Scene {
     const bgKey = house ? `room${room.wallpaper % 4}` : roomId;
     if (bgKey !== this.bgKey) {
       this.bgKey = bgKey;
-      void imageTex(bgKey, `${BASE}assets/rooms/${bgKey}.${house ? 'jpg' : 'webp'}`, { upp: 1, ox: 0, oy: 0 }).then((t) => { if (this.bgKey === bgKey) { this.bg.texture = t.texture; this.bg.width = ROOM_W; this.bg.height = ROOM_H; } });
+      void imageTex(bgKey, `${BASE}assets/rooms/${bgKey}.${house ? 'jpg' : 'webp'}`, { upp: 1, ox: 0, oy: 0 }).then((t) => { if (this.bgKey === bgKey) { this.bg.texture = t.texture; this.bg.width = ROOM_W; this.bg.height = ROOM_H; this.bgTop.texture = new Texture({ source: t.texture.source, frame: new Rectangle(0, 1, t.texture.source.width, 2) }); this.bgTop.width = ROOM_W; this.bgTop.height = ROOM_H; this.bgTop.y = -ROOM_H + 1; } });
     }
     this.nightAlpha = room.lightOn ? 0 : 0.5;
     // эффекты клуба работают только пока игрок в клубе
@@ -194,6 +206,7 @@ export class Scene {
       this.syncFace(n, w.face);
       this.syncOverlay(n, w.overlay);
       this.syncLiquid(n, w.liquid);
+      this.syncBowl(n, w.bowl);
     }
     for (const [id, n] of this.nodes) if (!seen.has(id)) { n.c.destroy({ children: true }); this.nodes.delete(id); }
     this.syncGlow(world, roomId);
@@ -284,7 +297,7 @@ export class Scene {
       const z = o.kind === 'hand' ? (charZ.get(o.characterId) ?? 200) + 0.05 : o.kind === 'surface' ? zOfFurn(o.furnitureId) + 0.6 + o.slot * 0.001 : o.kind === 'furniture' ? zOfFurn(o.furnitureId) + 0.3 + o.slot * 0.001 : 200 + pl.y;
       const LIQ: Record<string, number> = { water: 0x8fd0f5, milk: 0xffffff, tea: 0xc98c4f };
       const liquid = it.state.contents ? (it.definitionId === 'glass' ? { color: LIQ[it.state.contents], x: 0, y: -45, rx: 10 } : { color: LIQ[it.state.contents], x: -5, y: -40, rx: 13 }) : undefined;
-      out.push({ id: 'i:' + it.instanceId, kind: 'item', ref: it.instanceId, x: pl.x, y: pl.y, z, flip: false, rot: 0, liquid, ...this.itemTex(it) });
+      out.push({ id: 'i:' + it.instanceId, kind: 'item', ref: it.instanceId, x: pl.x, y: pl.y, z, flip: false, rot: 0, liquid, bowl: it.definitionId === 'pet_double_bowl' ? { water: !!it.state.water, kibble: !!it.state.kibble } : undefined, ...this.itemTex(it) });
     }
     return out;
   }
@@ -386,6 +399,26 @@ export class Scene {
     g.ellipse(l.x - l.rx * 0.3, l.y - 0.6, l.rx * 0.3, l.rx * 0.1).fill({ color: 0xffffff, alpha: 0.7 });
     n.c.addChild(g);
     n.liquid = g;
+  }
+
+  private syncBowl(n: Node, b: Want['bowl']) {
+    const key = b ? `${b.water}:${b.kibble}` : '';
+    if (n.bowlKey === key) return;
+    n.bowlKey = key;
+    n.bowlG?.destroy();
+    n.bowlG = undefined;
+    if (!b || (!b.water && !b.kibble)) return;
+    const g = new Graphics();
+    if (b.water) {
+      g.ellipse(-23.5, -35, 15, 7).fill({ color: 0x8fd0f5 }).stroke({ color: 0x6bb3de, width: 1.2 });
+      g.ellipse(-28, -36.5, 5, 1.8).fill({ color: 0xffffff, alpha: 0.75 });
+    }
+    if (b.kibble) {
+      g.ellipse(24, -34.5, 15, 7).fill({ color: 0xb9783f });
+      for (const [x, y] of [[15, -36], [22, -39], [30, -37], [19, -33], [27, -33], [24, -36.5], [33, -34]]) g.ellipse(x, y, 4.2, 3.2).fill({ color: 0xcf8f4f }).stroke({ color: 0x9a6230, width: 0.8 });
+    }
+    n.c.addChild(g);
+    n.bowlG = g;
   }
 
   /** Волшебная ночь: в темноте светятся ночники, а спящим снятся сны. */

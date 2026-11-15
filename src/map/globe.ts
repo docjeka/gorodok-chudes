@@ -70,6 +70,7 @@ export class WorldMap {
     this.el.addEventListener('pointerup', (e) => this.up(e));
     this.el.addEventListener('pointercancel', () => this.release());
     window.addEventListener('resize', () => this.layout());
+    if ('ResizeObserver' in window) new ResizeObserver(() => { if (this.isOpen) this.layout(); }).observe(this.el); // размер области мог уточниться позже события resize
     this.texts();
     this.apply();
   }

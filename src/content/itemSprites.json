@@ -356,8 +356,8 @@
 "h": 182
 },
 "pet_double_bowl": {
-"w": 229,
-"h": 107
+"w": 250,
+"h": 121
 },
 "pet_grooming_brush": {
 "w": 151,
@@ -386,5 +386,9 @@
 "fair_plush_prize": {
 "w": 156,
 "h": 184
+},
+"pet_food_bag": {
+"w": 182,
+"h": 216
 }
 }
