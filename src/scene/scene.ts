@@ -227,7 +227,12 @@ export class Scene {
     for (const f of Object.values(w.furniture)) {
       if (f.roomId !== roomId) continue;
       const def = FURNITURE[f.definitionId];
-      if (def.invisible) continue;
+      if (def.invisible) {
+        // места фермы: сено в кормушке, зерно на земле, яйцо в гнезде, росток или цветок на грядке — отдельными слоями поверх фона
+        const art = def.farm ? farmArt(def.farm, f.on) : null;
+        if (art) { const key = `farm:${def.farm}:${f.on}`; out.push({ id: 'fa:' + f.id, kind: 'front', ref: f.id, x: f.x, y: f.y, z: 20 + f.y * 0.001, flip: false, rot: 0, key, load: () => artTex(key, () => art) }); }
+        continue;
+      }
       const occupied = Object.values(w.characters).some((c) => c.seat?.furnitureId === f.id);
       const name = this.furnFile(f, night, occupied);
       const meta = FURN_SPRITES[name] ?? FURN_SPRITES[f.definitionId];
@@ -266,7 +271,8 @@ export class Scene {
       const box = p.inItem ? w.items[p.inItem] : undefined;
       const inBox = box && box.owner.kind === 'room' && box.owner.roomId === roomId;
       const mood: PetMood = p.sleeping ? 'sleep' : this.moodOf(p.id);
-      const name = `${p.kind}_${mood}`;
+      // у жителей фермы две позы: обычная и радостная
+      const name = PET_SPRITES[`${p.kind}_${mood}`] ? `${p.kind}_${mood}` : `${p.kind}_${mood === 'idle' || mood === 'sleep' ? 'idle' : 'happy'}`;
       const meta = PET_SPRITES[name];
       const key = 'P:' + name;
       out.push({ id: 'p:' + p.id, kind: 'pet', ref: p.id, x: pos.x, y: inBox ? pos.y - 20 : pos.y, z: p.seat ? zOfFurn(p.seat.furnitureId) + 0.3 : 200 + pos.y + (inBox ? -0.5 : 0), flip: p.flipped, rot: 0, key, load: () => imageTex(key, `${BASE}assets/pets/${name}.png`, meta) });
@@ -810,3 +816,26 @@ export class Scene {
 }
 
 void ci; void Texture;
+
+/** Простые рисунки состояний фермы (в единицах комнаты, опорная точка — низ по центру). */
+function farmArt(kind: 'trough' | 'grain' | 'nest' | 'bed', on: number): Art | null {
+  const wrap = (w: number, h: number, body: string): Art => ({ svg: body, x: -w / 2, y: -h, w, h });
+  if (kind === 'trough' && on) {
+    let straws = '';
+    for (let i = 0; i < 26; i++) { const x = -150 + i * 12, h = 26 + ((i * 37) % 22); straws += `<path d="M${x} 0 q${((i * 13) % 14) - 7} ${-h / 2} ${((i * 7) % 18) - 9} ${-h}" stroke="${i % 3 ? '#e9b949' : '#f6d877'}" stroke-width="7" stroke-linecap="round" fill="none"/>`; }
+    return wrap(340, 60, `<ellipse cx="0" cy="-10" rx="160" ry="16" fill="#e2a93c"/>${straws}`);
+  }
+  if (kind === 'grain' && on) {
+    let dots = '';
+    for (let i = 0; i < 22; i++) dots += `<ellipse cx="${-52 + ((i * 29) % 104)}" cy="${-6 - ((i * 11) % 18)}" rx="6" ry="4.4" fill="${i % 2 ? '#e8b64c' : '#f2cf73'}" stroke="#b9862c" stroke-width="1"/>`;
+    return wrap(140, 36, `<ellipse cx="0" cy="-8" rx="62" ry="12" fill="#d9a441" opacity="0.55"/>${dots}`);
+  }
+  if (kind === 'nest' && !on) return wrap(60, 46, `<ellipse cx="0" cy="-20" rx="17" ry="21" fill="#fbeedb" stroke="#d9c3a3" stroke-width="2.5"/><ellipse cx="-6" cy="-28" rx="5" ry="7" fill="#ffffff" opacity="0.8"/>`);
+  if (kind === 'bed' && on === 1) return wrap(80, 70, `<path d="M0 0 V-40" stroke="#4f9e3f" stroke-width="7" stroke-linecap="round"/><path d="M0 -30 q-26 -14 -30 -34 q26 0 30 34z M0 -36 q26 -12 30 -30 q-26 -2 -30 30z" fill="#6cc653" stroke="#4f9e3f" stroke-width="2.5"/>`);
+  if (kind === 'bed' && on >= 2) {
+    let petals = '';
+    for (let i = 0; i < 6; i++) petals += `<ellipse cx="${Math.cos((i * Math.PI) / 3) * 17}" cy="${-82 + Math.sin((i * Math.PI) / 3) * 17}" rx="12" ry="12" fill="#ff9ec4" stroke="#e77aa6" stroke-width="2"/>`;
+    return wrap(90, 112, `<path d="M0 0 V-74" stroke="#4f9e3f" stroke-width="7" stroke-linecap="round"/><path d="M0 -34 q-26 -10 -32 -28 q26 -2 32 28z M0 -44 q26 -10 32 -26 q-26 -4 -32 26z" fill="#6cc653" stroke="#4f9e3f" stroke-width="2.5"/>${petals}<circle cx="0" cy="-82" r="10" fill="#ffd94d" stroke="#e0a92c" stroke-width="2"/>`);
+  }
+  return null;
+}

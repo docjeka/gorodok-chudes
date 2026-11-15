@@ -16,6 +16,8 @@ import type { Character, ItemInst } from '../game/types';
 import { BAG_CAPACITY } from '../game/types';
 import { has, setLang, t, type Key } from '../i18n';
 import { HOUSE_ROOMS } from '../content/furniture';
+import { IDEA_KITS } from '../content/ideaKits';
+import { prepareIdea, type PreparedItem } from '../game/rules';
 import type { Play } from '../scene/play';
 import type { Scene } from '../scene/scene';
 import { exportFileName } from '../storage/store';
@@ -61,6 +63,8 @@ export class Panels {
   private modal = el('div', 'modal hidden');
   open: PanelId | null = null;
   private thingsTab: 'bag' | 'catalog' | 'lost' = 'bag';
+  /** что показала последняя подготовка идеи (до закрытия игры) */
+  private ideaReport: Record<string, PreparedItem[]> = {};
   private cat: (typeof CATS)[number] = 'food';
   private parentOpen = false;
   onReplayTutorial: () => void = () => undefined;
@@ -319,11 +323,37 @@ export class Panels {
 
   // ---------- карточки идей: подсказки для историй, не задания ----------
   private renderIdeas() {
-    const pics: Record<string, string[]> = { breakfast: ['bread', 'cheese', 'sandwich'], birthday: ['cake', 'balloon', 'giftbox'], picnic: ['basket', 'apple', 'cookies'], vet: ['teddy', 'pillow', 'teapot'], winter: ['mittens', 'cocoa', 'snowglobe'], show: ['crown', 'wand', 'mask'], party: ['cupcake', 'giftbox', 'club_headphones'] };
+    const pics: Record<string, string[]> = { breakfast: ['bread', 'cheese', 'sandwich'], birthday: ['cake', 'balloon', 'giftbox'], picnic: ['basket', 'apple', 'cookies'], vet: ['teddy', 'pillow', 'teapot'], winter: ['mittens', 'cocoa', 'snowglobe'], show: ['crown', 'wand', 'mask'], party: ['cupcake', 'giftbox', 'club_headphones'], pets: ['pet_rope_ball', 'pet_food_bag', 'pet_double_bowl'] };
     const grid = el('div', 'grid gifts');
     for (const id of IDEA_CARDS) {
       const card = el('div', 'card idea');
+      card.dataset.idea = id;
       card.innerHTML = `<div class="giftitems">${(pics[id] ?? []).map((d) => itemThumb({ definitionId: d, state: { packed: true } }, 52)).join('')}</div><b>${t(('idea.' + id) as Key)}</b><span>${t(('idea.' + id + '.t') as Key)}</span>`;
+      const kit = IDEA_KITS[id];
+      if (kit) {
+        // просмотр карточки ничего не меняет; вещи появляются только по кнопке
+        const prep = el('button', 'pill small', t('idea.prepare'));
+        const run = (again: boolean) => {
+          const r = prepareIdea(this.game.world, id, kit, again);
+          if (!this.game.commit(r, true) || !r.ok) return;
+          this.ideaReport[id] = r.info!.report as PreparedItem[];
+          this.audio.play('sparkle');
+          this.render();
+        };
+        prep.onclick = () => run(false);
+        card.append(prep);
+        const rep = this.ideaReport[id];
+        if (rep) {
+          const list = el('div', 'idea-report');
+          for (const it of rep) {
+            const where = it.inBag ? t('idea.inBag') : `${it.roomId ? t(('room.' + it.roomId) as Key) : ''}${it.holder ? ` · ${t('idea.withHero')} ${this.game.world.characters[it.holder]?.name ?? ''}` : ''}`;
+            const row = el('div', 'idea-row ' + it.status, `${itemThumb({ definitionId: it.def, state: it.def === 'giftbox' ? { packed: false } : {} }, 36)}<span><b>${t(('idea.' + it.status) as Key)}</b>${it.status === 'eaten' ? '' : ': ' + where}</span>`);
+            if (it.status === 'eaten') { const more = el('button', 'pill small plain', t('idea.again')); more.onclick = () => run(true); row.append(more); }
+            list.append(row);
+          }
+          card.append(list);
+        }
+      }
       grid.append(card);
     }
     this.body.append(grid);

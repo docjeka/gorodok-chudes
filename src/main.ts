@@ -107,7 +107,10 @@ async function run(kv: KV, initial: World) {
   const thePanels = panels;
   thePanels.onReplayTutorial = () => theHud.startTutorial();
   const input = new Input(scene, play);
-  input.onDropUi = (el, target) => (el.dataset.drop === 'bag' && target.kind === 'item' ? thePanels.dropToBag(target.ref) : false);
+  input.onDropUi = (el, target) => {
+    if (target.kind === 'pet') return play.farmStay(target.ref); // зверя с фермы нельзя положить в сумку или унести за дверь и на карту
+    return el.dataset.drop === 'bag' && target.kind === 'item' ? thePanels.dropToBag(target.ref) : false;
+  };
   void offline.start();
   scene.reducedMotion = world.settings.reducedMotion;
   scene.zoom = world.settings.zoom ?? 1;

@@ -1,12 +1,12 @@
 // Игровые взаимодействия: что происходит при нажатии и при отпускании. Связывает правила, сцену и звук.
 import type { GameAudio } from '../audio/audio';
-import { DISCO_BALL, FURNITURE, TV_SCENES } from '../content/furniture';
+import { DISCO_BALL, FARM_KINDS, FURNITURE, GRAIN_EATERS, HAY_EATERS, TV_SCENES } from '../content/furniture';
 import { ITEMS } from '../content/items';
 import { resolveCharDrop, resolveItemDrop, resolvePetDrop, freeFloorSpot, type ItemDrop } from '../game/drop';
 import type { Game } from '../game/game';
 import { charBox, charPos, clampFloor, dist, itemPlace, petPos, slotPos } from '../game/geometry';
 import {
-  HEADWEAR, POURS, clone, emptyBowl, fillBowl, cook, cookables, drink, feed, fill, moveItem, openGift, patchPet, placeCharacter, placePet, recipeAt, seatTaken, setFurnitureOn,
+  HEADWEAR, POURS, clone, collectEgg, eatFromFeeder, emptyBowl, fillBowl, fillFeeder, henFed, waterBed, cook, cookables, drink, feed, fill, moveItem, openGift, patchPet, placeCharacter, placePet, recipeAt, seatTaken, setFurnitureOn,
   setRoomStyle, toggleOpen, travel, wake, wearSet, moveFurniture,
 } from '../game/rules';
 import type { Pt, RoomId, World } from '../game/types';
@@ -71,6 +71,8 @@ export class Play {
       case 'feed': case 'care': { const b = charBox(w, w.characters[d.characterId]); return { x: b.headX, y: b.headLine === null ? b.y0 + 60 : b.headLine - 50, r: 62 }; }
       case 'hand': case 'wear': { const p = charPos(w, w.characters[d.characterId]); const sit = w.characters[d.characterId].pose === 'sitting'; return { x: p.x, y: p.y - (sit ? 40 : 90), r: 58 }; }
       case 'pet': { const p = petPos(w, w.pets[d.petId]); return { x: p.x, y: p.y - 50, r: 60 }; }
+      case 'feeder': case 'bed': { const f = w.furniture[d.furnitureId]; return { x: f.x, y: f.y - 30, r: 70 }; }
+      case 'farmfeed': { const p = petPos(w, w.pets[d.petId]); return { x: p.x, y: p.y - 50, r: 60 }; }
       case 'into': case 'pour': case 'water': case 'bowl': { const pl = itemPlace(w, w.items[d.itemId]); return { x: pl.x, y: pl.y - 30, r: 52 }; }
       case 'surface': { const f = w.furniture[d.furnitureId]; const s = slotPos(f, FURNITURE[f.definitionId].surfaces![d.slot]); return { x: s.x, y: s.y - 22, r: 36 }; }
       case 'furniture': { const f = w.furniture[d.furnitureId]; const fd = FURNITURE[f.definitionId]; return { x: f.x, y: f.y - fd.h / 2, r: Math.min(fd.w, fd.h) * 0.42 }; }
@@ -116,6 +118,50 @@ export class Play {
           this.scene.burst(asDrink ? 'bubble' : 'crumb', { x: mouth.x, y: mouth.y + 6 }, asDrink ? 4 : 6);
           this.scene.pop(heroId, 0.08);
           this.talk?.say(heroId, 'food', 350);
+        });
+        return;
+      }
+      case 'feeder': {
+        // сено в кормушку или зерно на землю: одна порция, сено и ведёрко многоразовые
+        const f = w.furniture[d.furnitureId];
+        if (!fillFeeder(w, d.furnitureId).ok) return fail('farm.feederFull');
+        this.audio.play('crunch');
+        const drops = window.setInterval(() => this.scene.burst('crumb', { x: f.x, y: f.y - 40 }, 2), 160);
+        this.scene.consume(itemId, { x: f.x + 50, y: f.y - 130 }, 'tilt', () => {
+          window.clearInterval(drops);
+          this.game.commit(fillFeeder(this.w, d.furnitureId));
+          this.scene.sync(this.w);
+        });
+        return;
+      }
+      case 'farmfeed': {
+        // сено или зерно поднесли прямо зверю: он ест и радуется, запас не убывает
+        const pet = w.pets[d.petId];
+        const pos = petPos(w, pet);
+        if (pet.sleeping) this.game.commit(patchPet(w, d.petId, { sleeping: false }));
+        this.scene.setPetMood(d.petId, 'happy', 1800);
+        this.audio.play('crunch');
+        this.scene.burst('crumb', { x: pos.x, y: pos.y - 50 }, 5);
+        this.scene.consume(itemId, { x: pos.x + 40, y: pos.y - 60 }, 'eat', () => {
+          if (pet.kind === 'hen') this.game.commit(henFed(this.w));
+          this.scene.sync(this.w);
+          this.scene.burst('heart', { x: pos.x, y: pos.y - 110 }, 2);
+          this.scene.hop(d.petId, 16);
+        });
+        return;
+      }
+      case 'bed': {
+        // полив грядки: росток, потом цветок
+        const f = w.furniture[d.furnitureId];
+        this.audio.play('pour');
+        const rain = window.setInterval(() => this.scene.burst('bubble', { x: f.x, y: f.y - 60 }, 2), 200);
+        this.scene.consume(itemId, { x: f.x + 80, y: f.y - 150 }, 'tilt', () => {
+          window.clearInterval(rain);
+          const r = waterBed(this.w, d.furnitureId);
+          this.game.commit(r);
+          this.scene.sync(this.w);
+          this.scene.burst(r.ok && r.info!.level === 2 ? 'heart' : 'star', { x: f.x, y: f.y - 70 }, 5);
+          this.audio.play('sparkle');
         });
         return;
       }
@@ -276,6 +322,16 @@ export class Play {
     return true;
   }
 
+  /** Жителя фермы пытаются унести (на дверь, карту или в сумку): он остаётся и спокойно отвечает. */
+  farmStay(petId: string): boolean {
+    const p = this.w.pets[petId];
+    if (!p || !FARM_KINDS.has(p.kind)) return false;
+    this.ui.toast('farm.home');
+    this.scene.hop(petId, 12);
+    this.petVoice(p.kind);
+    return true;
+  }
+
   /** время, до которого питомцы молчат: один голос за раз и пауза между повторами */
   private petQuietUntil = 0;
   /** сколько раз и каким голосом отвечали питомцы — для проверок */
@@ -284,11 +340,32 @@ export class Play {
   petVoice(kind: string): boolean {
     const now = performance.now();
     if (now < this.petQuietUntil || this.talk?.speaking) return false;
-    const voice = ({ cat: 'meow', dog: 'woof', frenchie: 'frenchie', wolf: 'howl', capybara: 'whistle', rabbit: 'sniff' } as const)[kind as 'cat'];
+    const voice = ({ cat: 'meow', dog: 'woof', frenchie: 'frenchie', wolf: 'howl', capybara: 'whistle', rabbit: 'sniff', cow: 'moo', sheep: 'baa', pig: 'oink', goat: 'meh', hen: 'cluck', chick: 'peep', pony: 'neigh' } as const)[kind as 'cat'];
     if (!voice) return false;
     this.petQuietUntil = now + 2200;
     this.petVoiceLog.push(voice);
     this.audio.play(voice);
+    return true;
+  }
+
+  /** Житель фермы у полной кормушки: ест, радуется, порция исчезает в конце (если его не увели). */
+  private feederMeal(petId: string): boolean {
+    const p = this.w.pets[petId];
+    if (!p || p.seat || p.sleeping) return false;
+    const f = Object.values(this.w.furniture).find((x) => x.roomId === this.room && x.on > 0 && ['trough', 'grain'].includes(FURNITURE[x.definitionId].farm ?? '') && Math.abs(x.x - p.x) < FURNITURE[x.definitionId].w / 2 + 120 && (FURNITURE[x.definitionId].farm === 'trough' ? HAY_EATERS : GRAIN_EATERS).has(p.kind));
+    if (!f) return false;
+    const spot = { x: p.x, y: p.y };
+    this.scene.setPetMood(petId, 'happy', 1500);
+    this.audio.play('crunch');
+    this.scene.burst('crumb', { x: f.x, y: f.y - 30 }, 4);
+    window.setTimeout(() => {
+      const c = this.w.pets[petId];
+      if (!c || c.roomId !== this.room || c.x !== spot.x || c.y !== spot.y || this.scene.dragging === petId) return;
+      if (!this.game.commit(eatFromFeeder(this.w, f.id, petId))) return;
+      this.scene.burst('heart', { x: spot.x, y: spot.y - 120 }, 2);
+      this.scene.hop(petId, 16);
+      this.petVoice(c.kind);
+    }, 1450);
     return true;
   }
 
@@ -326,7 +403,7 @@ export class Play {
     const p = this.w.pets[id];
     if (!p || p.roomId !== this.room) return;
     const pos = petPos(this.w, p);
-    if (!p.sleeping) this.scene.setPetMood(id, ['capybara', 'frenchie', 'wolf'].includes(p.kind) ? 'play' : 'happy', 1600);
+    if (!p.sleeping) this.scene.setPetMood(id, ['capybara', 'frenchie', 'wolf'].includes(p.kind) ? 'play' : 'happy', 1600); // у жителей фермы это радостная поза
     this.scene.burst('heart', { x: pos.x, y: pos.y - 120 }, 2);
     this.audio.play('pet');
   }
@@ -424,7 +501,7 @@ export class Play {
     this.game.update((w) => { const p = w.pets[id]; const c = clampFloor(d.x, d.y); p.x = c.x; p.y = c.y; p.seat = null; p.sleeping = false; delete p.inItem; });
     this.scene.hop(id, 14);
     this.audio.play('put');
-    if (this.bowlMeal(id)) return;
+    if (this.feederMeal(id) || this.bowlMeal(id)) return;
     if (this.room === 'animals') this.parkHabits(id);
   }
 
@@ -497,6 +574,11 @@ export class Play {
       this.audio.play('light');
       return;
     }
+    if (!t && this.room === 'farm_yard') {
+      // пустое гнездо: спокойная подсказка
+      const nest = Object.values(w.furniture).find((f) => f.roomId === 'farm_yard' && FURNITURE[f.definitionId].farm === 'nest');
+      if (nest && Math.hypot(pt.x - nest.x, pt.y - (nest.y - 20)) < 70) { this.nestTap(nest.id); return; }
+    }
     if (!t) {
       // «нажал предмет — нажал цель»: пустое место на полу
       if (sel?.kind === 'item') { this.dropItem(sel.ref, pt, { type: 'floor', ...clampFloor(pt.x, pt.y) }); this.select(null); }
@@ -561,6 +643,8 @@ export class Play {
     const w = this.w;
     const f = w.furniture[id];
     const fd = FURNITURE[f.definitionId];
+    if (fd.farm === 'nest') { this.nestTap(id); return; }
+    if (fd.farm) { this.select(null); return; }
     switch (fd.tap) {
       case 'toggleOpen': this.game.commit(toggleOpen(w, id)); this.audio.play('door'); break;
       case 'tv': this.game.commit(setFurnitureOn(w, id, (f.on + 1) % (TV_SCENES + 1))); this.audio.play('click'); break;
@@ -578,6 +662,18 @@ export class Play {
       case 'wardrobe': this.ui.openWardrobe(this.selection?.kind === 'char' ? this.selection.ref : null); this.audio.play('door'); break;
       default: this.select(null); void pt;
     }
+  }
+
+  /** Гнездо в курятнике: яйцо собирается в корзинку (или на землю рядом). Пустое гнездо яиц не выдаёт. */
+  private nestTap(nestId: string) {
+    const r = collectEgg(this.w, nestId);
+    if (!this.game.commit(r) || !r.ok) { this.ui.toast('farm.nestEmpty'); this.audio.play('nope'); return; }
+    const egg = r.info!.instanceId as string;
+    const pl = itemPlace(this.w, r.info!.inBasket ? this.w.items[(this.w.items[egg].owner as { itemId: string }).itemId] : this.w.items[egg]);
+    this.audio.play('pop');
+    this.scene.burst('star', { x: pl.x, y: pl.y - 50 }, 5);
+    if (!r.info!.inBasket) this.scene.pop(egg, 0.25);
+    this.petVoice('hen');
   }
 
   // ---------- готовка ----------

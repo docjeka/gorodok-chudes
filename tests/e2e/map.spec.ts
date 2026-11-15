@@ -45,12 +45,12 @@ test('тап открывает место, свайп — нет; на обра
   // свайп, начатый прямо на домиках, ничего не открывает
   await swipe(page, -200); await settled(page);
   await expect(page.locator('.map')).toBeVisible();
-  expect(await page.evaluate(() => window.__game.map.frontPlaces())).toEqual(['animals']); // на обороте — только Парк животных
+  expect(await page.evaluate(() => window.__game.map.frontPlaces())).toEqual(['farm', 'animals']); // на обороте — Ферма и Парк животных
   // обратная сторона: там, где спереди домики, тап ничего не делает
   await page.mouse.click(...(await spot(page, 'houses')));
   await page.waitForTimeout(300);
   await expect(page.locator('.map')).toBeVisible();
-  expect(await page.evaluate(() => [...document.querySelectorAll('.map-zone')].filter((z) => !(z as HTMLButtonElement).disabled).map((z) => (z as HTMLElement).dataset.place))).toEqual(['animals']);
+  expect(await page.evaluate(() => [...document.querySelectorAll('.map-zone')].filter((z) => !(z as HTMLButtonElement).disabled).map((z) => (z as HTMLElement).dataset.place))).toEqual(['farm', 'animals']);
   await page.click('.map-turn.left'); await settled(page);
   // короткое дрожание пальца (меньше порога) — всё ещё тап
   const [x, y] = await spot(page, 'houses');

@@ -1,6 +1,6 @@
 // Эффекты синтезируются в браузере (Web Audio); музыка — два локальных файла (фон города и трек DJ-пульта).
 // Запускается только после действия пользователя и возобновляется при возвращении в приложение.
-export type Sfx = 'meow' | 'woof' | 'frenchie' | 'howl' | 'whistle' | 'sniff' | 'crunch' | 'lap' | 'boing' | 'squeak' | 'beep' | 'vroom' | 'whoosh' | 'clink' | 'scrub' | 'gulp' | 'pour' | 'pop' | 'put' | 'munch' | 'sparkle' | 'door' | 'water' | 'sleep' | 'nope' | 'gift' | 'click' | 'pet' | 'cook' | 'light';
+export type Sfx = 'moo' | 'baa' | 'oink' | 'meh' | 'cluck' | 'peep' | 'neigh' | 'meow' | 'woof' | 'frenchie' | 'howl' | 'whistle' | 'sniff' | 'crunch' | 'lap' | 'boing' | 'squeak' | 'beep' | 'vroom' | 'whoosh' | 'clink' | 'scrub' | 'gulp' | 'pour' | 'pop' | 'put' | 'munch' | 'sparkle' | 'door' | 'water' | 'sleep' | 'nope' | 'gift' | 'click' | 'pet' | 'cook' | 'light';
 
 const NOTES = [261.63, 293.66, 329.63, 392.0, 440.0, 523.25, 587.33, 659.25];
 
@@ -184,6 +184,14 @@ export class GameAudio {
       case 'click': this.tone(660, t, 0.06, 'triangle', out, 0.6); break;
       case 'munch': this.noise(t, 0.09, 900); this.noise(t + 0.13, 0.09, 700); break;
       // голоса питомцев — негромкие, 0,5–1,3 с, у каждого свой рисунок
+      // жители фермы
+      case 'moo': this.tone(150, t, 0.5, 'sawtooth', out, 0.3, 120); this.tone(120, t + 0.45, 0.55, 'sawtooth', out, 0.3, 165); this.tone(300, t, 1, 'sine', out, 0.12, 250); break;
+      case 'baa': [0, 0.09, 0.18, 0.27, 0.36, 0.45].forEach((d, i) => this.tone(430 + (i % 2) * 45, t + d, 0.1, 'sawtooth', out, 0.26, 400)); break;
+      case 'oink': [0, 0.26].forEach((d) => { this.noise(t + d, 0.13, 320, 0.45); this.tone(190, t + d, 0.12, 'square', out, 0.16, 140); }); break;
+      case 'meh': [0, 0.07, 0.14, 0.21, 0.28].forEach((d, i) => this.tone(620 + (i % 2) * 70, t + d, 0.08, 'sawtooth', out, 0.22, 560)); break;
+      case 'cluck': [0, 0.16, 0.3, 0.52].forEach((d, i) => this.tone(i === 3 ? 900 : 620, t + d, 0.06, 'square', out, 0.2, i === 3 ? 1200 : 480)); break;
+      case 'peep': [0, 0.18, 0.36].forEach((d) => this.tone(2300, t + d, 0.08, 'sine', out, 0.24, 2900)); break;
+      case 'neigh': this.tone(900, t, 0.25, 'sawtooth', out, 0.2, 1300); [0.25, 0.37, 0.49, 0.61, 0.73].forEach((d, i) => this.tone(1200 - i * 150, t + d, 0.11, 'sawtooth', out, 0.2, 1000 - i * 150)); break;
       case 'meow': this.tone(620, t, 0.22, 'triangle', out, 0.5, 930); this.tone(930, t + 0.2, 0.42, 'triangle', out, 0.5, 520); this.tone(1240, t, 0.5, 'sine', out, 0.12, 1040); break;
       case 'woof': [0, 0.3].forEach((d) => { this.tone(330, t + d, 0.13, 'sawtooth', out, 0.38, 170); this.noise(t + d, 0.09, 700, 0.3); }); break;
       case 'frenchie': this.tone(430, t, 0.1, 'sawtooth', out, 0.34, 240); this.noise(t, 0.07, 900, 0.25); [0.3, 0.46, 0.6].forEach((d, i) => this.noise(t + d, 0.09, 260 + i * 40, 0.4)); break;

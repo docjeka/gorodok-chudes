@@ -38,3 +38,4 @@
 | public/assets/pets/{capybara,frenchie,wolf}_*.png, public/assets/rooms/animals.webp, public/assets/map/town-back.webp (v3) | рисунки от пользователя | авторские, от пользователя |
 | public/assets/chars/hero_mila_dj_*.webp, hero_timur_confectioner_*.webp | лист ref-extra-mila-dj-timur-confectioner.png от пользователя, нарезан scripts/chars.py | авторские, от пользователя |
 | public/assets/items/pet_double_bowl.png (пустая), pet_food_bag.png | рисунки от пользователя | авторские, от пользователя |
+| public/assets/rooms/farm_*.webp, public/assets/pets/{cow,sheep,pig,goat,hen,chick,pony}_*.png, public/assets/items/farm_*.png, map/town-back.webp (v4) | набор «Ферма» от пользователя (gorodok-chudes-farm-v2.zip) | авторские, от пользователя |

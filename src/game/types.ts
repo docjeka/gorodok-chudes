@@ -1,6 +1,6 @@
 // Типы данных мира. Модель — единственный источник правды; сцена строится из неё.
 
-export const SCHEMA_VERSION = 6;
+export const SCHEMA_VERSION = 7;
 export const ROOM_W = 1600;
 export const ROOM_H = 900;
 export const FLOOR_TOP = 600;
@@ -11,7 +11,7 @@ export const BAG_CAPACITY = 8;
 export const GIFT_CAPACITY = 5;
 
 export type RoomId = 'living' | 'kitchen' | 'bedroom' | 'bathroom'
-  | 'park' | 'park_games' | 'cafe' | 'cafe_bakery' | 'toys' | 'toys_workshop' | 'beach' | 'beach_boats' | 'club' | 'animals';
+  | 'park' | 'park_games' | 'cafe' | 'cafe_bakery' | 'toys' | 'toys_workshop' | 'beach' | 'beach_boats' | 'club' | 'animals' | 'farm_yard' | 'farm_barn';
 export type HandSlot = 'left' | 'right';
 
 /** Владелец предмета. У каждого экземпляра он ровно один. */
@@ -90,7 +90,7 @@ export interface Character {
   costume?: string;
 }
 
-export type PetKind = 'cat' | 'dog' | 'rabbit' | 'capybara' | 'frenchie' | 'wolf';
+export type PetKind = 'cat' | 'dog' | 'rabbit' | 'capybara' | 'frenchie' | 'wolf' | 'cow' | 'sheep' | 'pig' | 'goat' | 'hen' | 'chick' | 'pony';
 export interface Pet {
   id: string;
   kind: PetKind;
@@ -149,6 +149,8 @@ export interface World {
   furniture: Record<string, FurnitureInst>;
   rooms: Record<RoomId, RoomState>;
   openedGiftIds: string[];
+  /** идеи, для которых уже нажимали «Подготовить игру» (поля нет в старых сохранениях) */
+  preparedIdeas?: string[];
   savedOutfits: SavedOutfit[];
   settings: Settings;
 }
@@ -204,6 +206,8 @@ export interface FurnitureDef {
   fixed?: boolean; // нельзя убрать на склад (например, окно)
   /** полка или стол нарисованы на фоне локации: у мебели нет своей картинки, только места для вещей */
   invisible?: boolean;
+  /** место фермы: кормушка для сена, зерно во дворе, гнездо, грядка. Состояние хранится в поле on мебели. */
+  farm?: 'trough' | 'grain' | 'nest' | 'bed';
 }
 
 export interface Recipe {

@@ -1,7 +1,7 @@
 // Интерфейс поверх сцены (HTML/CSS): титульный экран, комнаты, панель героя, кнопки готовки, подсказки.
 import { toSvg } from '../art/base';
 import { eyeArt, eyeStateFor, mouthArt } from '../art/face';
-import { ROOM_GROUPS, groupOf } from '../content/furniture';
+import { FARM_KINDS, ROOM_GROUPS, groupOf } from '../content/furniture';
 import { HERO_COSTUMES, OUTFIT_SETS } from '../content/wardrobe';
 import type { Game } from '../game/game';
 import { charPos, itemPlace } from '../game/geometry';
@@ -76,6 +76,7 @@ export class Hud {
     const right = h('div', 'topright');
     right.append(this.saveEl, this.mapBtn, this.zoomBtn, this.undoBtn, this.soundBtn);
     this.mapBtn.id = 'tomap';
+    this.mapBtn.dataset.drop = 'away';
     this.mapBtn.innerHTML = icon('globe');
     this.mapBtn.onclick = () => { this.audio.play('click'); this.onToMap?.(); };
     this.zoomBtn.onclick = () => {
@@ -248,7 +249,9 @@ export class Hud {
     const w = this.game.world;
     const here = Object.values(w.characters).filter((c) => c.roomId === w.currentRoomId);
     // питомцев можно взять с собой; если в комнате только они, спрашиваем лишь при переходе в другое место города
-    const pets = Object.values(w.pets).filter((p) => p.roomId === w.currentRoomId);
+    // жители фермы идут только по ферме; за её пределы их в список не берут
+    const leavingFarm = groupOf(w.currentRoomId) === 'farm' && groupOf(roomId) !== 'farm';
+    const pets = Object.values(w.pets).filter((p) => p.roomId === w.currentRoomId && !(FARM_KINDS.has(p.kind) && leavingFarm));
     if (!here.length && (!pets.length || groupOf(roomId) === groupOf(w.currentRoomId))) { this.play.goRoom(roomId, []); return; }
     const chosen = new Set<string>(this.sel?.kind === 'char' ? [this.sel.ref] : []);
     const chosenPets = new Set<string>();

@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { createWorld, parseWorld, repairWorld, validateWorld } from '../../src/game/world';
 import {
-  applyGarment, cook, drink, emptyBowl, fill, fillBowl, wearSet, deleteCharacter, feed, handItems, isValidOutfit, moveItem, openGift, addCustomCharacter,
+  applyGarment, cook, drink, collectEgg, eatFromFeeder, emptyBowl, fill, fillBowl, fillFeeder, prepareIdea, waterBed, summonCharacter, wearSet, deleteCharacter, feed, handItems, isValidOutfit, moveItem, openGift, addCustomCharacter,
   placeCharacter, removeGarment, spawnItem, takeGiftSet, tidyRoom, travel, wrapGift, newEmptyGift, storeFurniture, moveFurniture,
 } from '../../src/game/rules';
 import { itemPlace } from '../../src/game/geometry';
 import { ITEMS } from '../../src/content/items';
 import { FURNITURE } from '../../src/content/furniture';
+import { IDEA_KITS } from '../../src/content/ideaKits';
 import { resolveItemDrop } from '../../src/game/drop';
 import { K_BACKUP, K_WORLD, MemoryKV, Saver, loadWorld } from '../../src/storage/store';
 import type { World } from '../../src/game/types';
@@ -219,6 +220,111 @@ describe('двойная миска', () => {
   });
 });
 
+describe('подготовка идей', () => {
+  it('ничего не копирует и не двигает; недостающее появляется один раз; съеденное угощение — только по «Приготовить ещё»', () => {
+    let w = createWorld();
+    const n0 = Object.keys(w.items).length;
+    // в новом мире всё для вечеринки уже есть: коробка и игрушка в мастерской, капкейк в пекарне
+    let r = prepareIdea(w, 'party', IDEA_KITS.party); w = must(r);
+    expect(Object.keys(w.items).length).toBe(n0);
+    expect(((r.ok ? r.info!.report : []) as any[]).map((x: any) => x.status)).toEqual(['found', 'found', 'found']);
+    // капкейки съели, коробку унёс герой, игрушку положили в сумку
+    for (const it of Object.values(w.items)) if (it.definitionId === 'cupcake') delete w.items[it.instanceId];
+    const box = find(w, 'giftbox').instanceId, toy = find(w, 'toy_jack_box').instanceId;
+    w = must(summonCharacter(w, 'hero_lev', 'club'));
+    w = must(moveItem(w, box, { kind: 'hand', characterId: 'hero_lev', slot: 'left' }));
+    w = must(moveItem(w, toy, { kind: 'bag', slot: 0 }));
+    const snap = JSON.stringify([w.items[box], w.items[toy], w.characters, w.pets]);
+    r = prepareIdea(w, 'party', IDEA_KITS.party); w = must(r);
+    const rep = (r.ok ? r.info!.report : []) as any[];
+    expect(rep.find((x) => x.def === 'cupcake').status).toBe('eaten'); // само не появляется
+    expect(rep.find((x) => x.def === 'giftbox')).toMatchObject({ status: 'found', roomId: 'club', holder: 'hero_lev' });
+    expect(rep.find((x) => x.def === 'toy_jack_box')).toMatchObject({ status: 'found', inBag: true });
+    expect(JSON.stringify([w.items[box], w.items[toy], w.characters, w.pets])).toBe(snap); // ничего не переставлено
+    expect(Object.values(w.items).filter((i) => i.definitionId === 'cupcake')).toHaveLength(0);
+    r = prepareIdea(w, 'party', IDEA_KITS.party, true); w = must(r);
+    expect(Object.values(w.items).filter((i) => i.definitionId === 'cupcake')).toHaveLength(1);
+    expect(find(w, 'cupcake').owner).toMatchObject({ kind: 'surface' }); // стол в пекарне занят — капкейк встал на соседнюю столешницу
+    expect(['cb_table', 'cb_oven']).toContain((find(w, 'cupcake').owner as any).furnitureId);
+    for (let i = 0; i < 3; i++) w = must(prepareIdea(w, 'party', IDEA_KITS.party, true));
+    expect(Object.values(w.items).filter((i) => i.definitionId === 'cupcake')).toHaveLength(1); // повторные нажатия не плодят
+    // убранные на склад пульт и столик возвращаются на свои места; стоящую мебель не двигает
+    w = must(storeFurniture(w, 'cl_table'));
+    const dj = { ...w.furniture.cl_dj, x: 500 }; w.furniture.cl_dj = dj;
+    w = must(prepareIdea(w, 'party', IDEA_KITS.party));
+    expect(w.furniture.cl_table).toMatchObject({ roomId: 'club', x: w.furniture.cl_table.homeX });
+    expect(w.furniture.cl_dj.x).toBe(500);
+    // питомцы: в новом мире нет кувшина в парке — появляется один, остальное уже есть
+    const pr = prepareIdea(w, 'pets', IDEA_KITS.pets); w = must(pr);
+    expect((pr.ok ? pr.info!.report as any[] : []).map((x) => x.status)).toEqual(['found', 'found', 'found', 'found']);
+    expect(validateWorld(w)).toEqual([]);
+    expect(parseWorld(JSON.stringify(w)).ok).toBe(true);
+    // сохранение без поля preparedIdeas читается как раньше
+    const old: any = JSON.parse(JSON.stringify(createWorld())); delete old.preparedIdeas;
+    expect(parseWorld(JSON.stringify(old)).ok).toBe(true);
+  });
+});
+
+describe('ферма', () => {
+  it('жители фермы остаются на ферме на уровне правил; обычные питомцы ездят как раньше', () => {
+    let w = createWorld();
+    expect(Object.keys(w.pets).filter((id) => ['pet_cow', 'pet_sheep', 'pet_pig', 'pet_goat', 'pet_hen', 'pet_chick', 'pet_pony'].includes(id))).toHaveLength(7);
+    w = must(travel(w, 'farm_yard', []));
+    // внутри фермы — можно
+    w = must(travel(w, 'farm_barn', [], ['pet_hen']));
+    expect(w.pets.pet_hen.roomId).toBe('farm_barn');
+    // за пределы фермы — нельзя: зверь остаётся, игра сообщает об отказе
+    const r = travel(w, 'living', [], ['pet_hen', 'pet_cow']);
+    expect(r.ok && r.info!.refused).toEqual(['pet_hen', 'pet_cow']);
+    w = must(r);
+    expect(w.pets.pet_hen.roomId).toBe('farm_barn'); expect(w.pets.pet_cow.roomId).toBe('farm_barn');
+    w = must(travel(w, 'animals', [], ['pet_cat']));
+    expect(w.pets.pet_cat.roomId).toBe('animals'); // обычных питомцев правило не касается
+    // испорченное сохранение, где корова оказалась в гостиной, чинится: она возвращается на ферму
+    const bad: World = JSON.parse(JSON.stringify(w)); bad.pets.pet_cow.roomId = 'living';
+    expect(validateWorld(bad)).toContain('farm_pet:pet_cow');
+    expect(repairWorld(bad).pets.pet_cow.roomId).toBe('farm_barn');
+  });
+  it('кормушка, яйцо и грядка: порция одна, яйца не множатся, цветок растёт от полива', () => {
+    let w = createWorld();
+    expect(fillFeeder(w, 'kt_table')).toEqual({ ok: false, reason: 'not_feeder' });
+    w = must(fillFeeder(w, 'fb_trough'));
+    expect(fillFeeder(w, 'fb_trough')).toEqual({ ok: false, reason: 'feeder_full' });
+    expect(eatFromFeeder(w, 'fb_trough', 'pet_hen')).toEqual({ ok: false, reason: 'wrong_food' });
+    w = must(eatFromFeeder(w, 'fb_trough', 'pet_cow'));
+    expect(w.furniture.fb_trough.on).toBe(0);
+    expect(eatFromFeeder(w, 'fb_trough', 'pet_cow')).toEqual({ ok: false, reason: 'feeder_empty' });
+    w = must(fillFeeder(w, 'fb_trough')); // пустую можно наполнить снова
+    // яйцо: одно; повторное нажатие ничего не даёт; в корзинку, если она во дворе
+    const eggs = (x: World) => Object.values(x.items).filter((i) => i.definitionId === 'farm_eggs');
+    let r = collectEgg(w, 'fy_nest'); w = must(r);
+    expect(eggs(w)).toHaveLength(1);
+    expect(eggs(w)[0].owner.kind).toBe('item'); // лежит в корзинке
+    expect(collectEgg(w, 'fy_nest')).toEqual({ ok: false, reason: 'nest_empty' });
+    expect(collectEgg(parseWorld(JSON.stringify(w)).ok ? (parseWorld(JSON.stringify(w)) as any).world : w, 'fy_nest').ok).toBe(false); // и после перезапуска
+    // курочка поела зерна — в гнезде новое яйцо; не больше трёх яиц в мире
+    for (let i = 0; i < 5; i++) { w = must(fillFeeder(w, 'fy_grain')); w = must(eatFromFeeder(w, 'fy_grain', 'pet_hen')); r = collectEgg(w, 'fy_nest'); if (r.ok) w = r.world; }
+    expect(eggs(w)).toHaveLength(3);
+    // грядка
+    expect(w.furniture.fy_bed1.on).toBe(0);
+    w = must(waterBed(w, 'fy_bed1')); expect(w.furniture.fy_bed1.on).toBe(1);
+    w = must(waterBed(w, 'fy_bed1')); w = must(waterBed(w, 'fy_bed1')); expect(w.furniture.fy_bed1.on).toBe(2);
+    expect(w.furniture.fy_bed2.on).toBe(0);
+    expect(validateWorld(w)).toEqual([]);
+    // сохранение прошлой версии получает ферму один раз
+    const old: any = JSON.parse(JSON.stringify(createWorld()));
+    for (const id of Object.keys(old.pets)) if (['cow', 'sheep', 'pig', 'goat', 'hen', 'chick', 'pony'].includes(old.pets[id].kind)) delete old.pets[id];
+    for (const [id, it] of Object.entries<any>(old.items)) if (it.definitionId.startsWith('farm_')) delete old.items[id];
+    for (const id of Object.keys(old.furniture)) if (id.startsWith('fy_') || id.startsWith('fb_')) delete old.furniture[id];
+    delete old.rooms.farm_yard; delete old.rooms.farm_barn; old.schemaVersion = 6;
+    const m = parseWorld(JSON.stringify(old));
+    expect(m.ok && Object.keys(m.world.pets).length).toBe(13);
+    const again = m.ok ? parseWorld(JSON.stringify(m.world)) : m;
+    expect(again.ok && Object.keys(again.world.items).length).toBe(m.ok ? Object.keys(m.world.items).length : -1);
+    expect(again.ok && Object.keys(again.world.pets).length).toBe(13);
+  });
+});
+
 describe('подарки', () => {
   it('открытие атомарно и не даёт дубликатов при повторе', () => {
     let w = createWorld();
@@ -300,30 +406,30 @@ describe('сохранения', () => {
     for (const f of Object.values<any>(w.furniture)) { delete f.homeX; delete f.homeY; }
     const r = parseWorld(JSON.stringify(w));
     expect(r.ok).toBe(true);
-    if (r.ok) { expect(r.world.schemaVersion).toBe(6); expect(Object.keys(r.world.pets)).toHaveLength(6); }
+    if (r.ok) { expect(r.world.schemaVersion).toBe(7); expect(Object.keys(r.world.pets)).toHaveLength(13); }
   });
-  it('миграция v2 → v6 добавляет локации города, Парк животных и трёх новых питомцев и ничего не трогает в домиках', () => {
+  it('миграция v2 → v7 добавляет локации города, Парк животных и трёх новых питомцев и ничего не трогает в домиках', () => {
     let w: any = createWorld();
     const cup = find(w, 'cup', (o) => o.kind === 'surface').instanceId;
     w = must(moveItem(w, cup, { kind: 'hand', characterId: 'hero_mila', slot: 'left' }));
     w = must(wearSet(w, 'hero_mila', 'fairy'));
     w = JSON.parse(JSON.stringify(w));
-    const loc = ['park', 'park_games', 'cafe', 'cafe_bakery', 'toys', 'toys_workshop', 'beach', 'beach_boats', 'club', 'animals'];
+    const loc = ['park', 'park_games', 'cafe', 'cafe_bakery', 'toys', 'toys_workshop', 'beach', 'beach_boats', 'club', 'animals', 'farm_yard', 'farm_barn'];
     const locFurn = new Set(Object.values<any>(w.furniture).filter((f) => loc.includes(f.roomId)).map((f) => f.id));
     for (const [id, it] of Object.entries<any>(w.items)) if ((it.owner.kind === 'room' && loc.includes(it.owner.roomId)) || (it.owner.kind === 'surface' && locFurn.has(it.owner.furnitureId))) delete w.items[id];
     for (const id of locFurn) delete w.furniture[id as string];
     for (const r of loc) delete w.rooms[r];
-    for (const id of ['pet_capybara', 'pet_frenchie', 'pet_wolf']) delete w.pets[id];
+    for (const id of Object.keys(w.pets)) if (!['pet_cat', 'pet_dog', 'pet_rabbit'].includes(id)) delete w.pets[id];
     w.schemaVersion = 2;
     const before = JSON.parse(JSON.stringify(w));
     const r = parseWorld(JSON.stringify(w));
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(r.world.schemaVersion).toBe(6);
+    expect(r.world.schemaVersion).toBe(7);
     expect(validateWorld(r.world)).toEqual([]);
     expect(r.world.furniture.cl_table.roomId).toBe('club');
     expect(Object.values(r.world.items).filter((i) => i.definitionId === 'giftbox' && i.owner.kind === 'room' && i.owner.roomId === 'toys_workshop')).toHaveLength(1);
-    expect(Object.keys(r.world.pets).sort()).toEqual(['pet_capybara', 'pet_cat', 'pet_dog', 'pet_frenchie', 'pet_rabbit', 'pet_wolf']);
+    expect(Object.keys(r.world.pets).sort()).toEqual(['pet_capybara', 'pet_cat', 'pet_chick', 'pet_cow', 'pet_dog', 'pet_frenchie', 'pet_goat', 'pet_hen', 'pet_pig', 'pet_pony', 'pet_rabbit', 'pet_sheep', 'pet_wolf']);
     for (const id of ['pet_cat', 'pet_dog', 'pet_rabbit']) expect(r.world.pets[id]).toEqual(before.pets[id]); // старые звери остались дома
     // повторная загрузка ничего не дублирует
     const again = parseWorld(JSON.stringify(r.world));
@@ -341,18 +447,18 @@ describe('сохранения', () => {
     for (const [id, f] of Object.entries<any>(before.furniture)) expect(r.world.furniture[id]).toEqual(f);
     expect(r.world.characters.hero_mila.costume).toBe('fairy');
   });
-  it('миграция v4 → v6: столик в клубе и одна коробка в мастерской, без дублей при повторной загрузке', () => {
+  it('миграция v4 → v7: столик в клубе и одна коробка в мастерской, без дублей при повторной загрузке', () => {
     const w: any = JSON.parse(JSON.stringify(createWorld()));
     delete w.furniture.cl_table;
-    for (const [id, it] of Object.entries<any>(w.items)) if ((it.definitionId === 'giftbox' && it.owner.roomId === 'toys_workshop') || (it.definitionId === 'cupcake' && it.owner.furnitureId === 'cb_shelves') || it.definitionId === 'pet_food_bag') delete w.items[id];
+    for (const [id, it] of Object.entries<any>(w.items)) if ((it.definitionId === 'giftbox' && it.owner.roomId === 'toys_workshop') || (it.definitionId === 'cupcake' && it.owner.furnitureId === 'cb_shelves') || it.definitionId === 'pet_food_bag' || it.definitionId.startsWith('farm_')) delete w.items[id];
     w.schemaVersion = 4;
     const before = JSON.parse(JSON.stringify(w));
     const r = parseWorld(JSON.stringify(w));
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(r.world.schemaVersion).toBe(6);
+    expect(r.world.schemaVersion).toBe(7);
     expect(validateWorld(r.world)).toEqual([]);
-    expect(Object.keys(r.world.items).length).toBe(Object.keys(before.items).length + 3); // коробка, капкейк и мешок корма
+    expect(Object.keys(r.world.items).length).toBe(Object.keys(before.items).length + 8); // коробка, капкейк, мешок корма и пять вещей фермы
     for (const [id, it] of Object.entries<any>(before.items)) expect(r.world.items[id]).toEqual(it);
     const again = parseWorld(JSON.stringify(r.world));
     expect(again.ok && Object.keys(again.world.items).length).toBe(Object.keys(r.world.items).length);

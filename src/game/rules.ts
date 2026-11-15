@@ -1,6 +1,6 @@
 // Чистые правила мира. Каждая функция получает мир и возвращает новый мир либо причину отказа.
 // Ничего не знает про DOM, Canvas и хранилище — поэтому тестируется напрямую.
-import { FURNITURE } from '../content/furniture';
+import { FARM_KINDS, FURNITURE, GRAIN_EATERS, HAY_EATERS, groupOf } from '../content/furniture';
 import { GIFTS, ITEMS, RECIPES } from '../content/items';
 import { GARMENTS, OUTFITS, presetCharacter } from '../content/wardrobe';
 import { charPos, clampFloor, itemPlace, petPos } from './geometry';
@@ -241,14 +241,17 @@ export function travel(world: World, roomId: RoomId, characterIds: string[], pet
     if (c.emotion === 'sleepy') c.emotion = 'joy';
   });
   // питомцев можно взять с собой: они идут рядом и никогда не раздваиваются
+  const refused: string[] = [];
   [...new Set(petIds)].forEach((id, i) => {
     const p = w.pets[id];
     if (!p) return;
+    // жители фермы ходят только по ферме: это правило игры, а не только кнопок
+    if (FARM_KINDS.has(p.kind) && groupOf(roomId) !== 'farm') { refused.push(id); return; }
     const at = clampFloor(980 + i * 130, 830 - (i % 2) * 50);
     p.roomId = roomId; p.x = at.x; p.y = at.y; p.seat = null; p.sleeping = false; delete p.inItem;
   });
   w.currentRoomId = roomId;
-  return ok(w);
+  return ok(w, refused.length ? { refused } : undefined);
 }
 
 /** Позвать героя в комнату (или убрать на полку, roomId=null). Герой всегда ровно в одном месте. */
@@ -674,3 +677,99 @@ export function emptyBowl(world: World, bowlId: string, half: BowlHalf): Result 
 }
 /** Чем можно налить воду в миску: кувшин-чайник или чашка/стакан, в которых что-то налито. */
 export const isWaterSource = (it: ItemInst): boolean => it.definitionId === 'teapot' || (FILLABLE.has(it.definitionId) && !!it.state.contents);
+
+// ---------- «Подготовить игру» в карточках идей ----------
+export interface PreparedItem { def: string; status: 'created' | 'found' | 'eaten'; roomId: RoomId | null; holder?: string; inBag?: boolean; instanceId?: string }
+/** Где сейчас вещь: комната, у какого героя в руках, в сумке. */
+export function whereIs(w: World, it: ItemInst): { roomId: RoomId | null; holder?: string; inBag?: boolean } {
+  let cur = it;
+  for (let i = 0; i < 6 && cur.owner.kind === 'item'; i++) { const p = w.items[cur.owner.itemId]; if (!p) break; cur = p; }
+  if (cur.owner.kind === 'bag') return { roomId: null, inBag: true };
+  if (cur.owner.kind === 'hand') return { roomId: w.characters[cur.owner.characterId]?.roomId ?? null, holder: cur.owner.characterId };
+  return { roomId: itemPlace(w, cur).roomId };
+}
+/**
+ * Готовит вещи для идеи. Уже существующую вещь не копирует и не двигает — только сообщает, где она.
+ * Недостающее появляется в своём месте. Съеденное угощение выдаётся заново только при again = true.
+ * Героев, питомцев и стоящую мебель не трогает; мебель возвращает, только если её убрали на склад.
+ */
+export function prepareIdea(world: World, ideaId: string, kit: { items: { def: string; room: RoomId; surface?: [string, number]; alt?: [string, number]; floor?: [number, number]; treat?: boolean }[]; furniture?: { id: string; room: RoomId }[] }, again = false): Result {
+  let w = clone(world);
+  const before = (w.preparedIdeas ?? []).includes(ideaId);
+  const report: PreparedItem[] = [];
+  for (const k of kit.items) {
+    const have = Object.values(w.items).find((i) => i.definitionId === k.def && i.owner.kind !== 'lost');
+    if (have) { report.push({ def: k.def, status: 'found', instanceId: have.instanceId, ...whereIs(w, have) }); continue; }
+    if (k.treat && before && !again) { report.push({ def: k.def, status: 'eaten', roomId: k.room }); continue; }
+    const state = k.def === 'giftbox' ? { packed: false, paper: 2, bow: 1 } : {};
+    let r: Result = fail('no_surface');
+    // сначала указанное место, потом любой свободный слот той же полки или стола, потом запасная поверхность
+    for (const [fid, pref] of [k.surface, k.alt].filter((x): x is [string, number] => !!x)) {
+      const n = FURNITURE[w.furniture[fid]?.definitionId]?.surfaces?.length ?? 0;
+      for (const slot of [pref, ...Array.from({ length: n }, (_, i) => i)]) { r = spawnItem(w, k.def, { kind: 'surface', furnitureId: fid, slot }, state); if (r.ok) break; }
+      if (r.ok) break;
+    }
+    if (!r.ok) { const at = k.floor ?? [800, 820]; const taken = Object.values(w.items).filter((i) => i.owner.kind === 'room' && i.owner.roomId === k.room); const p = clampFloor(at[0] + taken.filter((i) => Math.abs((i.owner as { x: number }).x - at[0]) < 40).length * 60, at[1]); r = spawnItem(w, k.def, { kind: 'room', roomId: k.room, x: p.x, y: p.y }, state); }
+    if (!r.ok) continue; // вещей слишком много — эту пропускаем, мир игрока важнее
+    w = r.world;
+    report.push({ def: k.def, status: 'created', roomId: k.room, instanceId: r.info!.instanceId as string });
+  }
+  for (const f of kit.furniture ?? []) { const inst = w.furniture[f.id]; if (inst && inst.roomId === null) { inst.roomId = f.room; inst.x = inst.homeX; inst.y = inst.homeY; } }
+  w.preparedIdeas = [...new Set([...(w.preparedIdeas ?? []), ideaId])];
+  return ok(w, { report });
+}
+
+// ---------- ферма ----------
+export const EGG_LIMIT = 3;
+/** Наполнить кормушку сеном или насыпать зерно: одна порция, повторно в полную нельзя. */
+export function fillFeeder(world: World, furnitureId: string): Result {
+  const w = clone(world);
+  const f = w.furniture[furnitureId];
+  const kind = f && FURNITURE[f.definitionId]?.farm;
+  if (!f || (kind !== 'trough' && kind !== 'grain')) return fail('not_feeder');
+  if (f.on) return fail('feeder_full');
+  f.on = 1;
+  return ok(w);
+}
+/** Зверь съел порцию: кормушка пустеет. Курица после зерна снова несёт яйцо (пока яиц в мире меньше трёх). */
+export function eatFromFeeder(world: World, furnitureId: string, petId: string): Result {
+  const w = clone(world);
+  const f = w.furniture[furnitureId], p = w.pets[petId];
+  const kind = f && FURNITURE[f.definitionId]?.farm;
+  if (!f || !p || (kind !== 'trough' && kind !== 'grain')) return fail('not_feeder');
+  if (!f.on) return fail('feeder_empty');
+  if (!(kind === 'trough' ? HAY_EATERS : GRAIN_EATERS).has(p.kind)) return fail('wrong_food');
+  f.on = 0;
+  if (p.kind === 'hen') layEgg(w);
+  return ok(w);
+}
+function layEgg(w: World) {
+  const eggs = Object.values(w.items).filter((i) => i.definitionId === 'farm_eggs').length;
+  for (const f of Object.values(w.furniture)) if (FURNITURE[f.definitionId]?.farm === 'nest' && eggs < EGG_LIMIT) f.on = 0;
+}
+/** Курицу покормили зерном прямо из ведёрка — она тоже несёт яйцо. */
+export function henFed(world: World): Result { const w = clone(world); layEgg(w); return ok(w); }
+/**
+ * Собрать яйцо из гнезда: одно яйцо, пока гнездо не наполнится снова. В поле on гнезда: 0 — яйцо лежит, 1 — уже собрано.
+ * Яйцо кладётся в корзинку, если она рядом, иначе — на землю у курятника. Повторные нажатия и входы яиц не добавляют.
+ */
+export function collectEgg(world: World, nestId: string): Result {
+  const nest = world.furniture[nestId];
+  if (!nest || FURNITURE[nest.definitionId]?.farm !== 'nest' || !nest.roomId) return fail('not_nest');
+  if (nest.on) return fail('nest_empty');
+  if (Object.values(world.items).filter((i) => i.definitionId === 'farm_eggs').length >= EGG_LIMIT) return fail('nest_empty');
+  const basket = Object.values(world.items).find((i) => i.definitionId === 'farm_basket' && itemPlace(world, i).roomId === nest.roomId && itemPlace(world, i).visible);
+  let r: Result = basket ? spawnItem(world, 'farm_eggs', { kind: 'item', itemId: basket.instanceId, slot: 0 }) : fail('no_basket');
+  if (!r.ok) { const p = clampFloor(nest.x + 110, 700); r = spawnItem(world, 'farm_eggs', { kind: 'room', roomId: nest.roomId, x: p.x, y: p.y }); }
+  if (!r.ok) return r;
+  r.world.furniture[nestId].on = 1;
+  return ok(r.world, { instanceId: r.info!.instanceId, inBasket: !!basket && r.world.items[r.info!.instanceId as string].owner.kind === 'item' });
+}
+/** Полить грядку: 0 — земля, 1 — росток, 2 — цветок. Таймеров нет: растёт только от полива. */
+export function waterBed(world: World, bedId: string): Result {
+  const w = clone(world);
+  const f = w.furniture[bedId];
+  if (!f || FURNITURE[f.definitionId]?.farm !== 'bed') return fail('not_bed');
+  f.on = Math.min(2, f.on + 1);
+  return ok(w, { level: f.on });
+}

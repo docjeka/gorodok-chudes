@@ -61,6 +61,11 @@ export const FURNITURE_LIST: FurnitureDef[] = [
   { id: 'loc_rack3x3', category: 'storage', w: 290, h: 260, layer: 'wall', fixed: true, invisible: true, surfaces: [...row(3, -94, 93, -165), ...row(3, -94, 93, -80), ...row(3, -94, 93, 0)] },
   { id: 'loc_bench4', category: 'tables', w: 320, h: 40, layer: 'wall', fixed: true, invisible: true, surfaces: row(4, -128, 85, 0) },
   { id: 'loc_pond', category: 'decor', w: 380, h: 120, layer: 'wall', fixed: true, invisible: true },
+  // ферма: всё нарисовано на фоне, здесь только точки действий
+  { id: 'fm_trough', category: 'decor', w: 400, h: 60, layer: 'wall', fixed: true, invisible: true, farm: 'trough' },
+  { id: 'fm_grain', category: 'decor', w: 160, h: 40, layer: 'wall', fixed: true, invisible: true, farm: 'grain' },
+  { id: 'fm_nest', category: 'decor', w: 120, h: 80, layer: 'wall', fixed: true, invisible: true, farm: 'nest' },
+  { id: 'fm_bed', category: 'plants', w: 200, h: 80, layer: 'wall', fixed: true, invisible: true, farm: 'bed' },
   // реквизит локаций: обычная мебель — её можно двигать, поворачивать и убирать
   { id: 'beach_lounger', category: 'seats', w: 300, h: 165, layer: 'floor', seats: [{ x: -10, y: -92, pose: 'sitting' }] },
   { id: 'beach_umbrella', category: 'decor', w: 250, h: 285, layer: 'floor' },
@@ -120,6 +125,8 @@ const LAYOUT: Record<RoomId, Place[]> = {
   beach: [['bc_pier', 'loc_pier', 1430, 383], ['bc_umbrella', 'beach_umbrella', 330, 720], ['bc_lounger', 'beach_lounger', 540, 760]],
   beach_boats: [['bb_rack', 'loc_rack3x3', 271, 574], ['bb_bench', 'loc_bench4', 1335, 497], ['bb_boat', 'beach_rowboat', 820, 820]],
   club: [['cl_dj', 'djconsole', 800, 700], ['cl_speaker', 'club_speaker', 520, 690], ['cl_light', 'club_light', 1090, 690], ['cl_stool', 'club_stool', 300, 820], ['cl_table', 'coffeetable', 1330, 840]],
+  farm_yard: [['fy_nest', 'fm_nest', 352, 398], ['fy_grain', 'fm_grain', 560, 690], ['fy_bed1', 'fm_bed', 1177, 400], ['fy_bed2', 'fm_bed', 1407, 400]],
+  farm_barn: [['fb_trough', 'fm_trough', 1305, 478]],
   animals: [['an_pond', 'loc_pond', 364, 450], ['an_tunnel', 'pet_tunnel', 1000, 760], ['an_cushion', 'pet_cushion', 1330, 820]],
 };
 
@@ -142,6 +149,7 @@ export const ROOM_GROUPS: Record<string, RoomId[]> = {
   toys: ['toys', 'toys_workshop'],
   beach: ['beach', 'beach_boats'],
   animals: ['animals'],
+  farm: ['farm_yard', 'farm_barn'],
 };
 export const ROOM_IDS: RoomId[] = Object.values(ROOM_GROUPS).flat();
 export const HOUSE_ROOMS = new Set<RoomId>(ROOM_GROUPS.houses);
@@ -152,3 +160,9 @@ export const TV_SCENES = 4;
 
 /** Диско-шар нарисован на фоне клуба: центр и радиус в единицах комнаты. Анимация ложится точно поверх него. */
 export const DISCO_BALL = { x: 799, y: 181, r: 92 };
+
+/** Жители фермы: с фермы их унести нельзя. */
+export const FARM_KINDS = new Set(['cow', 'sheep', 'pig', 'goat', 'hen', 'chick', 'pony']);
+/** Что ест сено, а что зерно. */
+export const HAY_EATERS = new Set(['cow', 'sheep', 'goat', 'pony', 'pig']);
+export const GRAIN_EATERS = new Set(['hen', 'chick', 'pig']);

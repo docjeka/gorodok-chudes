@@ -1,6 +1,6 @@
 // Выбор цели при отпускании предмета, героя или питомца. Чистая логика: принимает мир и точку в координатах комнаты.
 // Приоритет: рука/рот героя → питомец → контейнер-предмет → поверхность/контейнер мебели → пол.
-import { FURNITURE } from '../content/furniture';
+import { FURNITURE, GRAIN_EATERS, HAY_EATERS } from '../content/furniture';
 import { ITEMS } from '../content/items';
 import { charBox, charPos, clampFloor, dist, itemPlace, petPos, slotPos } from './geometry';
 import { FILLABLE, HEADWEAR, PET_BRUSHES, isWaterSource, POURS, handItems, isInside, seatTaken } from './rules';
@@ -15,6 +15,9 @@ export type ItemDrop =
   | { type: 'into'; itemId: string }
   | { type: 'pour'; itemId: string }
   | { type: 'bowl'; itemId: string; half: 'water' | 'kibble' }
+  | { type: 'feeder'; furnitureId: string }
+  | { type: 'farmfeed'; petId: string }
+  | { type: 'bed'; furnitureId: string }
   | { type: 'water'; itemId: string }
   | { type: 'surface'; furnitureId: string; slot: number }
   | { type: 'furniture'; furnitureId: string; slot: number }
@@ -28,6 +31,21 @@ export function resolveItemDrop(w: World, itemId: string, pt: Pt, roomId: RoomId
   const def = it && ITEMS[it.definitionId];
   if (!it || !def) return { type: 'reject' };
   const has = (t: string) => def.tags.includes(t as never);
+
+  // 0ф. ферма: сено — в кормушку или прямо зверю, зерно — на землю или птице, лейка — на грядку
+  const farmFood = it.definitionId === 'farm_hay' ? 'trough' : it.definitionId === 'farm_grain' ? 'grain' : null;
+  if (farmFood) {
+    // точно в кормушку — в кормушку, даже если рядом стоит зверь
+    for (const f of Object.values(w.furniture)) if (f.roomId === roomId && FURNITURE[f.definitionId].farm === farmFood && Math.abs(pt.x - f.x) < FURNITURE[f.definitionId].w / 2 && Math.abs(pt.y - (f.y - 20)) < 55) return { type: 'feeder', furnitureId: f.id };
+    for (const p of Object.values(w.pets).filter((x) => x.roomId === roomId)) {
+      const pp = petPos(w, p);
+      if (Math.abs(pt.x - pp.x) < 80 && pt.y > pp.y - 150 && pt.y < pp.y + 20 && (farmFood === 'trough' ? HAY_EATERS : GRAIN_EATERS).has(p.kind)) return { type: 'farmfeed', petId: p.id };
+    }
+    for (const f of Object.values(w.furniture)) if (f.roomId === roomId && FURNITURE[f.definitionId].farm === farmFood && Math.abs(pt.x - f.x) < FURNITURE[f.definitionId].w / 2 + 30 && Math.abs(pt.y - f.y) < 130) return { type: 'feeder', furnitureId: f.id };
+  }
+  if (it.definitionId === 'farm_can' || it.definitionId === 'wateringcan') {
+    for (const f of Object.values(w.furniture)) if (f.roomId === roomId && FURNITURE[f.definitionId].farm === 'bed' && Math.abs(pt.x - f.x) < 130 && Math.abs(pt.y - f.y) < 140) return { type: 'bed', furnitureId: f.id };
+  }
 
   // 0а. двойная миска: мешок корма — в правую половину, вода — в левую
   if (it.definitionId === 'pet_food_bag' || isWaterSource(it)) {
@@ -48,7 +66,7 @@ export function resolveItemDrop(w: World, itemId: string, pt: Pt, roomId: RoomId
   }
 
   // 0б. полить: лейка над цветочным горшком
-  if (it.definitionId === 'wateringcan') {
+  if (it.definitionId === 'wateringcan' || it.definitionId === 'farm_can') {
     for (const pot of Object.values(w.items)) {
       if (pot.definitionId !== 'flowerpot') continue;
       const pl = itemPlace(w, pot);

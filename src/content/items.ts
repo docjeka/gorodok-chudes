@@ -96,6 +96,13 @@ export const ITEM_LIST: ItemDef[] = [
   d('fair_popcorn', ['food'], 48, 60, { servings: 3, catalog: 'food' }),
   d('fair_cotton_candy', ['food'], 52, 67, { servings: 1, catalog: 'food' }),
   d('fair_plush_prize', ['toy'], 60, 71, { catalog: 'toys' }),
+  // ферма: сено и зерно многоразовые, яйца собираются из гнезда
+  d('farm_hay', ['toy'], 92, 67, { catalog: 'pets' }),
+  d('farm_grain', ['toy'], 70, 65, { catalog: 'pets' }),
+  d('farm_basket', ['container'], 82, 93, { capacity: 6, catalog: 'table' }),
+  d('farm_eggs', ['ingredient'], 58, 54),
+  d('farm_milkcan', ['decor'], 60, 88, { catalog: 'table' }),
+  d('farm_can', ['toy'], 86, 54, { catalog: 'toys' }),
   // контейнеры
   d('basket', ['container'], 76, 54, { capacity: 8, catalog: 'table' }),
   d('giftbox', ['container', 'giftbox', 'big'], 84, 86, { capacity: 5 }),
@@ -139,4 +146,4 @@ export const GIFT_SETS: GiftSetDef[] = [
 ];
 export const GIFTS: Record<string, GiftSetDef> = Object.fromEntries(GIFT_SETS.map((g) => [g.id, g]));
 
-export const IDEA_CARDS = ['breakfast', 'birthday', 'picnic', 'vet', 'winter', 'show', 'party'] as const;
+export const IDEA_CARDS = ['breakfast', 'birthday', 'picnic', 'vet', 'winter', 'show', 'party', 'pets'] as const;

@@ -326,6 +326,28 @@ try {
     await drag(page, await at(page, pot, -25), await half(-16)); await idle(); await wait(1200);
     const v = page.video(); await ctx.close(); console.log('video', await v.path());
   }
+  if (scenario === 'ideas') {
+    const page = await open('', { width: 1024, height: 768 });
+    await page.evaluate(() => window.__game.game.update((w) => { for (const [id, it] of Object.entries(w.items)) if (['giftbox', 'cupcake', 'pet_rope_ball', 'pet_double_bowl', 'pet_food_bag'].includes(it.definitionId)) delete w.items[id]; }));
+    await page.click('[data-panel="ideas"]');
+    await page.locator('.card.idea[data-idea="party"]').scrollIntoViewIfNeeded();
+    await page.click('.card.idea[data-idea="party"] .pill'); await page.click('.card.idea[data-idea="pets"] .pill');
+    await page.locator('.card.idea[data-idea="party"]').scrollIntoViewIfNeeded();
+    await shot(page, 'ideas-panel');
+    await page.click('[data-panel="ideas"]');
+    for (const r of ['cafe_bakery', 'toys_workshop', 'animals']) { await page.evaluate((room) => { const g = window.__game; g.game.commit(g.rules.travel(g.game.world, room, [])); g.scene.setZoom(0.1); }, r); await wait(800); await shot(page, `ideas-${r}`); }
+  }
+  if (scenario === 'farm') {
+    const page = await open('', { width: 1024, height: 768 });
+    const go = (room) => page.evaluate((r) => { const g = window.__game; g.game.commit(g.rules.travel(g.game.world, r, [])); g.scene.setZoom(1); g.scene.panBy(0, 0); }, room);
+    await go('farm_yard'); await wait(900); await shot(page, 'farm-yard');
+    await page.evaluate(() => { const g = window.__game; g.game.commit(g.rules.fillFeeder(g.game.world, 'fy_grain')); g.game.commit(g.rules.waterBed(g.game.world, 'fy_bed1')); g.game.commit(g.rules.waterBed(g.game.world, 'fy_bed2')); g.game.commit(g.rules.waterBed(g.game.world, 'fy_bed2')); g.scene.setZoom(0.1); });
+    await wait(700); await shot(page, 'farm-yard-far');
+    await go('farm_barn'); await wait(900); await shot(page, 'farm-barn');
+    await page.evaluate(() => { const g = window.__game; g.game.commit(g.rules.fillFeeder(g.game.world, 'fb_trough')); g.scene.setZoom(0.1); });
+    await wait(700); await shot(page, 'farm-barn-far');
+    await page.click('#tomap'); await wait(500); await page.click('.map-turn.right'); await wait(900); await shot(page, 'farm-map-back');
+  }
   if (scenario === 'six' || scenario === 'all') {
     const page = await open('', { width: 1600, height: 900 });
     await page.evaluate(() => { const g = window.__game; const R = g.rules; const put = [['hero_mila', 330, 860, 'fairy', 'delight'], ['hero_timur', 560, 850, 'pirate', 'silly'], ['hero_yuki', 800, 860, 'casual', 'joy'], ['hero_asya', 1040, 850, 'cat', 'surprise'], ['hero_lev', 1270, 860, 'astronaut', 'calm'], ['hero_nora', 1480, 850, 'princess', 'thinking']];

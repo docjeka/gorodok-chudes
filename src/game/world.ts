@@ -1,5 +1,5 @@
 // Создание нового мира, проверка целостности, миграции и разбор импорта.
-import { FURNITURE, initialFurniture, ROOM_IDS } from '../content/furniture';
+import { FARM_KINDS, FURNITURE, groupOf, initialFurniture, ROOM_IDS } from '../content/furniture';
 import { ITEMS } from '../content/items';
 import { GARMENTS, PRESET_HEROES, presetCharacter } from '../content/wardrobe';
 import { isInside, isValidOutfit, moveItem, spawnItem } from './rules';
@@ -63,8 +63,18 @@ const PARK_PETS: World['pets'] = {
 const PARTY_SEEDS: [string, Owner][] = [['giftbox', floor('toys_workshop', 820, 830)], ['cupcake', surf('cb_shelves', 2)]];
 /** Мешок корма для двойной миски — один, в Парке животных (ещё можно взять в каталоге). */
 const FEED_SEEDS: [string, Owner][] = [['pet_food_bag', floor('animals', 620, 860)]];
-const LOCATION_ROOMS: RoomId[] = ['animals', 'park', 'park_games', 'cafe', 'cafe_bakery', 'toys', 'toys_workshop', 'beach', 'beach_boats', 'club'];
-function seedLocations(world: World, seeds: [string, Owner][] = [...LOCATION_SEEDS, ...PROP_SEEDS, ...PARTY_SEEDS, ...FEED_SEEDS]): World {
+/** Ферма: у животных постоянные ID, с фермы они не уходят. */
+const FARM_PETS: World['pets'] = Object.fromEntries(([
+  ['pet_hen', 'hen', 'farm_yard', 480, 700], ['pet_chick', 'chick', 'farm_yard', 610, 750], ['pet_pony', 'pony', 'farm_yard', 1050, 730],
+  ['pet_cow', 'cow', 'farm_barn', 330, 760], ['pet_sheep', 'sheep', 'farm_barn', 600, 800], ['pet_pig', 'pig', 'farm_barn', 860, 770], ['pet_goat', 'goat', 'farm_barn', 1120, 800],
+] as const).map(([id, kind, roomId, x, y]) => [id, { id, kind, roomId, x, y, sleeping: false, seat: null, collar: 0, flipped: false }]));
+const FARM_HOME: Record<string, RoomId> = Object.fromEntries(Object.values(FARM_PETS).map((p) => [p.id, p.roomId]));
+const FARM_SEEDS: [string, Owner][] = [
+  ['farm_grain', floor('farm_yard', 300, 830)], ['farm_basket', floor('farm_yard', 760, 840)], ['farm_can', floor('farm_yard', 1300, 800)],
+  ['farm_hay', floor('farm_barn', 840, 860)], ['farm_milkcan', floor('farm_barn', 1480, 760)],
+];
+const LOCATION_ROOMS: RoomId[] = ['farm_yard', 'farm_barn', 'animals', 'park', 'park_games', 'cafe', 'cafe_bakery', 'toys', 'toys_workshop', 'beach', 'beach_boats', 'club'];
+function seedLocations(world: World, seeds: [string, Owner][] = [...LOCATION_SEEDS, ...PROP_SEEDS, ...PARTY_SEEDS, ...FEED_SEEDS, ...FARM_SEEDS]): World {
   let w = world;
   for (const [def, owner] of seeds) {
     const r = spawnItem(w, def, owner, def === 'giftbox' ? { packed: false, paper: 2, bow: 1 } : {});
@@ -95,6 +105,7 @@ export function createWorld(lang: 'ru' | 'en' = 'ru'): World {
     pet_dog: { id: 'pet_dog', kind: 'dog', roomId: 'bedroom', x: 900, y: 830, sleeping: false, seat: null, collar: 1, flipped: false },
     pet_rabbit: { id: 'pet_rabbit', kind: 'rabbit', roomId: 'kitchen', x: 1250, y: 840, sleeping: false, seat: null, collar: 2, flipped: true },
     ...structuredClone(PARK_PETS),
+    ...structuredClone(FARM_PETS),
   };
   for (const [def, owner] of SEEDS) {
     // контейнеры временно открыты, чтобы разложить вещи
@@ -171,6 +182,7 @@ export function validateWorld(w: World): string[] {
     if (f.roomId !== null && !w.rooms[f.roomId]) errs.push(`bad_room:${id}`);
   }
   for (const [id, p] of Object.entries(w.pets)) if (p.id !== id || !w.rooms[p.roomId]) errs.push(`bad_pet:${id}`);
+  for (const p of Object.values(w.pets)) if (FARM_KINDS.has(p.kind) && groupOf(p.roomId) !== 'farm') errs.push(`farm_pet:${p.id}`);
   if (!w.rooms[w.currentRoomId]) errs.push('bad_current_room');
   return errs;
 }
@@ -184,6 +196,7 @@ export function repairWorld(world: World): World {
     for (const e of errs) {
       const [kind, id] = e.split(':');
       if (['orphan', 'cycle', 'double', 'bad_owner', 'bad_hand', 'bad_room'].includes(kind) && w.items[id]) w.items[id].owner = { kind: 'lost' };
+      if (kind === 'farm_pet' && w.pets[id]) { const p = w.pets[id]; p.roomId = FARM_HOME[id] ?? 'farm_yard'; p.x = 800; p.y = 780; p.seat = null; p.sleeping = false; } // житель фермы возвращается домой
       if (kind === 'no_def') delete w.items[id];
       if ((kind === 'bad_seat' || kind === 'double_seat') && w.characters[id]) { w.characters[id].seat = null; w.characters[id].pose = 'standing'; }
       if (kind === 'bad_outfit' && w.characters[id]) w.characters[id].outfit = { top: { id: 'tee', color: 0 }, bottom: { id: 'shorts', color: 0 } };
@@ -239,6 +252,15 @@ export const MIGRATIONS: Record<number, Migration> = {
   },
   // v5: появился мешок корма. Старые миски остаются как были (пустые половины), ничего не удаляется.
   5: (raw) => { raw.schemaVersion = 6; return seedLocations(raw as World, FEED_SEEDS); },
+  // v6: появилась ферма — два экрана, семь её жителей и реквизит. Добавляется один раз, остальное не меняется.
+  6: (raw) => {
+    const fresh = createWorld(raw.settings?.lang === 'en' ? 'en' : 'ru');
+    for (const r of LOCATION_ROOMS) raw.rooms[r] = raw.rooms[r] ?? fresh.rooms[r];
+    for (const [id, f] of Object.entries(fresh.furniture)) if (!raw.furniture[id]) raw.furniture[id] = f;
+    for (const [id, p] of Object.entries(FARM_PETS)) if (!raw.pets[id]) raw.pets[id] = structuredClone(p);
+    raw.schemaVersion = 7;
+    return seedLocations(raw as World, FARM_SEEDS);
+  },
 };
 
 export function migrate(raw: any): any {
@@ -262,6 +284,7 @@ function checkShape(w: any): string | null {
   if (!isObj(w)) return 'not_object';
   if (!num(w.schemaVersion) || !num(w.revision) || !num(w.nextId)) return 'bad_header';
   for (const k of ['items', 'characters', 'pets', 'furniture', 'rooms', 'settings']) if (!isObj(w[k])) return `bad_${k}`;
+  if (w.preparedIdeas !== undefined && !(Array.isArray(w.preparedIdeas) && w.preparedIdeas.length <= 40 && w.preparedIdeas.every((x: unknown) => typeof x === 'string' && ID_RE.test(x)))) return 'bad_ideas';
   if (!Array.isArray(w.openedGiftIds) || !w.openedGiftIds.every((x: unknown) => typeof x === 'string' && ID_RE.test(x))) return 'bad_gifts';
   if (!Array.isArray(w.savedOutfits) || w.savedOutfits.length > 40) return 'bad_outfits';
   for (const it of Object.values<any>(w.items)) {
@@ -278,7 +301,7 @@ function checkShape(w: any): string | null {
     if (c.dream !== undefined && !ITEMS[c.dream]) return 'bad_character';
   }
   for (const f of Object.values<any>(w.furniture)) if (!isObj(f) || !FURNITURE[f.definitionId] || !num(f.x) || !num(f.y)) return 'bad_furniture';
-  for (const p of Object.values<any>(w.pets)) if (!isObj(p) || !['cat', 'dog', 'rabbit', 'capybara', 'frenchie', 'wolf'].includes(p.kind) || !num(p.x) || !num(p.y)) return 'bad_pet';
+  for (const p of Object.values<any>(w.pets)) if (!isObj(p) || !['cat', 'dog', 'rabbit', 'capybara', 'frenchie', 'wolf', 'cow', 'sheep', 'pig', 'goat', 'hen', 'chick', 'pony'].includes(p.kind) || !num(p.x) || !num(p.y)) return 'bad_pet';
   for (const s of w.savedOutfits) if (!isObj(s) || typeof s.name !== 'string' || s.name.length > 24 || !isObj(s.outfit) || !isValidOutfit(s.outfit)) return 'bad_outfits';
   const st = w.settings;
   if (!['ru', 'en'].includes(st.lang) || !num(st.music) || !num(st.sfx)) return 'bad_settings';

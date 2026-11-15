@@ -149,7 +149,7 @@ test('история есть в карточках идей на двух яз�
   await page.evaluate(() => window.__game.game.update((w: any) => { w.settings.tutorialDone = true; }));
   await page.click('#play'); await enter(page, 'houses');
   await page.click('[data-panel="ideas"]');
-  await expect(page.locator('.card.idea').last()).toContainText('Устрой вечеринку');
+  await expect(page.locator('.card.idea[data-idea="party"]')).toContainText('Устрой вечеринку');
   await page.click('[data-panel="ideas"]');
   // подарок в домике — прежняя реплика с озвучкой; в клубе без подарка музыка включается сама по себе
   await page.evaluate(() => { const g = window.__game; const r = g.rules.takeGiftSet(g.game.world, 'tea', 'living', { x: 900, y: 840 }); g.game.commit(r); });
@@ -163,7 +163,7 @@ test('история есть в карточках идей на двух яз�
   await page.waitForFunction(() => !!window.__game);
   await page.click('#play'); await enter(page, 'houses');
   await page.click('[data-panel="ideas"]');
-  await expect(page.locator('.card.idea').last()).toContainText('Throw a party');
+  await expect(page.locator('.card.idea[data-idea="party"]')).toContainText('Throw a party');
 });
 
 test('танцы в клубе: диджей и сидящие не танцуют, новый герой присоединяется, унесённый сразу стоит ровно, после музыки все спокойны и координаты не изменились', async ({ page }) => {
@@ -338,4 +338,68 @@ test('живые вещи клуба: шар включается и выклю�
   expect(await page.evaluate(() => (window.__game.scene as any).particles.length)).toBe(0);
   await page.click('#tomap'); await enter(page, 'club');
   await page.waitForFunction(() => { const f = window.__game.scene.clubFx(); return f.ball && f.stars; });
+});
+
+test('«Подготовить игру»: просмотр ничего не меняет, вещи появляются один раз в своих комнатах, найденные не двигаются; после перезапуска без сети всё на месте', async ({ page, context }) => {
+  await page.goto('./');
+  await page.waitForFunction(() => !!window.__game);
+  await page.waitForFunction(() => window.__game.offline.state === 'ready', null, { timeout: 60_000 });
+  // «старое сохранение»: ни коробки, ни капкейков, ни мячика с миской; мешок корма — у героя в другой комнате
+  await page.evaluate(() => window.__game.game.update((w: any) => {
+    w.settings.tutorialDone = true; delete w.preparedIdeas;
+    for (const [id, it] of Object.entries<any>(w.items)) if (['giftbox', 'cupcake', 'pet_rope_ball', 'pet_double_bowl'].includes(it.definitionId)) delete w.items[id];
+    const bag = Object.values<any>(w.items).find((i) => i.definitionId === 'pet_food_bag'); bag.owner = { kind: 'hand', characterId: 'hero_mila', slot: 'left' };
+  }));
+  await page.click('#play'); await enter(page, 'houses');
+  const count = async (def: string) => Object.values<any>((await world(page)).items).filter((i) => i.definitionId === def).length;
+  const before = JSON.stringify((await world(page)).items);
+  await page.click('[data-panel="ideas"]');
+  await expect(page.locator('.card.idea[data-idea="party"] .pill')).toHaveText('Подготовить игру');
+  expect(JSON.stringify((await world(page)).items)).toBe(before); // просмотр карточек ничего не меняет
+  expect((await music(page)).club).toBe(false);
+  // вечеринка
+  await page.click('.card.idea[data-idea="party"] .pill');
+  let w = await world(page);
+  const cup = Object.values<any>(w.items).find((i) => i.definitionId === 'cupcake');
+  const box = Object.values<any>(w.items).find((i) => i.definitionId === 'giftbox');
+  expect(cup.owner.kind).toBe('surface'); expect(w.furniture[cup.owner.furnitureId].roomId).toBe('cafe_bakery');
+  expect(box.owner).toMatchObject({ kind: 'room', roomId: 'toys_workshop' }); expect(box.state.packed).toBe(false);
+  await expect(page.locator('.card.idea[data-idea="party"] .idea-row')).toHaveCount(3);
+  await expect(page.locator('.card.idea[data-idea="party"] .idea-row.created').first()).toContainText('появилось: Пекарня');
+  await expect(page.locator('.card.idea[data-idea="party"] .idea-row.found')).toContainText('уже есть: Мастерская подарков');
+  expect((await music(page)).club).toBe(false); // музыку карточка не включает
+  expect(w.currentRoomId).toBe('living'); // игрока никуда не уносит
+  // повторные нажатия не плодят
+  for (let i = 0; i < 3; i++) await page.click('.card.idea[data-idea="party"] .pill >> nth=0');
+  expect(await count('cupcake')).toBe(1); expect(await count('giftbox')).toBe(1); expect(await count('toy_jack_box')).toBe(1);
+  // питомцы: мешок у Милы в руках — показывается, где он, и не переставляется
+  await page.click('.card.idea[data-idea="pets"] .pill');
+  w = await world(page);
+  expect(Object.values<any>(w.items).find((i) => i.definitionId === 'pet_food_bag').owner).toMatchObject({ kind: 'hand', characterId: 'hero_mila' });
+  await expect(page.locator('.card.idea[data-idea="pets"] .idea-row.found').filter({ hasText: 'у героя' })).toContainText('уже есть: Гостиная · у героя Мила');
+  await expect(page.locator('.card.idea[data-idea="pets"] .idea-row.found')).toHaveCount(2); // мешок и кувшин уже есть в мире — показано, где они
+  for (const d of ['pet_rope_ball', 'pet_double_bowl']) expect(Object.values<any>(w.items).some((i) => i.definitionId === d && i.owner.roomId === 'animals')).toBe(true);
+  expect(w.items[Object.keys(w.items).find((k) => w.items[k].definitionId === 'pet_double_bowl')!].state).toEqual({}); // питомцев никто не кормит автоматически
+  const pets0 = JSON.stringify(w.pets);
+  await page.click('.card.idea[data-idea="pets"] .pill >> nth=0');
+  expect(await count('pet_double_bowl')).toBe(1); expect(await count('pet_rope_ball')).toBe(1);
+  expect(JSON.stringify((await world(page)).pets)).toBe(pets0);
+  // угощение съели: само не появляется, только по «Приготовить ещё»
+  await page.evaluate(() => window.__game.game.update((x: any) => { for (const [id, it] of Object.entries<any>(x.items)) if (it.definitionId === 'cupcake') delete x.items[id]; }));
+  await page.click('.card.idea[data-idea="party"] .pill >> nth=0');
+  expect(await count('cupcake')).toBe(0);
+  await expect(page.locator('.card.idea[data-idea="party"] .idea-row.eaten')).toContainText('уже съели');
+  await page.click('.card.idea[data-idea="party"] .idea-row.eaten .pill');
+  expect(await count('cupcake')).toBe(1);
+  // перезапуск без интернета
+  await expect(page.locator('.save.saved')).toBeVisible();
+  const kept = JSON.stringify((await world(page)).items);
+  await context.setOffline(true);
+  await page.reload();
+  await page.waitForFunction(() => !!window.__game);
+  expect(JSON.stringify((await world(page)).items)).toBe(kept);
+  await page.click('#play'); await enter(page, 'houses');
+  await page.click('[data-panel="ideas"]');
+  await page.click('.card.idea[data-idea="party"] .pill');
+  expect(JSON.stringify((await world(page)).items)).toBe(kept); // и после перезапуска ничего не дублируется
 });
