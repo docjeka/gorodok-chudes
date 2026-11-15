@@ -165,7 +165,10 @@ async function run(kv: KV, initial: World) {
     if (!audio.musicState().club || map.isOpen || w.currentRoomId !== 'club') return [];
     return Object.values(w.characters).filter((c) => c.roomId === 'club' && c.pose === 'standing' && !c.seat).map((c) => c.id);
   };
-  const syncDance = () => scene.setDancers(dancers(), 500); // 120 ударов в минуту — темп клубного трека
+  const syncDance = () => {
+    scene.setBeat(audio.musicState().club && !map.isOpen && game.world.currentRoomId === 'club', 500); // 120 ударов в минуту — темп клубного трека
+    scene.setDancers(dancers(), 500);
+  };
   window.setInterval(syncDance, 200);
   game.subscribe(syncDance);
   hud.showTitle(true);

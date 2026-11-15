@@ -264,6 +264,26 @@ try {
     await ev(() => { const g = window.__game; g.game.commit(g.rules.placeCharacter(g.game.world, 'hero_timur', { furnitureId: 'kt_chair1', slot: 0 })); });
     await clip('hero_timur', 'outfit-timur-confectioner-sit');
   }
+  if (scenario === 'clubfx') {
+    const ctx = await browser.newContext({ viewport: { width: 1024, height: 576 }, deviceScaleFactor: 1, hasTouch: true, recordVideo: { dir: `${OUT}/video-fx`, size: { width: 1024, height: 576 } } });
+    const page = await ctx.newPage();
+    await page.goto('http://127.0.0.1:4173/');
+    await page.waitForFunction(() => !!window.__game);
+    await page.evaluate(() => window.__game.game.update((w) => { w.settings.tutorialDone = true; w.rooms.club.visited = true; const put = (id, x, y) => Object.assign(w.characters[id], { roomId: 'club', x, y, pose: 'standing', seat: null }); put('hero_mila', 1320, 850); put('hero_timur', 520, 840); put('hero_lev', 760, 850); w.currentRoomId = 'club'; }));
+    await page.click('#play'); await page.evaluate(() => window.__game.map.enter('club'));
+    await page.evaluate(() => window.__game.scene.setZoom(0.1));
+    await page.waitForFunction(() => window.__game.audio.musicState().loaded[1], null, { timeout: 30000 });
+    await wait(1200);
+    await page.mouse.click(...(await roomPt(page, 799, 181))); await wait(4500); // шар
+    await page.screenshot({ path: `${OUT}/clubfx-ball.png` });
+    await page.mouse.click(...(await at(page, 'cl_light', -90))); await wait(4000); // прожектор
+    await page.screenshot({ path: `${OUT}/clubfx-stars.png` });
+    await drag(page, await at(page, 'hero_mila', -120), await roomPt(page, 800, 628)); await wait(7000); // DJ: колонка и танцы
+    await page.screenshot({ path: `${OUT}/clubfx-all.png` });
+    await drag(page, await at(page, 'hero_mila', -150), await roomPt(page, 1320, 850)); await wait(2500);
+    await page.mouse.click(...(await roomPt(page, 799, 181))); await wait(2000);
+    const v = page.video(); await ctx.close(); console.log('video', await v.path());
+  }
   if (scenario === 'six' || scenario === 'all') {
     const page = await open('', { width: 1600, height: 900 });
     await page.evaluate(() => { const g = window.__game; const R = g.rules; const put = [['hero_mila', 330, 860, 'fairy', 'delight'], ['hero_timur', 560, 850, 'pirate', 'silly'], ['hero_yuki', 800, 860, 'casual', 'joy'], ['hero_asya', 1040, 850, 'cat', 'surprise'], ['hero_lev', 1270, 860, 'astronaut', 'calm'], ['hero_nora', 1480, 850, 'princess', 'thinking']];

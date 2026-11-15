@@ -271,3 +271,71 @@ test('новые наряды: Мила-диджей и Тимур-кондит�
   expect(w.characters.hero_mila.costume).toBe('dj');
   expect(w.characters.hero_timur.costume).toBe('confectioner');
 });
+
+test('живые вещи клуба: шар включается и выключается тапом, звёзды летят из прожектора и после его перемещения, колонка пульсирует только под DJ-трек', async ({ page }) => {
+  await page.goto('./');
+  await page.waitForFunction(() => !!window.__game);
+  await page.evaluate(() => window.__game.game.update((w: any) => { w.settings.tutorialDone = true; w.rooms.club.visited = true; Object.assign(w.characters.hero_mila, { roomId: 'club', x: 1300, y: 850, pose: 'standing', seat: null }); }));
+  await page.click('#play'); await enter(page, 'club');
+  await page.waitForFunction(() => window.__game.audio.musicState().loaded[1], null, { timeout: 20_000 });
+  const fx = () => page.evaluate(() => window.__game.scene.clubFx());
+  expect(await fx()).toMatchObject({ ball: false, stars: false, pulse: false, speakerScale: 1 });
+  // шар: тап — включён, второй тап — выключен; музыка от этого не начинается
+  const ball = await roomPt(page, 799, 181);
+  await page.mouse.click(...ball);
+  await page.waitForFunction(() => window.__game.scene.clubFx().ball);
+  expect((await world(page)).rooms.club.ball).toBe(true);
+  expect((await music(page)).club).toBe(false);
+  // плитки едут: картинка внутри шара меняется со временем, а за его контуром — нет рывков яркости
+  const draws = await page.evaluate(async () => { const g = (window.__game.scene as any).clubBall; const a = g.context.instructions.length; const b0 = JSON.stringify(g.context.instructions[0]?.data?.path?.instructions?.[0]?.data ?? null); await new Promise((r) => setTimeout(r, 700)); const b1 = JSON.stringify(g.context.instructions[0]?.data?.path?.instructions?.[0]?.data ?? null); return { n: a, moved: b0 !== b1 }; });
+  expect(draws.n).toBeGreaterThan(20); expect(draws.moved).toBe(true);
+  await page.mouse.click(...ball);
+  await page.waitForFunction(() => !window.__game.scene.clubFx().ball, null, { timeout: 5000 });
+  await page.mouse.click(...ball); // оставим включённым
+  // прожектор: тап включает звёздочки; перенос (долгое нажатие) не считается тапом
+  const lampX0 = (await world(page)).furniture.cl_light.x;
+  await page.mouse.click(...(await at(page, 'cl_light', -90)));
+  await page.waitForFunction(() => window.__game.scene.clubFx().stars);
+  expect((await world(page)).furniture.cl_light.on).toBe(1);
+  const starXs = () => page.evaluate(() => (window.__game.scene as any).particles.map((p: any) => Math.round(p.s.x)));
+  await page.waitForTimeout(700);
+  const near = await starXs();
+  expect(near.length).toBeGreaterThan(2);
+  expect(near.every((x: number) => x < lampX0 + 40 && x > lampX0 - 420)).toBe(true); // летят от лампы к танцполу
+  const a = await at(page, 'cl_light', -90);
+  await page.mouse.move(a[0], a[1]); await page.mouse.down(); await page.waitForTimeout(650);
+  for (let i = 1; i <= 8; i++) await page.mouse.move(a[0] + (300 * i) / 8, a[1] + 15);
+  await page.mouse.up(); await page.waitForTimeout(400);
+  const lamp = (await world(page)).furniture.cl_light;
+  expect(lamp.x).toBeGreaterThan(lampX0 + 200);
+  expect(lamp.on).toBe(1); // перенос не выключил
+  await page.waitForTimeout(3200); // старые звёздочки погасли
+  const moved = await starXs();
+  expect(moved.length).toBeGreaterThan(2);
+  expect(moved.every((x: number) => x > lampX0 + 200 - 420 + 34 && x < lamp.x + 40)).toBe(true); // вылетают из нового места
+  expect(Math.max(...moved)).toBeGreaterThan(lampX0 + 100);
+  // колонка: тап музыку не запускает и не пульсирует
+  await page.mouse.click(...(await at(page, 'cl_speaker', -110)));
+  await page.waitForTimeout(400);
+  expect((await music(page)).club).toBe(false);
+  expect((await fx()).pulse).toBe(false);
+  // герой за пультом — колонка пульсирует в такт
+  await drag(page, await at(page, 'hero_mila', -120), await roomPt(page, 800, 628));
+  await page.waitForFunction(() => window.__game.audio.musicState().club);
+  await page.waitForFunction(() => window.__game.scene.clubFx().pulse);
+  const scales = await page.evaluate(async () => { const out: number[] = []; const t0 = performance.now(); while (performance.now() - t0 < 1600) { out.push(window.__game.scene.clubFx().speakerScale); await new Promise((r) => requestAnimationFrame(r)); } return out; });
+  expect(Math.max(...scales)).toBeGreaterThan(1.008); expect(Math.max(...scales)).toBeLessThan(1.05); expect(Math.min(...scales)).toBeLessThan(1.004);
+  // героя сняли с пульта — колонка сразу обычная; шар и прожектор работают дальше, они независимы
+  await drag(page, await at(page, 'hero_mila', -150), await roomPt(page, 1300, 850));
+  await page.waitForFunction(() => !window.__game.audio.musicState().club);
+  await page.waitForFunction(() => { const f = window.__game.scene.clubFx(); return !f.pulse && f.speakerScale === 1; });
+  expect(await fx()).toMatchObject({ ball: true, stars: true });
+  // выход из клуба останавливает эффекты; при возвращении включённые шар и прожектор снова работают
+  await page.click('#tomap'); await enter(page, 'houses');
+  await page.waitForTimeout(900);
+  expect(await fx()).toMatchObject({ ball: false, stars: false, pulse: false });
+  await page.waitForTimeout(3000);
+  expect(await page.evaluate(() => (window.__game.scene as any).particles.length)).toBe(0);
+  await page.click('#tomap'); await enter(page, 'club');
+  await page.waitForFunction(() => { const f = window.__game.scene.clubFx(); return f.ball && f.stars; });
+});

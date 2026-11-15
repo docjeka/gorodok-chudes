@@ -68,7 +68,7 @@ export const FURNITURE_LIST: FurnitureDef[] = [
   { id: 'beach_rowboat', category: 'seats', w: 380, h: 195, layer: 'floor', seats: [{ x: -85, y: -84, pose: 'sitting' }, { x: 85, y: -84, pose: 'sitting' }], front: { x0: -190, y0: -92, x1: 190, y1: 0 } },
   { id: 'club_stool', category: 'seats', w: 160, h: 120, layer: 'floor', seats: [{ x: 0, y: -100, pose: 'sitting' }] },
   { id: 'club_speaker', category: 'decor', w: 115, h: 223, layer: 'floor' },
-  { id: 'club_light', category: 'lighting', w: 135, h: 185, layer: 'floor' },
+  { id: 'club_light', category: 'lighting', w: 135, h: 185, layer: 'floor', tap: 'toggleOn' },
   { id: 'pet_tunnel', category: 'toys', w: 250, h: 173, layer: 'floor', petSeats: [{ x: -40, y: -18 }] },
   { id: 'pet_cushion', category: 'beds', w: 200, h: 140, layer: 'floor', petSeats: [{ x: 0, y: -40 }] },
   // колечки надеваются на три колышка стойки
@@ -149,3 +149,6 @@ export const groupOf = (roomId: RoomId): string => Object.keys(ROOM_GROUPS).find
 export const WALLPAPERS = 6;
 export const FLOORS = 5;
 export const TV_SCENES = 4;
+
+/** Диско-шар нарисован на фоне клуба: центр и радиус в единицах комнаты. Анимация ложится точно поверх него. */
+export const DISCO_BALL = { x: 799, y: 181, r: 92 };

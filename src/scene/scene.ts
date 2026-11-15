@@ -9,7 +9,7 @@ import charSprites from '../content/charSprites.json';
 import furnSprites from '../content/furnSprites.json';
 import itemSprites from '../content/itemSprites.json';
 import petSprites from '../content/petSprites.json';
-import { FURNITURE, HOUSE_ROOMS, TV_SCREEN } from '../content/furniture';
+import { DISCO_BALL, FURNITURE, HOUSE_ROOMS, TV_SCREEN } from '../content/furniture';
 import { ITEMS } from '../content/items';
 import { HAIR_COLORS } from '../content/wardrobe';
 import { charPos, itemPlace, petPos } from '../game/geometry';
@@ -53,6 +53,12 @@ export class Scene {
   private night = new Graphics();
   private glow = new Container();
   private fx = new Container();
+  /** эффекты клуба за героями: блики на стенах и полу, плитки диско-шара */
+  private club = new Container();
+  private clubGlints = new Graphics();
+  private clubBall = new Graphics();
+  private clubState = { ball: false, lightId: null as string | null, speakerId: null as string | null, ballAmp: 0, starAt: 0, noteAt: 0 };
+  private beatOn = false;
   private hl = new Graphics();
   private debugG = new Graphics();
   private nodes = new Map<string, Node>();
@@ -86,7 +92,11 @@ export class Scene {
     this.layer.sortableChildren = true;
     this.night.rect(0, 0, ROOM_W, ROOM_H).fill({ color: 0x1b2250 });
     this.night.alpha = 0;
-    this.root.addChild(this.bg, this.layer, this.night, this.glow, this.fx, this.hl, this.debugG);
+    this.clubGlints.blendMode = 'add';
+    const ballMask = new Graphics().circle(DISCO_BALL.x, DISCO_BALL.y, DISCO_BALL.r).fill({ color: 0xffffff });
+    this.clubBall.mask = ballMask; // контур и крепление шара остаются с фона: анимация только внутри круга
+    this.club.addChild(this.clubGlints, ballMask, this.clubBall);
+    this.root.addChild(this.bg, this.club, this.layer, this.night, this.glow, this.fx, this.hl, this.debugG);
     this.app.stage.addChild(this.root);
     this.app.renderer.on('resize', () => this.layout());
     this.layout();
@@ -150,6 +160,13 @@ export class Scene {
       void imageTex(bgKey, `${BASE}assets/rooms/${bgKey}.${house ? 'jpg' : 'webp'}`, { upp: 1, ox: 0, oy: 0 }).then((t) => { if (this.bgKey === bgKey) { this.bg.texture = t.texture; this.bg.width = ROOM_W; this.bg.height = ROOM_H; } });
     }
     this.nightAlpha = room.lightOn ? 0 : 0.5;
+    // эффекты клуба работают только пока игрок в клубе
+    const inClub = roomId === 'club';
+    const lamp = inClub ? Object.values(world.furniture).find((f) => f.roomId === 'club' && f.definitionId === 'club_light' && f.on > 0) : undefined;
+    const speaker = inClub ? Object.values(world.furniture).find((f) => f.roomId === 'club' && f.definitionId === 'club_speaker') : undefined;
+    this.clubState.ball = inClub && !!room.ball;
+    this.clubState.lightId = lamp?.id ?? null;
+    this.clubState.speakerId = speaker?.id ?? null;
     const wants = this.collect(world, roomId);
     const seen = new Set<string>();
     for (const w of wants) {
@@ -465,6 +482,78 @@ export class Scene {
     this.tween(ms, (k) => { const e = k * k * (3 - 2 * k); n.c.position.set(x0 + (to.x - x0) * e, y0 + (to.y - y0) * e - Math.abs(Math.sin(k * Math.PI * 4)) * 10); }, () => { this.animating.delete(ref); done(); });
   }
 
+  // ---------- живые вещи клуба ----------
+  /** Играет ли сейчас клубный трек: по этому же ритму танцуют герои и пульсирует колонка. */
+  setBeat(on: boolean, beatMs = 500) {
+    if (on && !this.beatOn) this.danceT0 = performance.now();
+    this.beatOn = on;
+    this.danceBeat = beatMs;
+  }
+  /** Что сейчас работает в клубе — для проверок. */
+  clubFx() { return { ball: this.clubState.ballAmp > 0.02, ballOn: this.clubState.ball, stars: this.clubState.lightId !== null, pulse: this.beatOn && this.clubState.speakerId !== null, speakerScale: (() => { const n = this.clubState.speakerId ? this.nodeOf(this.clubState.speakerId) : undefined; return n?.tex ? n.body.scale.y / n.tex.upp : 1; })(), stars_n: this.particles.length }; }
+  private clubTick(dt: number, now: number) {
+    const st = this.clubState;
+    // --- диско-шар: плитки медленно едут по круглой поверхности, по стенам и полу плывут мягкие блики
+    st.ballAmp = Math.max(0, Math.min(1, st.ballAmp + (st.ball && !this.reducedMotion ? dt : -dt) / 700));
+    this.clubBall.clear(); this.clubGlints.clear();
+    if (st.ballAmp > 0) {
+      const { x: cx, y: cy, r } = DISCO_BALL;
+      const turn = now / 9000; // один оборот за 9 секунд — без мелькания
+      const tint = [0xd9c8ff, 0xffc4e4, 0xbfe6ff, 0xa9efe2, 0xfff1c9, 0xe6d6ff];
+      const rows = 9, cols = 14;
+      for (let j = 0; j < rows; j++) {
+        const lat0 = -Math.PI / 2 + (j * Math.PI) / rows, lat1 = lat0 + Math.PI / rows;
+        const y0 = cy + r * Math.sin(lat0), y1 = cy + r * Math.sin(lat1), mid = (lat0 + lat1) / 2;
+        for (let i = 0; i < cols; i++) {
+          const a0 = ((i / cols + turn) % 1) * Math.PI * 2, a1 = a0 + (Math.PI * 2) / cols;
+          if (Math.cos((a0 + a1) / 2) <= 0.05) continue; // дальняя сторона шара не видна
+          const xa = cx + r * Math.cos(mid) * Math.sin(a0), xb = cx + r * Math.cos(mid) * Math.sin(a1);
+          const shine = 0.35 + 0.5 * Math.cos((a0 + a1) / 2) * (0.6 + 0.4 * Math.sin((i * 7 + j * 5) * 1.3));
+          this.clubBall.rect(Math.min(xa, xb) + 1, y0 + 1, Math.abs(xb - xa) - 2, y1 - y0 - 2).fill({ color: tint[(i + j * 2) % tint.length], alpha: 0.78 * st.ballAmp * shine + 0.12 * st.ballAmp });
+        }
+      }
+      const glow = [0xff8fd0, 0x8fe8ff, 0xffd98a, 0xc9a6ff, 0x8ff0c8, 0xff9fb0, 0x9fc0ff];
+      for (let i = 0; i < 9; i++) {
+        const ph = now / (11000 + i * 900) + i * 0.71;
+        const gx = 800 + Math.sin(ph * Math.PI * 2) * (260 + i * 62), gy = (i % 3 === 0 ? 720 : 330) + Math.cos(ph * Math.PI * 2 + i) * (i % 3 === 0 ? 90 : 150);
+        const rad = 46 + (i % 4) * 12;
+        for (let q = 0; q < 8; q++) { const k = 1 - q / 8; this.clubGlints.ellipse(gx, gy, rad * k * 1.5, rad * k).fill({ color: glow[i % glow.length], alpha: 0.022 * st.ballAmp }); } // много тонких слоёв — мягкий край без колец
+      }
+    }
+    // --- прожектор: звёздочки летят из линзы на танцпол (из того места, где лампа стоит сейчас)
+    const lamp = st.lightId ? this.nodeOf(st.lightId) : undefined;
+    if (lamp && now > st.starAt && this.dragging !== st.lightId) {
+      st.starAt = now + (this.reducedMotion ? 600 : 170);
+      const dir = lamp.c.scale.x < 0 ? 1 : -1; // линза на картинке смотрит влево
+      const g = new Graphics();
+      g.star(0, 0, 5, 10 + Math.random() * 5, 4.6).fill({ color: [0xff9ccf, 0xffd76a, 0x7fe3d4][Math.floor(Math.random() * 3)] });
+      g.position.set(lamp.c.x + dir * 34, lamp.c.y - 138);
+      this.fx.addChild(g);
+      this.particles.push({ s: g, vx: dir * (0.06 + Math.random() * 0.11), vy: 0.03 + Math.random() * 0.06, g: 0.00004, life: 0, max: 2300 + Math.random() * 700, spin: (Math.random() - 0.5) * 0.004 });
+    }
+    // --- колонка: динамики слегка пульсируют в такт, иногда вылетают нотки
+    const sp = st.speakerId ? this.nodeOf(st.speakerId) : undefined;
+    if (sp && sp.tex) {
+      const base = sp.tex.upp;
+      if (this.beatOn && !this.reducedMotion && this.dragging !== st.speakerId) {
+        const k = ((now - this.danceT0) / this.danceBeat) % 1;
+        const pulse = Math.exp(-k * 5) * 0.035; // короткий мягкий толчок на каждый удар
+        sp.body.scale.set(base * (1 + pulse * 0.5), base * (1 + pulse));
+        if (now > st.noteAt) {
+          st.noteAt = now + this.danceBeat * 8 + Math.random() * 600;
+          for (let i = 0; i < 2 + Math.floor(Math.random() * 2); i++) {
+            const g = new Graphics();
+            const col = [0xffc8ea, 0xffe08a, 0x9fe8dc][i % 3];
+            g.ellipse(0, 0, 6, 4.5).fill({ color: col }).rect(4.5, -17, 2.2, 17).fill({ color: col }).ellipse(8, -15, 5, 2.6).fill({ color: col });
+            g.position.set(sp.c.x - 20 + i * 22, sp.c.y - 210);
+            this.fx.addChild(g);
+            this.particles.push({ s: g, vx: (Math.random() - 0.5) * 0.03, vy: -0.05 - Math.random() * 0.02, g: 0, life: -i * 180, max: 1700, spin: 0 });
+          }
+        }
+      } else if (sp.body.scale.x !== base || sp.body.scale.y !== base) sp.body.scale.set(base, base);
+    }
+  }
+
   // ---------- танец ----------
   private dance = new Map<string, { on: boolean; amp: number }>();
   private danceT0 = 0;
@@ -474,7 +563,7 @@ export class Scene {
    * качнулся влево → вправо → маленький подскок → мягко приземлился. Фигурка целиком (с лицом) качается вокруг точки у ступней.
    */
   setDancers(ids: string[], beatMs = 500) {
-    if (!this.dance.size && ids.length) this.danceT0 = performance.now();
+    if (!this.beatOn && !this.dance.size && ids.length) this.danceT0 = performance.now();
     this.danceBeat = beatMs;
     const want = new Set(ids);
     for (const [id, d] of this.dance) d.on = want.has(id);
@@ -631,6 +720,7 @@ export class Scene {
     const now = performance.now();
     this.night.alpha += (this.nightAlpha - this.night.alpha) * Math.min(1, dt / 180);
     this.danceTick(dt, now);
+    this.clubTick(dt, now);
     for (let i = this.tweens.length - 1; i >= 0; i--) {
       const t = this.tweens[i];
       t.t += dt;

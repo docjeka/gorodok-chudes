@@ -117,7 +117,7 @@ export interface FurnitureInst {
   homeY: number;
 }
 
-export interface RoomState { wallpaper: number; floor: number; lightOn: boolean; /** игрок уже бывал здесь (для встречи героев в клубе) */ visited?: boolean }
+export interface RoomState { wallpaper: number; floor: number; lightOn: boolean; /** игрок уже бывал здесь (для встречи героев в клубе) */ visited?: boolean; /** диско-шар клуба включён */ ball?: boolean }
 
 export interface SavedOutfit { id: string; name: string; outfit: Outfit }
 

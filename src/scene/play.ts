@@ -1,6 +1,6 @@
 // Игровые взаимодействия: что происходит при нажатии и при отпускании. Связывает правила, сцену и звук.
 import type { GameAudio } from '../audio/audio';
-import { FURNITURE, TV_SCENES } from '../content/furniture';
+import { DISCO_BALL, FURNITURE, TV_SCENES } from '../content/furniture';
 import { ITEMS } from '../content/items';
 import { resolveCharDrop, resolveItemDrop, resolvePetDrop, freeFloorSpot, type ItemDrop } from '../game/drop';
 import type { Game } from '../game/game';
@@ -426,6 +426,12 @@ export class Play {
     const w = this.w;
     const sel = this.selection;
     if (this.decorate) { if (t?.kind === 'furn') { this.select(sel?.ref === t.ref ? null : { kind: 'furn', ref: t.ref }); this.audio.play('click'); } else this.select(null); return; }
+    if (!t && this.room === 'club' && Math.hypot(pt.x - DISCO_BALL.x, pt.y - DISCO_BALL.y) < DISCO_BALL.r + 8) {
+      // диско-шар: тап включает, второй тап выключает
+      this.game.update((x) => { x.rooms.club.ball = !x.rooms.club.ball; });
+      this.audio.play('light');
+      return;
+    }
     if (!t) {
       // «нажал предмет — нажал цель»: пустое место на полу
       if (sel?.kind === 'item') { this.dropItem(sel.ref, pt, { type: 'floor', ...clampFloor(pt.x, pt.y) }); this.select(null); }
@@ -503,6 +509,7 @@ export class Play {
         setTimeout(() => { if (this.w.furniture[id]?.on) this.game.commit(setFurnitureOn(this.w, id, 0)); }, 1800);
         break;
       }
+      case 'toggleOn': this.game.commit(setFurnitureOn(w, id, f.on ? 0 : 1)); this.audio.play('light'); this.select(null); break; // прожектор клуба: звёздочки
       case 'wardrobe': this.ui.openWardrobe(this.selection?.kind === 'char' ? this.selection.ref : null); this.audio.play('door'); break;
       default: this.select(null); void pt;
     }
