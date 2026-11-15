@@ -251,6 +251,19 @@ try {
     await ctx.close();
     console.log('video', await v.path());
   }
+  if (scenario === 'outfits') {
+    const page = await open('', { width: 1024, height: 576 });
+    const ev = (fn, arg) => page.evaluate(fn, arg);
+    const clip = async (hero, name, h = 330) => { const c = await at(page, hero, -110); await wait(700); await page.screenshot({ path: `${OUT}/${name}.png`, clip: { x: Math.max(0, c[0] - 190), y: Math.max(0, c[1] - 190), width: 380, height: h } }); console.log('shot', name); };
+    await ev(() => { const g = window.__game; g.game.commit(g.rules.wearSet(g.game.world, 'hero_mila', 'dj')); g.game.commit(g.rules.wearSet(g.game.world, 'hero_timur', 'confectioner')); g.game.update((w) => { w.rooms.club.visited = true; }); g.game.commit(g.rules.travel(g.game.world, 'club', ['hero_mila'])); g.scene.setZoom(0.1); g.game.commit(g.rules.placeCharacter(g.game.world, 'hero_mila', { furnitureId: 'cl_dj', slot: 0 })); });
+    await clip('hero_mila', 'outfit-mila-dj-stand');
+    await ev(() => { const g = window.__game; g.game.commit(g.rules.placeCharacter(g.game.world, 'hero_mila', { furnitureId: 'cl_stool', slot: 0 })); });
+    await clip('hero_mila', 'outfit-mila-dj-sit');
+    await ev(() => { const g = window.__game; g.game.commit(g.rules.storeFurniture(g.game.world, 'kt_chair1')); g.game.commit(g.rules.unstoreFurniture(g.game.world, 'kt_chair1', 'cafe_bakery')); g.game.commit(g.rules.travel(g.game.world, 'cafe_bakery', ['hero_timur'])); g.game.commit(g.rules.moveFurniture(g.game.world, 'kt_chair1', 1100, 800)); g.game.update((w) => { w.characters.hero_timur.x = 760; w.characters.hero_timur.y = 820; }); g.scene.setZoom(0.1); });
+    await clip('hero_timur', 'outfit-timur-confectioner-stand');
+    await ev(() => { const g = window.__game; g.game.commit(g.rules.placeCharacter(g.game.world, 'hero_timur', { furnitureId: 'kt_chair1', slot: 0 })); });
+    await clip('hero_timur', 'outfit-timur-confectioner-sit');
+  }
   if (scenario === 'six' || scenario === 'all') {
     const page = await open('', { width: 1600, height: 900 });
     await page.evaluate(() => { const g = window.__game; const R = g.rules; const put = [['hero_mila', 330, 860, 'fairy', 'delight'], ['hero_timur', 560, 850, 'pirate', 'silly'], ['hero_yuki', 800, 860, 'casual', 'joy'], ['hero_asya', 1040, 850, 'cat', 'surprise'], ['hero_lev', 1270, 860, 'astronaut', 'calm'], ['hero_nora', 1480, 850, 'princess', 'thinking']];

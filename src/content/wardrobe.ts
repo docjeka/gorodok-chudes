@@ -62,6 +62,9 @@ export const OUTFIT_SETS: OutfitSetDef[] = [
   { id: 'princess', outfit: o({ dress: ['gown', 0], shoes: ['ballet', 0], hat: ['crown', 0], jewelry: ['necklace', 0] }) },
   { id: 'pirate', outfit: o({ dress: ['piratesuit', 0], shoes: ['boots', 4], hat: ['bandana', 0] }) },
   { id: 'summer', outfit: o({ dress: ['sundress', 4], shoes: ['sneakers', 1], bag: ['satchel', 0] }) },
+  // наряды только с готовыми фигурками (векторный запасной вид — из похожих вещей)
+  { id: 'dj', outfit: o({ top: ['sweater', 2], bottom: ['trousers', 2], shoes: ['sneakers', 1] }) },
+  { id: 'confectioner', outfit: o({ top: ['chefcoat', 0], bottom: ['trousers', 1], shoes: ['sneakers', 1], hat: ['chefhat', 0] }) },
 ];
 export const OUTFITS: Record<string, OutfitSetDef> = Object.fromEntries(OUTFIT_SETS.map((s) => [s.id, s]));
 
@@ -93,8 +96,8 @@ export function presetCharacter(id: string): Character | null {
 
 /** Костюмы каждого героя: для них есть (или готовятся) готовые фигурки стоя и сидя. */
 export const HERO_COSTUMES: Record<string, string[]> = {
-  hero_mila: ['summer', 'princess', 'pajama', 'fairy'],
-  hero_timur: ['casual', 'chef', 'dragon', 'pirate'],
+  hero_mila: ['summer', 'princess', 'pajama', 'fairy', 'dj'],
+  hero_timur: ['casual', 'chef', 'dragon', 'pirate', 'confectioner'],
   hero_asya: ['artist', 'ballerina', 'winter', 'cat'],
   hero_lev: ['sport', 'astronaut', 'rain', 'pajama'],
   hero_nora: ['gardener', 'summer', 'chef', 'princess'],

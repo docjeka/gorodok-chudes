@@ -7,7 +7,7 @@ import type { Game } from '../game/game';
 import { charPos, itemPlace } from '../game/geometry';
 import { flipCharacter, setEmotion, wearSet } from '../game/rules';
 import type { Emotion, RoomId } from '../game/types';
-import { t, type Key } from '../i18n';
+import { has, t, type Key } from '../i18n';
 import type { Play, Selection } from '../scene/play';
 import type { Scene } from '../scene/scene';
 import type { SaveState } from '../storage/store';
@@ -323,7 +323,7 @@ export class Hud {
       const name = h('div', 'charname', c.name);
       const step = (d: number, label: Key, ic: 'prev' | 'next') => { const b = h('button', 'round', icon(ic)); b.setAttribute('aria-label', t(label)); b.onclick = () => { if (this.game.commit(wearSet(this.game.world, c.id, sets[(cur + d + sets.length) % sets.length]), true)) { this.audio.play('sparkle'); this.scene.pop(c.id, 0.08); } }; return b; };
       const costume = h('div', 'group');
-      costume.append(step(-1, 'char.prev', 'prev'), h('span', 'grouplabel', `${t('char.costume')} ${cur + 1}/${sets.length}`), step(1, 'char.next', 'next'));
+      costume.append(step(-1, 'char.prev', 'prev'), h('span', 'grouplabel', has('costume.' + sets[cur]) ? t(('costume.' + sets[cur]) as Key) : `${t('char.costume')} ${cur + 1}/${sets.length}`), step(1, 'char.next', 'next'));
       const moods = h('div', 'group moods');
       for (const e of EMOTIONS) {
         const b = h('button', 'mood' + (c.emotion === e ? ' current' : ''), emotionSvg(e));

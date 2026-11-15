@@ -219,3 +219,55 @@ test('танцы в клубе: диджей и сидящие не танцую
   const after = (await world(page)).characters;
   expect([after.hero_lev.x, after.hero_lev.y]).toEqual([coords.hero_lev.x, coords.hero_lev.y]);
 });
+
+test('новые наряды: Мила-диджей и Тимур-кондитер — стоя и сидя, сохраняются после смены комнаты и перезапуска; наряд музыку не включает', async ({ page }) => {
+  await page.goto('./');
+  await page.waitForFunction(() => !!window.__game);
+  await page.evaluate(() => window.__game.game.update((w: any) => { w.settings.tutorialDone = true; }));
+  await page.click('#play'); await enter(page, 'houses');
+  // наряд выбирается стрелкой в панели героя; название видно
+  await page.mouse.click(...(await at(page, 'hero_mila', -120)));
+  await page.click('[aria-label="Предыдущий наряд"]');
+  await expect(page.locator('.grouplabel').first()).toHaveText('Диджей');
+  expect((await world(page)).characters.hero_mila.costume).toBe('dj');
+  await page.mouse.click(...(await at(page, 'hero_timur', -120)));
+  await page.click('[aria-label="Предыдущий наряд"]');
+  await expect(page.locator('.grouplabel').first()).toHaveText('Кондитер');
+  // старые наряды на месте, новых героев нет
+  let w = await world(page);
+  expect(Object.keys(w.characters)).toHaveLength(6);
+  await page.click('[aria-label="Следующий наряд"]');
+  expect((await world(page)).characters.hero_timur.costume).toBe('casual');
+  await page.click('[aria-label="Предыдущий наряд"]');
+  // готовые фигурки стоя и сидя загружаются, точки лица на месте
+  const spr = (hero: string) => page.evaluate((h) => { const n = window.__game.scene.nodeOf(h); return { key: n.key as string, ok: !!n.tex, eyes: n.parts ? [Math.round(n.parts.eyeL.x), Math.round(n.parts.eyeR.x)] : null }; }, hero);
+  await page.waitForFunction(() => !!window.__game.scene.nodeOf('hero_mila').tex && window.__game.scene.nodeOf('hero_mila').key.includes('dj'));
+  expect((await spr('hero_mila')).key).toContain('hero_mila_dj_stand');
+  expect((await spr('hero_timur')).key).toContain('hero_timur_confectioner_stand');
+  await page.mouse.click(...(await roomPt(page, 1000, 300)));
+  await drag(page, await at(page, 'hero_mila', -120), await roomPt(page, 440, 560)); // на диван
+  await page.waitForFunction(() => window.__game.scene.nodeOf('hero_mila').key.includes('dj_sit'));
+  expect((await world(page)).characters.hero_mila.pose).toBe('sitting');
+  await drag(page, await at(page, 'hero_mila', -90), await roomPt(page, 1000, 820)); // и встать
+  await page.waitForFunction(() => window.__game.scene.nodeOf('hero_mila').key.includes('dj_stand'));
+  // Тимур — в пекарню, Мила — в клуб за пульт
+  await page.click('#tomap'); await enter(page, 'cafe', ['Тимур']); await door(page, 'Пекарня', ['Тимур']);
+  w = await world(page);
+  expect(w.characters.hero_timur).toMatchObject({ roomId: 'cafe_bakery', costume: 'confectioner' });
+  await page.waitForFunction(() => window.__game.scene.nodeOf('hero_timur')?.key.includes('confectioner_stand'));
+  await page.evaluate(() => { const g = window.__game; g.game.update((x: any) => { Object.assign(x.characters.hero_mila, { roomId: 'club', x: 1150, y: 840, seat: null, pose: 'standing' }); x.rooms.club.visited = true; }); });
+  await page.click('#tomap'); await enter(page, 'club');
+  await page.waitForFunction(() => window.__game.audio.musicState().loaded[1], null, { timeout: 20_000 });
+  await page.waitForTimeout(600);
+  expect((await music(page)).club).toBe(false); // наряд диджея сам музыку не включает
+  await drag(page, await at(page, 'hero_mila', -120), await roomPt(page, 800, 628));
+  await page.waitForFunction(() => window.__game.audio.musicState().club);
+  expect((await world(page)).characters.hero_mila).toMatchObject({ costume: 'dj', seat: { furnitureId: 'cl_dj' } });
+  // перезапуск: наряды те же
+  await expect(page.locator('.save.saved')).toBeVisible();
+  await page.reload();
+  await page.waitForFunction(() => !!window.__game);
+  w = await world(page);
+  expect(w.characters.hero_mila.costume).toBe('dj');
+  expect(w.characters.hero_timur.costume).toBe('confectioner');
+});

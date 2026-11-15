@@ -216,5 +216,7 @@ export const ru = {
   'pet.rabbit': 'Кролик',
   'idea.party': "Устрой вечеринку",
   'idea.party.t': "Возьми угощение в пекарне, упакуй игрушку в мастерской и неси всё в Клуб друзей. Кто встанет за пульт?",
+  'costume.dj': 'Диджей',
+  'costume.confectioner': 'Кондитер',
 } as const;
 export type Key = keyof typeof ru;

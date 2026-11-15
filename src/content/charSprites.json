@@ -1870,5 +1870,161 @@
    "y": 402
   },
   "faceScale": 1.18
+ },
+ "hero_mila:dj:stand": {
+  "file": "hero_mila_dj_stand.webp",
+  "w": 379,
+  "h": 529,
+  "unit": 2,
+  "origin": {
+   "x": 189,
+   "y": 528
+  },
+  "eyeL": {
+   "x": 151,
+   "y": 135
+  },
+  "eyeR": {
+   "x": 228,
+   "y": 135
+  },
+  "browL": {
+   "x": 151,
+   "y": 109
+  },
+  "browR": {
+   "x": 228,
+   "y": 109
+  },
+  "mouth": {
+   "x": 189,
+   "y": 182
+  },
+  "handL": {
+   "x": 93,
+   "y": 354
+  },
+  "handR": {
+   "x": 286,
+   "y": 353
+  },
+  "faceScale": 1.18
+ },
+ "hero_mila:dj:sit": {
+  "file": "hero_mila_dj_sit.webp",
+  "w": 381,
+  "h": 489,
+  "unit": 2,
+  "origin": {
+   "x": 191,
+   "y": 419
+  },
+  "eyeL": {
+   "x": 153,
+   "y": 133
+  },
+  "eyeR": {
+   "x": 230,
+   "y": 133
+  },
+  "browL": {
+   "x": 153,
+   "y": 107
+  },
+  "browR": {
+   "x": 230,
+   "y": 107
+  },
+  "mouth": {
+   "x": 191,
+   "y": 180
+  },
+  "handL": {
+   "x": 89,
+   "y": 351
+  },
+  "handR": {
+   "x": 297,
+   "y": 350
+  },
+  "faceScale": 1.18
+ },
+ "hero_timur:confectioner:stand": {
+  "file": "hero_timur_confectioner_stand.webp",
+  "w": 257,
+  "h": 555,
+  "unit": 2,
+  "origin": {
+   "x": 130,
+   "y": 554
+  },
+  "eyeL": {
+   "x": 92,
+   "y": 163
+  },
+  "eyeR": {
+   "x": 168,
+   "y": 163
+  },
+  "browL": {
+   "x": 92,
+   "y": 137
+  },
+  "browR": {
+   "x": 168,
+   "y": 137
+  },
+  "mouth": {
+   "x": 130,
+   "y": 210
+  },
+  "handL": {
+   "x": 29,
+   "y": 390
+  },
+  "handR": {
+   "x": 228,
+   "y": 390
+  },
+  "faceScale": 1.18
+ },
+ "hero_timur:confectioner:sit": {
+  "file": "hero_timur_confectioner_sit.webp",
+  "w": 251,
+  "h": 500,
+  "unit": 2,
+  "origin": {
+   "x": 127,
+   "y": 424
+  },
+  "eyeL": {
+   "x": 88,
+   "y": 166
+  },
+  "eyeR": {
+   "x": 165,
+   "y": 166
+  },
+  "browL": {
+   "x": 88,
+   "y": 140
+  },
+  "browR": {
+   "x": 165,
+   "y": 140
+  },
+  "mouth": {
+   "x": 127,
+   "y": 213
+  },
+  "handL": {
+   "x": 22,
+   "y": 379
+  },
+  "handR": {
+   "x": 225,
+   "y": 378
+  },
+  "faceScale": 1.18
  }
 }
