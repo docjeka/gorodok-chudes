@@ -15,6 +15,7 @@ import { createWorld, parseWorld } from '../game/world';
 import type { Character, ItemInst } from '../game/types';
 import { BAG_CAPACITY } from '../game/types';
 import { setLang, t, type Key } from '../i18n';
+import { HOUSE_ROOMS } from '../content/furniture';
 import type { Play } from '../scene/play';
 import type { Scene } from '../scene/scene';
 import { exportFileName } from '../storage/store';
@@ -287,13 +288,15 @@ export class Panels {
       row.append(flip, store);
       this.body.append(row);
     } else this.body.append(el('p', 'hint', t('deco.hint')));
-    this.body.append(el('h3', '', t('deco.walls')));
     const walls = el('div', 'grid slots');
-    for (let i = 0; i < 4; i++) {
-      const b = el('button', 'slot wall' + (w.rooms[room].wallpaper % 4 === i ? ' current' : ''), `<img src="${BASE}assets/rooms/room${i}.jpg" alt="" draggable="false">`);
-      b.setAttribute('aria-pressed', String(w.rooms[room].wallpaper % 4 === i));
-      b.onclick = () => { this.game.commit(setRoomStyle(this.game.world, room, { wallpaper: i })); this.audio.play('click'); };
-      walls.append(b);
+    if (HOUSE_ROOMS.has(room)) {
+    this.body.append(el('h3', '', t('deco.walls')));
+      for (let i = 0; i < 4; i++) {
+        const b = el('button', 'slot wall' + (w.rooms[room].wallpaper % 4 === i ? ' current' : ''), `<img src="${BASE}assets/rooms/room${i}.jpg" alt="" draggable="false">`);
+        b.setAttribute('aria-pressed', String(w.rooms[room].wallpaper % 4 === i));
+        b.onclick = () => { this.game.commit(setRoomStyle(this.game.world, room, { wallpaper: i })); this.audio.play('click'); };
+        walls.append(b);
+      }
     }
     this.body.append(walls, el('h3', '', t('deco.stored')));
     const stored = Object.values(w.furniture).filter((f) => f.roomId === null);

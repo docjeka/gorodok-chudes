@@ -32,6 +32,28 @@ const SEEDS: Seed[] = [
   ['comb', surf('bt_shelf', 0)], ['towel', surf('bt_shelf', 2)], ['petbrush', surf('bt_shelf', 4)], ['towel', inside('bt_laundry', 0)],
 ];
 
+/** Стартовая раскладка локаций города (добавляется и в старые сохранения при переходе на версию 3). */
+const LOCATION_SEEDS: [string, Owner][] = [
+  ['teddy', surf('ty_left', 0)], ['robot', surf('ty_left', 2)], ['doll', surf('ty_left', 6)], ['car', surf('ty_left', 12)], ['blocks', surf('ty_right', 1)], ['rocket', surf('ty_right', 7)], ['bunnytoy', surf('ty_right', 13)],
+  ['wand', surf('tw_bench', 1)], ['crown', surf('tw_bench', 3)], ['partyhat', surf('tw_bench', 5)], ['planet', surf('tw_cubby', 1)], ['snowglobe', surf('tw_cubby', 4)],
+  ['cupcake', surf('cf_sill', 1)], ['cookies', surf('cf_sill', 3)], ['cup', surf('cf_case', 0)], ['glass', surf('cf_case', 1)], ['cake', surf('cf_case', 5)],
+  ['dough', surf('cb_table', 1)], ['egg', surf('cb_table', 2)], ['milk', surf('cb_table', 4)], ['strawberry', surf('cb_table', 5)], ['chocolate', surf('cb_table', 6)], ['plate', surf('cb_shelves', 6)], ['cup', surf('cb_shelves', 8)], ['teapot', surf('cb_shelves', 12)],
+  ['ball', surf('pg_left', 1)], ['duck', surf('pg_left', 3)], ['mask', surf('pg_right', 1)], ['balloon', floor('park_games', 800, 820)],
+  ['ball', floor('beach', 600, 800)], ['duck', surf('bc_pier', 1)], ['towel', floor('beach', 1000, 830)], ['wateringcan', floor('beach', 300, 820)],
+  ['pillow', surf('bb_bench', 1)], ['towel', surf('bb_rack', 4)], ['sled', surf('bb_rack', 7)], ['book', surf('bb_bench', 3)],
+];
+const LOCATION_ROOMS: RoomId[] = ['park', 'park_games', 'cafe', 'cafe_bakery', 'toys', 'toys_workshop', 'beach', 'beach_boats', 'club'];
+function seedLocations(world: World): World {
+  let w = world;
+  for (const [def, owner] of LOCATION_SEEDS) {
+    const r = spawnItem(w, def, owner);
+    if (!r.ok) continue; // место занято или вещей слишком много — мир игрока важнее раскладки
+    w = r.world;
+    w.items[r.info!.instanceId as string].home = owner;
+  }
+  return w;
+}
+
 export function createWorld(lang: 'ru' | 'en' = 'ru'): World {
   let w: World = {
     schemaVersion: SCHEMA_VERSION, revision: 0, nextId: 0, currentRoomId: 'living', lastScreen: 'title',
@@ -39,7 +61,8 @@ export function createWorld(lang: 'ru' | 'en' = 'ru'): World {
     rooms: {
       living: { wallpaper: 0, floor: 0, lightOn: true }, kitchen: { wallpaper: 1, floor: 1, lightOn: true },
       bedroom: { wallpaper: 2, floor: 2, lightOn: true }, bathroom: { wallpaper: 3, floor: 3, lightOn: true },
-    },
+      ...Object.fromEntries(LOCATION_ROOMS.map((r) => [r, { wallpaper: 0, floor: 0, lightOn: true }])),
+    } as World['rooms'],
     openedGiftIds: [], savedOutfits: [],
     settings: { lang, music: 0.5, sfx: 0.8, mute: false, reducedMotion: false, tutorialDone: false, voices: true },
   };
@@ -58,7 +81,7 @@ export function createWorld(lang: 'ru' | 'en' = 'ru'): World {
     w = r.world;
     w.items[r.info!.instanceId as string].home = owner;
   }
-  return w;
+  return seedLocations(w);
 }
 
 // ---------- Проверка целостности ----------
@@ -167,6 +190,14 @@ export const MIGRATIONS: Record<number, Migration> = {
     raw.settings = { ...fresh.settings, ...(raw.settings ?? {}) };
     raw.schemaVersion = 2;
     return raw;
+  },
+  // v2: были только домики. Появились локации города — их комнаты, мебель и стартовые вещи; всё прежнее остаётся как было.
+  2: (raw) => {
+    const fresh = createWorld(raw.settings?.lang === 'en' ? 'en' : 'ru');
+    for (const r of LOCATION_ROOMS) raw.rooms[r] = raw.rooms[r] ?? fresh.rooms[r];
+    for (const [id, f] of Object.entries(fresh.furniture)) if (!raw.furniture[id]) raw.furniture[id] = f;
+    raw.schemaVersion = 3;
+    return seedLocations(raw as World);
   },
 };
 

@@ -155,7 +155,7 @@ test('7–9. предмет за границей комнаты, отмена �
   }, ball);
   w = await world(page);
   expect(Object.keys(w.items).length).toBe(n0);
-  expect((Object.values(w.items) as any[]).filter((i) => i.definitionId === 'ball')).toHaveLength(1);
+  expect((Object.values(w.items) as any[]).filter((i) => i.definitionId === 'ball' && i.home?.roomId === 'living')).toHaveLength(1);
   expect(await page.evaluate(() => window.__game.scene.dragging)).toBeNull();
 });
 

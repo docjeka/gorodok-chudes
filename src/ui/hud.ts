@@ -1,7 +1,7 @@
 // Интерфейс поверх сцены (HTML/CSS): титульный экран, комнаты, панель героя, кнопки готовки, подсказки.
 import { toSvg } from '../art/base';
 import { eyeArt, eyeStateFor, mouthArt } from '../art/face';
-import { ROOM_IDS } from '../content/furniture';
+import { ROOM_GROUPS, groupOf } from '../content/furniture';
 import { HERO_COSTUMES, OUTFIT_SETS } from '../content/wardrobe';
 import type { Game } from '../game/game';
 import { charPos, itemPlace } from '../game/geometry';
@@ -31,6 +31,7 @@ const ICON = {
   prev: '<path d="M24 8L12 20l12 12"/>',
   next: '<path d="M16 8l12 12-12 12"/>',
   flip: '<path d="M20 6v28M14 12L5 20l9 8zM26 12l9 8-9 8z"/>',
+  door: '<path d="M10 34V8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v26M6 34h28M25 20v2"/>',
   globe: '<circle cx="20" cy="20" r="14"/><path d="M6 20h28M20 6c-7 8-7 20 0 28M20 6c7 8 7 20 0 28"/>',
   undo: '<path d="M14 10L6 18l8 8M6 18h18a10 10 0 0 1 0 20h-6"/>',
   cook: '<path d="M11 22a7 7 0 0 1 3-13 8 8 0 0 1 12 0 7 7 0 0 1 3 13v8H11zM11 26h18"/>',
@@ -107,6 +108,7 @@ export class Hud {
       this.audio.unlock();
       this.audio.play('pop');
       this.title.classList.add('hidden');
+      this.audio.startTown();
       if (this.onPlay) this.onPlay(); else this.enterRooms();
     };
   }
@@ -116,7 +118,8 @@ export class Hud {
   /** Вход в комнаты (с карты или сразу): здесь же начинается обучение. */
   enterRooms() {
     if (this.game.world.lastScreen !== 'room') this.game.update((w) => { w.lastScreen = 'room'; });
-    if (!this.game.world.settings.tutorialDone && this.tutEl.classList.contains('hidden')) this.startTutorial();
+    this.audio.startTown();
+    if (!this.game.world.settings.tutorialDone && this.tutEl.classList.contains('hidden') && this.game.world.currentRoomId === 'living') this.startTutorial();
   }
   saveZoom() {
     const z = Math.round(this.scene.zoom * 100) / 100;
@@ -241,7 +244,7 @@ export class Hud {
   }
 
   /** Переход: если в комнате есть герои, спрашиваем, кого взять с собой (до четырёх). */
-  private askTravel(roomId: RoomId) {
+  askTravel(roomId: RoomId) {
     const w = this.game.world;
     const here = Object.values(w.characters).filter((c) => c.roomId === w.currentRoomId);
     if (!here.length) { this.play.goRoom(roomId, []); return; }
@@ -288,8 +291,10 @@ export class Hud {
     this.audio.configure(w.settings);
     // комнаты
     this.rooms.innerHTML = '';
-    for (const id of ROOM_IDS) {
-      const b = h('button', 'roombtn' + (id === w.currentRoomId ? ' current' : ''), icon(id) + `<span>${t(('room.' + id) as Key)}</span>`);
+    this.rooms.classList.toggle('few', ROOM_GROUPS[groupOf(w.currentRoomId)].length <= 2);
+    // показываются только экраны текущего места (домики или локация города)
+    for (const id of ROOM_GROUPS[groupOf(w.currentRoomId)]) {
+      const b = h('button', 'roombtn' + (id === w.currentRoomId ? ' current' : ''), icon(id in ICON ? (id as keyof typeof ICON) : 'door') + `<span>${t(('room.' + id) as Key)}</span>`);
       b.setAttribute('aria-current', String(id === w.currentRoomId));
       b.onclick = () => { if (id !== this.game.world.currentRoomId) this.askTravel(id as RoomId); };
       this.rooms.append(b);

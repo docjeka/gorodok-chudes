@@ -24,6 +24,8 @@ button:disabled { opacity: 0.4; cursor: default; }
 .roombtn.current { background: var(--sun); border-width: 4px; }
 .roombtn span { display: none; }
 @media (min-width: 900px) { .roombtn span { display: inline; } }
+/* у локаций города всего один-два экрана — подпись двери видна всегда */
+.rooms.few .roombtn span { display: inline; }
 .topright { display: flex; gap: 8px; align-items: center; }
 .round { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; box-shadow: var(--shadow); padding: 0; }
 .save { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--mint-soft); border: 3px solid var(--ink); }

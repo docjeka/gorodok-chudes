@@ -161,5 +161,14 @@ export const ru = {
   'place.cafe': 'Кафе',
   'place.toys': 'Магазин игрушек',
   'place.beach': 'Пляж',
+  'room.park': 'Парк',
+  'room.park_games': 'Игры',
+  'room.cafe': 'Кафе',
+  'room.cafe_bakery': 'Пекарня',
+  'room.toys': 'Магазин игрушек',
+  'room.toys_workshop': 'Мастерская подарков',
+  'room.beach': 'Пляж',
+  'room.beach_boats': 'Лодочная',
+  'room.club': 'Клуб друзей',
 } as const;
 export type Key = keyof typeof ru;

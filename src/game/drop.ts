@@ -130,7 +130,7 @@ export function resolveCharDrop(w: World, characterId: string, pt: Pt, roomId: R
       if (seatTaken(w, f.id, slot, characterId)) return;
       const sp = slotPos(f, s);
       // pt — середина тела героя; у каждого вида места своя «середина» и радиус притяжения
-      const target = s.pose === 'sleeping' ? { x: sp.x - 150, y: sp.y - 20 } : s.pose === 'bathing' ? { x: sp.x, y: sp.y - 150 } : { x: sp.x, y: sp.y - 70 };
+      const target = s.pose === 'sleeping' ? { x: sp.x - 150, y: sp.y - 20 } : s.pose === 'bathing' ? { x: sp.x, y: sp.y - 150 } : s.pose === 'standing' ? { x: sp.x, y: sp.y - 120 } : { x: sp.x, y: sp.y - 70 };
       const d = dist(pt, target);
       const r = s.pose === 'sleeping' ? 190 : 120;
       if (d < r && (!best || d < best.d)) best = { furnitureId: f.id, slot, d };

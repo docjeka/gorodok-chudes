@@ -40,7 +40,7 @@ test('«Играть» открывает планету целиком; заг�
   expect(await page.evaluate(() => getComputedStyle(document.querySelector('.map-img')!).transform)).not.toContain('-1'); // без зеркала
 });
 
-test('тап открывает место, свайп — нет; на обратной стороне места не нажимаются; «Скоро» только подсказывает', async ({ page }) => {
+test('тап открывает место, свайп — нет; на обратной стороне места не нажимаются', async ({ page }) => {
   await open(page);
   // свайп, начатый прямо на домиках, ничего не открывает
   await swipe(page, -200); await settled(page);
@@ -52,10 +52,6 @@ test('тап открывает место, свайп — нет; на обра
   await expect(page.locator('.map')).toBeVisible();
   expect(await page.evaluate(() => [...document.querySelectorAll('.map-zone')].every((z) => (z as HTMLButtonElement).disabled))).toBe(true);
   await page.click('.map-turn.left'); await settled(page);
-  // «Скоро»
-  await page.mouse.click(...(await spot(page, 'cafe')));
-  await expect(page.locator('.toast')).toHaveText('Это место ещё не открыто. Загляни сюда позже.');
-  await expect(page.locator('.map')).toBeVisible();
   // короткое дрожание пальца (меньше порога) — всё ещё тап
   const [x, y] = await spot(page, 'houses');
   await page.mouse.move(x, y); await page.mouse.down(); await page.mouse.move(x + 4, y + 2); await page.mouse.up();
@@ -98,7 +94,6 @@ test('английская локаль: заголовок, места и кн�
   await expect(page.locator('.map-title')).toHaveText('My town');
   await expect(page.locator('.map-label[data-place="houses"]')).toHaveText('Houses');
   await expect(page.locator('.map-label[data-place="toys"]')).toContainText('Toy shop');
-  await expect(page.locator('.map-label[data-place="toys"] em')).toHaveText('Soon');
   await expect(page.locator('.map-turn.left')).toHaveAttribute('aria-label', 'Rotate left');
   expect(await page.locator('.map').innerText()).not.toMatch(/map\.|place\./);
   await page.mouse.click(...(await spot(page, 'houses')));

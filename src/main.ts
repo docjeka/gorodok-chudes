@@ -3,7 +3,7 @@ import { GameAudio } from './audio/audio';
 import { Game } from './game/game';
 import * as rules from './game/rules';
 import { createWorld, repairWorld, validateWorld } from './game/world';
-import type { World } from './game/types';
+import type { RoomId, World } from './game/types';
 import { setLang, t } from './i18n';
 import { Input } from './scene/input';
 import { Play } from './scene/play';
@@ -14,6 +14,7 @@ import { Hud } from './ui/hud';
 import { Panels } from './ui/panels';
 import { Offline } from './storage/offline';
 import { WorldMap } from './map/globe';
+import { ROOM_GROUPS, groupOf } from './content/furniture';
 
 const stage = document.getElementById('stage')!;
 const ui = document.getElementById('ui')!;
@@ -60,6 +61,7 @@ async function boot() {
 }
 
 async function run(kv: KV, initial: World) {
+  let mapOpen = () => false;
   let world = initial;
   if (validateWorld(world).length) world = repairWorld(world);
   setLang(world.settings.lang);
@@ -78,6 +80,7 @@ async function run(kv: KV, initial: World) {
     openWardrobe: () => { if (panels && panels.open !== 'heroes') panels.toggle('heroes'); },
     openItemMenu: (id) => theHud.openItemMenu(id),
     tutorialEvent: (ev) => theHud.tutorialEvent(ev),
+    djStart: () => { if (!mapOpen()) audio.setClub(true); },
   });
   hud.play = play;
   const talk = new Talk(game, scene, audio, { showBubble: (id, text) => theHud.showBubble(id, text), hideBubble: () => theHud.hideBubble() });
@@ -96,12 +99,32 @@ async function run(kv: KV, initial: World) {
   input.onZoomEnd = () => theHud.saveZoom();
   game.subscribe((w) => { scene.reducedMotion = w.settings.reducedMotion; scene.sync(w); if (w.settings.voices === false || w.settings.mute) { /* звук голоса гаснет сразу, пузырёк дочитывается */ } });
   scene.sync(game.world);
-  // «Мой город»: карта-глобус между заставкой и комнатами. Мир при этом не меняется — только экран.
+  // «Мой город»: планета между заставкой и комнатами. Вход в место открывает его экраны; мир сохраняется как обычно.
+  const lastRoom: Record<string, RoomId> = {};
   const map = new WorldMap(document.body, {
     enter: (place) => {
-      if (place.route !== 'rooms') return;
+      const group = place.route ? ROOM_GROUPS[place.route] : undefined;
+      if (!group) return;
       map.close();
       scene.app.start();
+      const cur = game.world.currentRoomId;
+      const target = group.includes(cur) ? cur : lastRoom[place.route!] ?? group[0];
+      if (target === 'club') audio.preloadClub();
+      if (target === 'club' && !game.world.rooms.club.visited) {
+        // первый вход в клуб: три уже существующих героя ждут там — один у пульта, двое на танцполе. Копий нет; потом их можно увести куда угодно.
+        game.update((w) => {
+          const all = Object.values(w.characters);
+          const pick = [...all.filter((c) => c.roomId === null), ...all.filter((c) => c.roomId !== null && c.roomId !== w.currentRoomId && c.pose !== 'sleeping'), ...all.filter((c) => c.roomId === w.currentRoomId)].slice(0, 3);
+          const spots = [{ x: 1090, y: 740 }, { x: 420, y: 800 }, { x: 700, y: 840 }];
+          pick.forEach((c, i) => { c.roomId = 'club'; c.x = spots[i].x; c.y = spots[i].y; c.seat = null; c.pose = 'standing'; c.flipped = i === 0; if (c.emotion === 'sleepy') c.emotion = 'joy'; });
+          w.rooms.club.visited = true;
+          w.currentRoomId = 'club';
+        }, true);
+      } else if (target !== cur) {
+        // в другое место можно взять героев с собой — тем же окошком, что и между комнатами
+        if (Object.values(game.world.characters).some((c) => c.roomId === cur)) theHud.askTravel(target);
+        else play.goRoom(target, []);
+      }
       scene.sync(game.world);
       theHud.enterRooms();
     },
@@ -109,18 +132,31 @@ async function run(kv: KV, initial: World) {
     sound: (n) => audio.play(n),
     reducedMotion: () => game.world.settings.reducedMotion,
   });
+  mapOpen = () => map.isOpen;
   const toMap = () => {
     input.cancel();
     talk.stop();
     play.select(null);
     if (thePanels.open) thePanels.toggle(thePanels.open);
+    audio.setClub(false); // с карты клубная музыка не слышна
     void game.flush();
     scene.app.stop(); // комнаты не рисуются, пока открыта карта
     map.open();
   };
   hud.onPlay = toMap;
   hud.onToMap = toMap;
-  game.subscribe(() => map.texts());
+  // клубный трек звучит, только пока кто-то стоит за пультом и игрок в клубе; танцпол слегка качает героев в такт
+  const djSeated = (w: World) => w.currentRoomId === 'club' && Object.values(w.characters).some((c) => c.roomId === 'club' && c.seat !== null && w.furniture[c.seat.furnitureId]?.definitionId === 'djconsole');
+  game.subscribe((w) => {
+    map.texts();
+    lastRoom[groupOf(w.currentRoomId)] = w.currentRoomId;
+    if (!djSeated(w) || w.settings.mute) audio.setClub(false);
+  });
+  window.setInterval(() => {
+    const w = game.world;
+    if (!audio.musicState().club || map.isOpen || w.settings.reducedMotion || input.busy) return;
+    for (const c of Object.values(w.characters)) if (c.roomId === 'club' && c.pose === 'standing') scene.hop(c.id, c.seat ? 5 : 9);
+  }, 1000);
   hud.showTitle(true);
   hud.refresh();
   // сохранить перед уходом со страницы

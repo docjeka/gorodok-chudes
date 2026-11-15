@@ -162,4 +162,13 @@ export const en: Record<Key, string> = {
   'place.cafe': 'Café',
   'place.toys': 'Toy shop',
   'place.beach': 'Beach',
+  'room.park': 'Park',
+  'room.park_games': 'Games',
+  'room.cafe': 'Café',
+  'room.cafe_bakery': 'Bakery',
+  'room.toys': 'Toy shop',
+  'room.toys_workshop': 'Gift workshop',
+  'room.beach': 'Beach',
+  'room.beach_boats': 'Boathouse',
+  'room.club': 'Friends club',
 };

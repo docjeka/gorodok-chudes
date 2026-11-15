@@ -22,6 +22,8 @@ export interface PlayUi {
   openWardrobe(characterId: string | null): void;
   openItemMenu(itemId: string): void;
   tutorialEvent(ev: 'item_in_hand' | 'hero_seated'): void;
+  /** героя поставили за DJ-пульт */
+  djStart?(): void;
 }
 
 export class Play {
@@ -295,6 +297,8 @@ export class Play {
       if (other) this.talk.dialogue(id, other);
       else if (c.pose === 'sitting') this.talk.say(id, 'sit', 350);
     }
+    // героя отпустили за DJ-пультом — только это включает клубную музыку
+    if (c.seat && this.w.furniture[c.seat.furnitureId]?.definitionId === 'djconsole') this.ui.djStart?.();
   }
 
   dropPet(id: string, pt: Pt) {

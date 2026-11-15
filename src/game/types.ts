@@ -1,6 +1,6 @@
 // Типы данных мира. Модель — единственный источник правды; сцена строится из неё.
 
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 export const ROOM_W = 1600;
 export const ROOM_H = 900;
 export const FLOOR_TOP = 600;
@@ -10,7 +10,8 @@ export const MAX_CUSTOM_HEROES = 12;
 export const BAG_CAPACITY = 8;
 export const GIFT_CAPACITY = 5;
 
-export type RoomId = 'living' | 'kitchen' | 'bedroom' | 'bathroom';
+export type RoomId = 'living' | 'kitchen' | 'bedroom' | 'bathroom'
+  | 'park' | 'park_games' | 'cafe' | 'cafe_bakery' | 'toys' | 'toys_workshop' | 'beach' | 'beach_boats' | 'club';
 export type HandSlot = 'left' | 'right';
 
 /** Владелец предмета. У каждого экземпляра он ровно один. */
@@ -116,7 +117,7 @@ export interface FurnitureInst {
   homeY: number;
 }
 
-export interface RoomState { wallpaper: number; floor: number; lightOn: boolean }
+export interface RoomState { wallpaper: number; floor: number; lightOn: boolean; /** игрок уже бывал здесь (для встречи героев в клубе) */ visited?: boolean }
 
 export interface SavedOutfit { id: string; name: string; outfit: Outfit }
 
@@ -195,7 +196,11 @@ export interface FurnitureDef {
   /** часть спрайта, которая рисуется поверх героя (одеяло, борт ванны), в единицах от опорной точки */
   front?: { x0: number; y0: number; x1: number; y1: number };
   frontOn?: { x0: number; y0: number; x1: number; y1: number };
+  /** несколько передних слоёв (карусель: по одному на лошадку) */
+  fronts?: { x0: number; y0: number; x1: number; y1: number }[];
   fixed?: boolean; // нельзя убрать на склад (например, окно)
+  /** полка или стол нарисованы на фоне локации: у мебели нет своей картинки, только места для вещей */
+  invisible?: boolean;
 }
 
 export interface Recipe {

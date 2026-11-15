@@ -177,6 +177,27 @@ try {
       await ctx.close();
     }
   }
+  if (scenario === 'loc') {
+    const page = await open(process.argv[3] === 'debug' ? '?debug=anchors' : '', { width: 1024, height: 576 });
+    for (const r of ['park', 'park_games', 'cafe', 'cafe_bakery', 'toys', 'toys_workshop', 'beach', 'beach_boats', 'club']) {
+      await page.evaluate((room) => { const g = window.__game; g.game.commit(g.rules.travel(g.game.world, room, room === 'club' || room === 'park' ? ['hero_mila', 'hero_timur'] : [])); g.scene.setZoom(0.1); }, r);
+      if (r === 'club') await page.evaluate(() => { const g = window.__game; g.game.commit(g.rules.placeCharacter(g.game.world, 'hero_mila', { furnitureId: 'cl_dj', slot: 0 })); });
+      if (r === 'park') await page.evaluate(() => { const g = window.__game; g.game.commit(g.rules.placeCharacter(g.game.world, 'hero_mila', { furnitureId: 'pk_carousel', slot: 0 })); g.game.commit(g.rules.placeCharacter(g.game.world, 'hero_timur', { furnitureId: 'pk_carousel', slot: 1 })); });
+      await wait(900);
+      await shot(page, `loc-${r}`);
+    }
+  }
+  if (scenario === 'carousel') {
+    const page = await open('', { width: 1024, height: 768 });
+    await page.evaluate(() => { const g = window.__game; g.game.commit(g.rules.travel(g.game.world, 'park', ['hero_mila', 'hero_timur'])); g.game.commit(g.rules.placeCharacter(g.game.world, 'hero_mila', { furnitureId: 'pk_carousel', slot: 0 })); g.game.commit(g.rules.placeCharacter(g.game.world, 'hero_timur', { furnitureId: 'pk_carousel', slot: 1 })); g.scene.setZoom(0.1); });
+    await wait(900);
+    const c = await roomPt(page, 861, 330);
+    await page.screenshot({ path: `${OUT}/carousel-seated.png`, clip: { x: c[0] - 300, y: c[1] - 270, width: 600, height: 520 } });
+    await page.evaluate(() => { const g = window.__game; g.game.commit(g.rules.wearSet(g.game.world, 'hero_mila', 'princess')); g.game.commit(g.rules.wearSet(g.game.world, 'hero_timur', g.game.world.characters.hero_timur.costume === 'pirate' ? 'summer' : 'pirate')); });
+    await wait(700);
+    await page.screenshot({ path: `${OUT}/carousel-outfits.png`, clip: { x: c[0] - 300, y: c[1] - 270, width: 600, height: 520 } });
+    console.log('shot carousel');
+  }
   if (scenario === 'six' || scenario === 'all') {
     const page = await open('', { width: 1600, height: 900 });
     await page.evaluate(() => { const g = window.__game; const R = g.rules; const put = [['hero_mila', 330, 860, 'fairy', 'delight'], ['hero_timur', 560, 850, 'pirate', 'silly'], ['hero_yuki', 800, 860, 'casual', 'joy'], ['hero_asya', 1040, 850, 'cat', 'surprise'], ['hero_lev', 1270, 860, 'astronaut', 'calm'], ['hero_nora', 1480, 850, 'princess', 'thinking']];

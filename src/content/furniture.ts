@@ -46,6 +46,26 @@ export const FURNITURE_LIST: FurnitureDef[] = [
   { id: 'laundry', category: 'storage', w: 150, h: 190, layer: 'floor', tap: 'toggleOpen', container: { capacity: 6, slots: grid(3, 2, -40, 40, -190, 40) } },
   { id: 'bathmat', category: 'decor', w: 260, h: 100, layer: 'rug' },
   { id: 'stool', category: 'seats', w: 125, h: 135, layer: 'floor', seats: [{ x: 0, y: -116, pose: 'sitting' }] },
+  // ---------- локации города: полки и столы нарисованы на фоне, здесь только места для вещей ----------
+  { id: 'loc_shelf3x5', category: 'storage', w: 320, h: 250, layer: 'wall', fixed: true, invisible: true, surfaces: [...row(5, -120, 60, -191), ...row(5, -120, 60, -89), ...row(5, -120, 60, 0)] },
+  { id: 'loc_bench8', category: 'tables', w: 600, h: 60, layer: 'wall', fixed: true, invisible: true, surfaces: row(8, -245, 70, 0) },
+  { id: 'loc_cubby3x2', category: 'storage', w: 460, h: 300, layer: 'wall', fixed: true, invisible: true, surfaces: [...row(3, -153, 153, -151), ...row(3, -153, 153, 0)] },
+  { id: 'loc_sill5', category: 'tables', w: 380, h: 40, layer: 'wall', fixed: true, invisible: true, surfaces: row(5, -160, 80, 0) },
+  { id: 'loc_case', category: 'storage', w: 290, h: 170, layer: 'wall', fixed: true, invisible: true, surfaces: [...row(4, -105, 70, -84), ...row(4, -105, 70, 0)] },
+  { id: 'loc_oven', category: 'kitchen', w: 430, h: 40, layer: 'wall', fixed: true, invisible: true, workspace: 'stove', surfaces: row(4, -120, 80, 0) },
+  { id: 'loc_worktable', category: 'kitchen', w: 820, h: 40, layer: 'wall', fixed: true, invisible: true, workspace: 'board', surfaces: row(8, -350, 100, 0) },
+  { id: 'loc_wallshelves', category: 'storage', w: 430, h: 240, layer: 'wall', fixed: true, invisible: true, surfaces: [...row(5, -170, 85, -193), ...row(5, -170, 85, -95), ...row(5, -170, 85, 0)] },
+  { id: 'loc_counter5', category: 'tables', w: 430, h: 40, layer: 'wall', fixed: true, invisible: true, surfaces: row(5, -170, 85, 0) },
+  { id: 'loc_stall', category: 'storage', w: 430, h: 120, layer: 'wall', fixed: true, invisible: true, surfaces: [...row(3, -110, 110, -73), ...row(5, -170, 85, 0)] },
+  { id: 'loc_pier', category: 'tables', w: 300, h: 40, layer: 'wall', fixed: true, invisible: true, surfaces: row(3, -90, 90, 0) },
+  { id: 'loc_rack3x3', category: 'storage', w: 290, h: 260, layer: 'wall', fixed: true, invisible: true, surfaces: [...row(3, -94, 93, -165), ...row(3, -94, 93, -80), ...row(3, -94, 93, 0)] },
+  { id: 'loc_bench4', category: 'tables', w: 320, h: 40, layer: 'wall', fixed: true, invisible: true, surfaces: row(4, -128, 85, 0) },
+  // отдельные предметы локаций
+  // у каждой лошадки своё седло; ближняя часть лошадки рисуется поверх героя, чтобы он сидел верхом, а не перед ней
+  { id: 'carousel', category: 'decor', w: 450, h: 591, layer: 'floor', fixed: true, seats: [{ x: -90, y: -150, pose: 'sitting' }, { x: 82, y: -150, pose: 'sitting' }],
+    fronts: [{ x0: -146, y0: -152, x1: -28, y1: -104 }, { x0: 24, y0: -152, x1: 144, y1: -104 }] },
+  // герой встаёт за пульт: он виден над пультом, а передняя часть пульта закрывает ноги
+  { id: 'djconsole', category: 'decor', w: 430, h: 160, layer: 'floor', fixed: true, seats: [{ x: 0, y: -62, pose: 'standing' }], front: { x0: -215, y0: -160, x1: 215, y1: 0 } },
 ];
 
 /** Экран телевизора в единицах комнаты относительно опорной точки — сюда рисуются сценки. */
@@ -77,6 +97,15 @@ const LAYOUT: Record<RoomId, Place[]> = {
     ['bt_tub', 'bathtub', 430, 720], ['bt_sink', 'bathsink', 900, 650], ['bt_laundry', 'laundry', 1440, 700],
     ['bt_plant', 'plant', 1300, 660, 2], ['bt_mat', 'bathmat', 760, 870], ['bt_stool', 'stool', 1180, 820, 1],
   ],
+  park: [['pk_carousel', 'carousel', 861, 582]],
+  park_games: [['pg_left', 'loc_counter5', 397, 457], ['pg_right', 'loc_stall', 1230, 461]],
+  cafe: [['cf_sill', 'loc_sill5', 780, 448], ['cf_case', 'loc_case', 1410, 505]],
+  cafe_bakery: [['cb_oven', 'loc_oven', 285, 483], ['cb_table', 'loc_worktable', 926, 469], ['cb_shelves', 'loc_wallshelves', 1306, 351]],
+  toys: [['ty_left', 'loc_shelf3x5', 294, 553], ['ty_right', 'loc_shelf3x5', 1311, 553]],
+  toys_workshop: [['tw_bench', 'loc_bench8', 347, 481], ['tw_cubby', 'loc_cubby3x2', 1292, 522]],
+  beach: [['bc_pier', 'loc_pier', 1430, 383]],
+  beach_boats: [['bb_rack', 'loc_rack3x3', 271, 574], ['bb_bench', 'loc_bench4', 1335, 497]],
+  club: [['cl_dj', 'djconsole', 800, 700]],
 };
 
 export function initialFurniture(): Record<string, FurnitureInst> {
@@ -89,7 +118,18 @@ export function initialFurniture(): Record<string, FurnitureInst> {
   return out;
 }
 
-export const ROOM_IDS: RoomId[] = ['living', 'kitchen', 'bedroom', 'bathroom'];
+/** Группы экранов: место на карте города → его комнаты (первая открывается по умолчанию). */
+export const ROOM_GROUPS: Record<string, RoomId[]> = {
+  houses: ['living', 'kitchen', 'bedroom', 'bathroom'],
+  park: ['park', 'park_games'],
+  club: ['club'],
+  cafe: ['cafe', 'cafe_bakery'],
+  toys: ['toys', 'toys_workshop'],
+  beach: ['beach', 'beach_boats'],
+};
+export const ROOM_IDS: RoomId[] = Object.values(ROOM_GROUPS).flat();
+export const HOUSE_ROOMS = new Set<RoomId>(ROOM_GROUPS.houses);
+export const groupOf = (roomId: RoomId): string => Object.keys(ROOM_GROUPS).find((g) => ROOM_GROUPS[g].includes(roomId)) ?? 'houses';
 export const WALLPAPERS = 6;
 export const FLOORS = 5;
 export const TV_SCENES = 4;

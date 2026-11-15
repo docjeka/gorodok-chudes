@@ -9,7 +9,7 @@ import charSprites from '../content/charSprites.json';
 import furnSprites from '../content/furnSprites.json';
 import itemSprites from '../content/itemSprites.json';
 import petSprites from '../content/petSprites.json';
-import { FURNITURE, TV_SCREEN } from '../content/furniture';
+import { FURNITURE, HOUSE_ROOMS, TV_SCREEN } from '../content/furniture';
 import { ITEMS } from '../content/items';
 import { HAIR_COLORS } from '../content/wardrobe';
 import { charPos, itemPlace, petPos } from '../game/geometry';
@@ -141,10 +141,11 @@ export class Scene {
     const roomId = world.currentRoomId;
     const room = world.rooms[roomId];
     if (roomId !== this.roomId) { this.roomId = roomId; this.camX = Math.max(0, (ROOM_W - this.viewW) / 2); this.camY = Math.max(0, ROOM_H - this.viewH); this.panBy(0, 0); this.clearFx(); }
-    const bgKey = `room${room.wallpaper % 4}`;
+    const house = HOUSE_ROOMS.has(roomId); // у локаций города свой постоянный фон
+    const bgKey = house ? `room${room.wallpaper % 4}` : roomId;
     if (bgKey !== this.bgKey) {
       this.bgKey = bgKey;
-      void imageTex(bgKey, `${BASE}assets/rooms/${bgKey}.jpg`, { upp: 1, ox: 0, oy: 0 }).then((t) => { if (this.bgKey === bgKey) { this.bg.texture = t.texture; this.bg.width = ROOM_W; this.bg.height = ROOM_H; } });
+      void imageTex(bgKey, `${BASE}assets/rooms/${bgKey}.${house ? 'jpg' : 'webp'}`, { upp: 1, ox: 0, oy: 0 }).then((t) => { if (this.bgKey === bgKey) { this.bg.texture = t.texture; this.bg.width = ROOM_W; this.bg.height = ROOM_H; } });
     }
     this.nightAlpha = room.lightOn ? 0 : 0.5;
     const wants = this.collect(world, roomId);
@@ -193,6 +194,7 @@ export class Scene {
     for (const f of Object.values(w.furniture)) {
       if (f.roomId !== roomId) continue;
       const def = FURNITURE[f.definitionId];
+      if (def.invisible) continue;
       const occupied = Object.values(w.characters).some((c) => c.seat?.furnitureId === f.id);
       const name = this.furnFile(f, night, occupied);
       const meta = FURN_SPRITES[name] ?? FURN_SPRITES[f.definitionId];
@@ -209,11 +211,12 @@ export class Scene {
       }
       out.push(want);
       const fr = (name.endsWith('_on') ? def.frontOn : undefined) ?? def.front;
-      if (fr) {
-        const crop = { x: meta.ox + fr.x0 / meta.upp, y: meta.oy + fr.y0 / meta.upp, w: (fr.x1 - fr.x0) / meta.upp, h: (fr.y1 - fr.y0) / meta.upp };
-        const key = `FF:${name}`;
-        out.push({ id: 'ff:' + f.id, kind: 'front', ref: f.id, x: f.x, y: f.y, z: z + 0.5, flip: f.flipped, rot: 0, key, load: () => imageTex(key, url, { upp: meta.upp, ox: meta.ox, oy: meta.oy, crop }) });
-      }
+      (fr ? [fr] : def.fronts ?? []).forEach((r, i) => {
+        const crop = { x: meta.ox + r.x0 / meta.upp, y: meta.oy + r.y0 / meta.upp, w: (r.x1 - r.x0) / meta.upp, h: (r.y1 - r.y0) / meta.upp };
+        const key = `FF:${name}:${i}`;
+        // слой рисуется на своём месте внутри мебели, поэтому у него свой сдвиг от опорной точки
+        out.push({ id: `ff:${f.id}:${i}`, kind: 'front', ref: f.id, x: f.x, y: f.y, z: z + 0.5, flip: f.flipped, rot: 0, key, load: () => imageTex(key, url, { upp: meta.upp, ox: meta.ox, oy: meta.oy, crop }) });
+      });
     }
     const zOfFurn = (id: string) => 200 + (w.furniture[id]?.y ?? 0);
     const charZ = new Map<string, number>();

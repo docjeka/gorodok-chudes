@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createWorld, parseWorld, repairWorld, validateWorld } from '../../src/game/world';
 import {
-  applyGarment, cook, drink, fill, deleteCharacter, feed, handItems, isValidOutfit, moveItem, openGift, addCustomCharacter,
+  applyGarment, cook, drink, fill, wearSet, deleteCharacter, feed, handItems, isValidOutfit, moveItem, openGift, addCustomCharacter,
   placeCharacter, removeGarment, spawnItem, takeGiftSet, tidyRoom, travel, wrapGift, newEmptyGift, storeFurniture, moveFurniture,
 } from '../../src/game/rules';
 import { itemPlace } from '../../src/game/geometry';
@@ -263,7 +263,34 @@ describe('сохранения', () => {
     for (const f of Object.values<any>(w.furniture)) { delete f.homeX; delete f.homeY; }
     const r = parseWorld(JSON.stringify(w));
     expect(r.ok).toBe(true);
-    if (r.ok) { expect(r.world.schemaVersion).toBe(2); expect(Object.keys(r.world.pets)).toHaveLength(3); }
+    if (r.ok) { expect(r.world.schemaVersion).toBe(3); expect(Object.keys(r.world.pets)).toHaveLength(3); }
+  });
+  it('миграция v2 → v3 добавляет локации города и ничего не трогает в домиках', () => {
+    let w: any = createWorld();
+    const cup = find(w, 'cup', (o) => o.kind === 'surface').instanceId;
+    w = must(moveItem(w, cup, { kind: 'hand', characterId: 'hero_mila', slot: 'left' }));
+    w = must(wearSet(w, 'hero_mila', 'fairy'));
+    w = JSON.parse(JSON.stringify(w));
+    const loc = ['park', 'park_games', 'cafe', 'cafe_bakery', 'toys', 'toys_workshop', 'beach', 'beach_boats', 'club'];
+    const locFurn = new Set(Object.values<any>(w.furniture).filter((f) => loc.includes(f.roomId)).map((f) => f.id));
+    for (const [id, it] of Object.entries<any>(w.items)) if ((it.owner.kind === 'room' && loc.includes(it.owner.roomId)) || (it.owner.kind === 'surface' && locFurn.has(it.owner.furnitureId))) delete w.items[id];
+    for (const id of locFurn) delete w.furniture[id as string];
+    for (const r of loc) delete w.rooms[r];
+    w.schemaVersion = 2;
+    const before = JSON.parse(JSON.stringify(w));
+    const r = parseWorld(JSON.stringify(w));
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.world.schemaVersion).toBe(3);
+    expect(validateWorld(r.world)).toEqual([]);
+    for (const room of loc) expect(r.world.rooms[room as 'park']).toBeDefined();
+    expect(r.world.furniture.cl_dj.definitionId).toBe('djconsole');
+    expect(Object.values(r.world.items).some((i) => i.owner.kind === 'surface' && i.owner.furnitureId === 'ty_left')).toBe(true);
+    // всё прежнее осталось на местах
+    for (const [id, it] of Object.entries<any>(before.items)) expect(r.world.items[id].owner).toEqual(it.owner);
+    expect(r.world.characters).toEqual(before.characters);
+    for (const [id, f] of Object.entries<any>(before.furniture)) expect(r.world.furniture[id]).toEqual(f);
+    expect(r.world.characters.hero_mila.costume).toBe('fairy');
   });
   it('повреждённый импорт отклоняется с причиной', () => {
     const good = createWorld();

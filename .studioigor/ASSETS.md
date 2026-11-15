@@ -31,3 +31,6 @@
 | Музыка и звуки | синтезируются кодом (Web Audio) | свои | src/audio/audio.ts |
 | public/assets/voice/girl, boy | 24 реплики, сгенерированы пользователем в ElevenLabs | права по тарифу пользователя |
 | public/assets/map/town-front.webp, town-back.webp | рисунки планеты от пользователя (world-map-v2-front/back.png) | авторские, от пользователя |
+| public/assets/rooms/{park,park_games,cafe,cafe_bakery,toys,toys_workshop,beach,beach_boats,club}.webp | фоны локаций от пользователя | авторские, от пользователя |
+| public/assets/furn/carousel.png, djconsole.png | реквизит от пользователя (prop-carousel, prop-dj-console) | авторские, от пользователя |
+| public/assets/music/town.mp3 (Wandering the Clay Path), club.mp3 (The Toybox Groove) | музыка от пользователя | права у пользователя; источник и лицензию не проверял |

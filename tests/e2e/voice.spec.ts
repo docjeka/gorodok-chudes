@@ -75,15 +75,14 @@ test('перетаскивание не считается тапом; рядо�
   await drag(page, await at(page, 'hero_mila', -150), await roomPt(page, 440, 690));
   await page.waitForFunction(() => window.__game.talk.log.length === 2, null, { timeout: 10_000 });
   await quiet(page);
+  // тот же жест сразу снова — пара ещё «молчит» (пауза между повторами разговора)
+  expect(await page.evaluate(() => [window.__game.talk.dialogue('hero_mila', 'hero_timur'), window.__game.talk.say('hero_mila', 'hello')])).toEqual([false, false]);
   let entries = await log(page);
   expect(entries.map((e: any) => [e.heroId, e.event])).toEqual([['hero_mila', 'hello'], ['hero_timur', 'reply']]);
   expect(entries.every((e: any) => e.audio)).toBe(true);
   noOverlap(entries);
   const w = await page.evaluate(() => window.__game.game.world.characters);
   expect([w.hero_mila.pose, w.hero_timur.pose]).toEqual(['standing', 'standing']);
-  // тот же жест сразу снова — пара ещё «молчит» (пауза между повторами разговора)
-  expect(await page.evaluate(() => window.__game.talk.dialogue('hero_mila', 'hero_timur'))).toBe(false);
-  expect(await page.evaluate(() => window.__game.talk.say('hero_mila', 'hello'))).toBe(false);
   expect(await log(page)).toHaveLength(2);
   // герои продолжают стоять рядом — сами они больше ничего не говорят
   await page.waitForTimeout(9000);

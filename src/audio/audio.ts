@@ -1,10 +1,82 @@
-// Звук целиком синтезируется в браузере (Web Audio): файлов и сторонних лицензий нет.
+// Эффекты синтезируются в браузере (Web Audio); музыка — два локальных файла (фон города и трек DJ-пульта).
 // Запускается только после действия пользователя и возобновляется при возвращении в приложение.
 export type Sfx = 'boing' | 'squeak' | 'beep' | 'vroom' | 'whoosh' | 'clink' | 'scrub' | 'gulp' | 'pour' | 'pop' | 'put' | 'munch' | 'sparkle' | 'door' | 'water' | 'sleep' | 'nope' | 'gift' | 'click' | 'pet' | 'cook' | 'light';
 
 const NOTES = [261.63, 293.66, 329.63, 392.0, 440.0, 523.25, 587.33, 659.25];
-// спокойная зацикленная мелодия: индексы нот, -1 — пауза
-const TUNE = [0, 2, 4, 2, 3, 4, 5, -1, 4, 2, 3, 1, 2, 0, 1, -1, 0, 2, 4, 5, 6, 5, 4, -1, 3, 4, 2, 1, 0, 1, 0, -1];
+
+/**
+ * Зацикленный трек из локального файла. Следующий круг запускается точно по часам аудиоконтекста и внахлёст:
+ * хвост прошлого круга дозвучивает под началом нового, поэтому на стыке нет ни щелчка, ни паузы.
+ */
+class LoopTrack {
+  private buffer: AudioBuffer | null = null;
+  private loading: Promise<void> | null = null;
+  private live: { src: AudioBufferSourceNode; at: number }[] = [];
+  private gain: GainNode;
+  private nextAt = 0;
+  private timer: ReturnType<typeof setInterval> | null = null;
+  /** позиция в круге, с которой продолжить после паузы (секунды) */
+  private resumeAt = 0;
+  private want = false;
+  private token = 0;
+  playing = false;
+  /** сколько раз трек запускался — для проверок «только одна копия» */
+  starts = 0;
+  constructor(private ctx: AudioContext, out: AudioNode, private url: string, private offset: number, private period: number, private level: number) {
+    this.gain = ctx.createGain();
+    this.gain.gain.value = 0;
+    this.gain.connect(out);
+  }
+  get loaded() { return !!this.buffer; }
+  get sources() { return this.live.length; }
+  load(): Promise<void> {
+    this.loading ??= fetch(this.url).then((r) => { if (!r.ok) throw new Error('no music'); return r.arrayBuffer(); }).then((b) => this.ctx.decodeAudioData(b)).then((buf) => { this.buffer = buf; }).catch(() => { this.loading = null; });
+    return this.loading;
+  }
+  /** Запуск (или продолжение с места паузы, если fromStart = false). Повторный вызов ничего не дублирует. */
+  play(fromStart: boolean, fadeIn = 0.6) {
+    this.want = true;
+    const token = ++this.token;
+    if (fromStart) this.resumeAt = 0;
+    void this.load().then(() => {
+      if (!this.buffer || token !== this.token || !this.want || this.playing) return;
+      this.playing = true;
+      this.starts++;
+      const now = this.ctx.currentTime + 0.05;
+      const pos = this.resumeAt % this.period;
+      this.spawn(now, this.offset + pos);
+      this.nextAt = now + (this.period - pos);
+      this.gain.gain.cancelScheduledValues(now);
+      this.gain.gain.setValueAtTime(0, now);
+      this.gain.gain.linearRampToValueAtTime(this.level, now + fadeIn);
+      this.timer = setInterval(() => { if (this.ctx.currentTime > this.nextAt - 1.2) { this.spawn(this.nextAt, this.offset); this.nextAt += this.period; } }, 300);
+    });
+  }
+  private spawn(at: number, from: number) {
+    const src = this.ctx.createBufferSource();
+    src.buffer = this.buffer;
+    src.connect(this.gain);
+    src.start(at, from);
+    const rec = { src, at: at - (from - this.offset) };
+    this.live.push(rec);
+    src.onended = () => { this.live = this.live.filter((x) => x !== rec); };
+  }
+  /** Плавная остановка; позиция запоминается, чтобы фон продолжился с того же места. */
+  pause(fade = 0.8) {
+    this.want = false;
+    this.token++;
+    if (!this.playing) return;
+    this.playing = false;
+    if (this.timer) { clearInterval(this.timer); this.timer = null; }
+    const now = this.ctx.currentTime;
+    const cur = this.live[this.live.length - 1];
+    if (cur) this.resumeAt = Math.max(0, now - cur.at) % this.period;
+    this.gain.gain.cancelScheduledValues(now);
+    this.gain.gain.setValueAtTime(this.gain.gain.value, now);
+    this.gain.gain.linearRampToValueAtTime(0, now + fade);
+    for (const x of this.live) { try { x.src.stop(now + fade + 0.05); } catch { /* уже остановлен */ } }
+  }
+}
 
 export class GameAudio {
   private ctx: AudioContext | null = null;
@@ -14,9 +86,10 @@ export class GameAudio {
   private ducked = false;
   /** вызывается один раз, когда звук разблокирован действием пользователя */
   onUnlock: (() => void) | null = null;
-  private step = 0;
-  private nextTime = 0;
-  private timer: ReturnType<typeof setInterval> | null = null;
+  private town: LoopTrack | null = null;
+  private clubTrack: LoopTrack | null = null;
+  private clubOn = false;
+  private townWanted = false;
   music = 0.5;
   sfx = 0.8;
   mute = false;
@@ -34,8 +107,10 @@ export class GameAudio {
       this.voiceGain = this.ctx.createGain();
       this.voiceGain.connect(this.ctx.destination);
       this.apply();
-      this.nextTime = this.ctx.currentTime + 0.1;
-      this.timer = setInterval(() => this.schedule(), 200);
+      const base = import.meta.env.BASE_URL;
+      // фон: 20 тактов по 2,68 с; клубный трек: 32 такта по 2 с — круг ровно по тактам
+      this.town = new LoopTrack(this.ctx, this.musicGain, `${base}assets/music/town.mp3`, 0.04, 53.57, 1);
+      this.clubTrack = new LoopTrack(this.ctx, this.musicGain, `${base}assets/music/club.mp3`, 0.03, 64, 1.15);
       document.addEventListener('visibilitychange', () => { if (!this.ctx) return; if (document.hidden) void this.ctx.suspend(); else void this.ctx.resume(); });
       this.onUnlock?.();
     }
@@ -45,7 +120,8 @@ export class GameAudio {
   private apply() {
     if (!this.ctx || !this.musicGain || !this.sfxGain) return;
     const t = this.ctx.currentTime;
-    this.musicGain.gain.setTargetAtTime(this.mute ? 0 : this.music * (this.ducked ? 0.035 : 0.09), t, 0.08);
+    this.musicGain.gain.setTargetAtTime(this.mute ? 0 : this.music * (this.ducked ? 0.12 : 0.34), t, 0.18); // во время реплик музыка тише
+    if (this.mute && this.clubOn) this.setClub(false);
     this.voiceGain?.gain.setTargetAtTime(this.mute ? 0 : Math.max(this.sfx, 0.4) * 0.9, t, 0.02);
     this.sfxGain.gain.setTargetAtTime(this.mute ? 0 : this.sfx * 0.3, t, 0.02);
   }
@@ -55,20 +131,24 @@ export class GameAudio {
   /** Пока герой говорит, музыка звучит тише. */
   duck(on: boolean) { this.ducked = on; this.apply(); }
 
-  /** Музыка планируется вперёд по часам аудиоконтекста — петля без щелчка на стыке. */
-  private schedule() {
-    const ctx = this.ctx;
-    if (!ctx || !this.musicGain || ctx.state !== 'running') return;
-    if (this.nextTime < ctx.currentTime) this.nextTime = ctx.currentTime + 0.05;
-    while (this.nextTime < ctx.currentTime + 0.6) {
-      const n = TUNE[this.step % TUNE.length];
-      if (n >= 0) {
-        this.tone(NOTES[n], this.nextTime, 0.5, 'sine', this.musicGain, 0.9);
-        if (this.step % 4 === 0) this.tone(NOTES[n] / 2, this.nextTime, 0.9, 'triangle', this.musicGain, 0.5);
-      }
-      this.step++;
-      this.nextTime += 0.42;
-    }
+  /** Фоновая музыка города: тихо после «Играть», по кругу; повторный вызов не перезапускает её с начала. */
+  startTown() {
+    this.townWanted = true;
+    if (!this.clubOn) this.town?.play(false, 1.5);
+  }
+  /** Трек DJ-пульта: фон плавно уходит в тишину и потом продолжается с места паузы. Одновременно звучит одна копия. */
+  setClub(on: boolean) {
+    if (on === this.clubOn || !this.clubTrack) return;
+    if (on && (this.mute || !this.ctx)) return;
+    this.clubOn = on;
+    if (on) { this.town?.pause(0.7); this.clubTrack.play(true, 0.4); }
+    else { this.clubTrack.pause(0.9); if (this.townWanted) this.town?.play(false, 1.2); }
+  }
+  /** Заранее загрузить клубный трек (при входе в клуб), чтобы он включался сразу. */
+  preloadClub() { void this.clubTrack?.load(); }
+  /** Состояние музыки — для автоматических проверок. */
+  musicState() {
+    return { town: !!this.town?.playing, club: !!this.clubTrack?.playing, clubOn: this.clubOn, townSources: this.town?.sources ?? 0, clubSources: this.clubTrack?.sources ?? 0, clubStarts: this.clubTrack?.starts ?? 0, townStarts: this.town?.starts ?? 0, loaded: [!!this.town?.loaded, !!this.clubTrack?.loaded] };
   }
 
   private tone(freq: number, at: number, dur: number, type: OscillatorType, out: AudioNode, vol = 1, slideTo?: number) {
