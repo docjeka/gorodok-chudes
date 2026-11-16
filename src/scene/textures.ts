@@ -1,5 +1,5 @@
 // Кэш текстур: картинки-спрайты и растеризованные SVG. У каждой текстуры — опорная точка, масштаб и альфа-маска для касаний.
-import { Texture } from 'pixi.js';
+import { Rectangle, Texture } from 'pixi.js';
 import { toSvg, type Art } from '../art/base';
 
 export interface Tex {
@@ -16,6 +16,8 @@ export interface Tex {
   mw: number;
   mh: number;
   used: number;
+  /** файл-источник, если текстура — кадр общей картинки */
+  url?: string;
 }
 
 const ready = new Map<string, Tex>();
@@ -52,15 +54,43 @@ function finish(key: string, canvas: HTMLCanvasElement, upp: number, ox: number,
 
 export interface ImageMeta { upp: number; ox: number; oy: number; crop?: { x: number; y: number; w: number; h: number } }
 
+/** Общие источники картинок: один файл — одна текстура в памяти, вырезки берут из неё кадр. */
+const sources = new Map<string, { texture: Texture; img: HTMLImageElement; users: number }>();
+
+/**
+ * Спрайт из файла. Картинка идёт в текстуру напрямую, без промежуточного холста: у Safari на iPad общий
+ * предел памяти холстов, и когда он исчерпан, новые холсты молча остаются пустыми — спрайт становится невидимым.
+ */
 export function imageTex(key: string, url: string, meta: ImageMeta): Promise<Tex> {
   const hit = pending.get(key);
   if (hit) return hit;
   const p = loadImage(url).then((img) => {
     const c = meta.crop ?? { x: 0, y: 0, w: img.naturalWidth, h: img.naturalHeight };
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.max(1, Math.round(c.w)); canvas.height = Math.max(1, Math.round(c.h));
-    canvas.getContext('2d')!.drawImage(img, -c.x, -c.y);
-    return finish(key, canvas, meta.upp, meta.ox - c.x, meta.oy - c.y);
+    const x = Math.max(0, Math.round(c.x)), y = Math.max(0, Math.round(c.y));
+    const w = Math.max(1, Math.min(img.naturalWidth - x, Math.round(c.w))), h = Math.max(1, Math.min(img.naturalHeight - y, Math.round(c.h)));
+    let src = sources.get(url);
+    if (!src) { src = { texture: Texture.from(img), img, users: 0 }; sources.set(url, src); }
+    src.users++;
+    const texture = new Texture({ source: src.texture.source, frame: new Rectangle(x, y, w, h) });
+    // маска попадания — на маленьком холсте, который сразу освобождается
+    const k = Math.min(1, 96 / Math.max(w, h));
+    const mw = Math.max(1, Math.round(w * k)), mh = Math.max(1, Math.round(h * k));
+    const small = document.createElement('canvas');
+    small.width = mw; small.height = mh;
+    const mask = new Uint8Array(mw * mh);
+    let seen = false;
+    try {
+      const sctx = small.getContext('2d', { willReadFrequently: true })!;
+      sctx.drawImage(src.img, x, y, w, h, 0, 0, mw, mh);
+      const data = sctx.getImageData(0, 0, mw, mh).data;
+      for (let i = 0; i < mask.length; i++) { mask[i] = data[i * 4 + 3]; if (mask[i]) seen = true; }
+    } catch { /* маску снять не удалось */ }
+    if (!seen) mask.fill(255); // холст не дался: пусть спрайт берётся по своему прямоугольнику, а не становится неуловимым
+    small.width = 0; small.height = 0;
+    const tex: Tex = { key, texture, upp: meta.upp, ox: meta.ox - x, oy: meta.oy - y, w, h, mask, mw, mh, used: performance.now(), url };
+    ready.set(key, tex);
+    evict();
+    return tex;
   });
   pending.set(key, p);
   p.catch(() => pending.delete(key));
@@ -103,7 +133,12 @@ function evict() {
   const old = [...ready.values()].filter((t) => now - t.used > 20_000).sort((a, b) => a.used - b.used);
   for (const t of old.slice(0, ready.size - MAX_TEXTURES + 20)) {
     ready.delete(t.key); pending.delete(t.key);
-    t.texture.destroy(true);
+    if (t.url) {
+      // кадр общей картинки: сама картинка уходит, когда не осталось ни одного кадра
+      t.texture.destroy(false);
+      const src = sources.get(t.url);
+      if (src && --src.users <= 0) { sources.delete(t.url); src.texture.destroy(true); }
+    } else t.texture.destroy(true);
   }
 }
 

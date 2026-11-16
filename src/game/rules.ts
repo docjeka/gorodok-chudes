@@ -2,10 +2,10 @@
 // Ничего не знает про DOM, Canvas и хранилище — поэтому тестируется напрямую.
 import { FURNITURE, GRAIN_EATERS, HAY_EATERS, charAllowedIn, petAllowedIn } from '../content/furniture';
 import { GIFTS, ITEMS, RECIPES } from '../content/items';
-import { GARMENTS, OUTFITS, presetCharacter } from '../content/wardrobe';
+import { GARMENTS, OUTFITS, costumeFits, presetCharacter } from '../content/wardrobe';
 import { charPos, clampFloor, itemPlace, petPos } from './geometry';
 import type {
-  Character, HandSlot, ItemInst, Liquid, Look, Outfit, Owner, Pt, Recipe, Result, RoomId, World, GarmentSlot, Emotion,
+  Character, HandSlot, ItemInst, Pet, Liquid, Look, Outfit, Owner, Pt, Recipe, Result, RoomId, World, GarmentSlot, Emotion,
 } from './types';
 import { BAG_CAPACITY, GIFT_CAPACITY, MAX_CUSTOM_HEROES, MAX_ITEMS } from './types';
 
@@ -39,6 +39,12 @@ const sameContainer = (a: Owner, b: Owner): boolean => {
   if (a.kind === 'item' && b.kind === 'item') return a.itemId === b.itemId;
   return a.kind === 'bag';
 };
+
+/** Свободна ли подушка сиденья: на ней никто не сидит и не лежит другая вещь. */
+export function cushionFree(w: World, furnitureId: string, slot: number, exceptItem?: string): boolean {
+  if (Object.values(w.characters).some((c) => c.seat?.furnitureId === furnitureId && c.seat.slot === slot)) return false;
+  return !Object.values(w.items).some((i) => i.instanceId !== exceptItem && i.owner.kind === 'surface' && i.owner.furnitureId === furnitureId && i.owner.slot === slot);
+}
 
 function usedSlots(w: World, target: Owner, exceptId: string): Set<number> {
   const used = new Set<number>();
@@ -120,7 +126,13 @@ export function moveItem(world: World, itemId: string, target: Owner): Result {
       const f = w.furniture[target.furnitureId];
       const fd = f && FURNITURE[f.definitionId];
       if (!f || !fd?.surfaces || !f.roomId) return fail('no_surface');
-      const slot = freeSlot(usedSlots(w, target, itemId), fd.surfaces.length, target.slot);
+      let slot = freeSlot(usedSlots(w, target, itemId), fd.surfaces.length, target.slot);
+      if (fd.cushions) {
+        // на подушку сиденья — только игрушку и только на свободное место: под героя она не прячется
+        if (!ITEMS[it.definitionId].tags.includes('toy')) return fail('not_toy');
+        const free = [target.slot, ...fd.surfaces.map((_, i) => i)].find((i) => i >= 0 && i < fd.surfaces!.length && cushionFree(w, f.id, i, itemId));
+        slot = free ?? null;
+      }
       if (slot === null) return fail('surface_full');
       it.owner = { kind: 'surface', furnitureId: f.id, slot };
       if (fd.tap === 'water' && it.state.dirty) it.state.dirty = false;
@@ -191,6 +203,16 @@ export function placeCharacter(world: World, id: string, to: { x: number; y: num
     c.pose = seat.pose;
     c.roomId = f.roomId;
     if (seat.pose === 'sleeping') c.emotion = 'sleepy';
+    const fd = FURNITURE[f.definitionId];
+    if (fd.cushions) {
+      // герой сел на подушку с игрушкой: игрушка не остаётся под ним — переезжает на свободную подушку рядом или на пол перед мебелью
+      for (const toy of Object.values(w.items)) {
+        if (toy.owner.kind !== 'surface' || toy.owner.furnitureId !== f.id || toy.owner.slot !== to.slot) continue;
+        const free = fd.surfaces!.findIndex((_, i) => i !== to.slot && cushionFree(w, f.id, i, toy.instanceId));
+        if (free >= 0) toy.owner = { kind: 'surface', furnitureId: f.id, slot: free };
+        else { const p = clampFloor(f.x + (f.flipped ? -seat.x : seat.x), f.y + 24); toy.owner = { kind: 'room', roomId: f.roomId, x: p.x, y: p.y }; }
+      }
+    }
     return ok(w);
   }
   const wasAsleep = c.pose === 'sleeping';
@@ -366,6 +388,7 @@ export function setOutfit(world: World, id: string, outfit: Outfit): Result {
 export function wearSet(world: World, id: string, setId: string): Result {
   const s = OUTFITS[setId];
   if (!s) return fail('no_set');
+  if (!costumeFits(id, setId)) return fail('no_costume_for_hero'); // у пластилинового героя нет такой фигурки — остаётся в прежнем
   const r = setOutfit(world, id, s.outfit);
   if (r.ok) r.world.characters[id].costume = setId;
   return r;
@@ -639,11 +662,11 @@ export function placePet(world: World, id: string, to: { x: number; y: number } 
     const f = w.furniture[to.furnitureId];
     if (!f || !FURNITURE[f.definitionId]?.petSeats?.[to.slot] || f.roomId !== p.roomId) return fail('no_seat');
     if (Object.values(w.pets).some((o) => o.id !== id && o.seat?.furnitureId === f.id && o.seat.slot === to.slot)) return fail('seat_taken');
-    p.seat = { furnitureId: f.id, slot: to.slot }; p.sleeping = true;
+    p.seat = { furnitureId: f.id, slot: to.slot }; p.sleeping = true; delete p.carriedBy;
     return ok(w);
   }
   const c = clampFloor(to.x, to.y); // питомец не выходит за пределы комнаты
-  p.x = c.x; p.y = c.y; p.seat = null; p.sleeping = false;
+  p.x = c.x; p.y = c.y; p.seat = null; p.sleeping = false; delete p.carriedBy;
   return ok(w);
 }
 
@@ -655,6 +678,19 @@ export function patchPet(world: World, id: string, patch: { collar?: number; sle
   Object.assign(p, patch);
   return ok(w);
 }
+
+/** Детёныша кенгуру сажают в карман взрослого. Только он, только к взрослому в том же загоне и только в пустой карман. */
+export function pouchJoey(world: World, joeyId: string, adultId: string): Result {
+  const w = clone(world);
+  const j = w.pets[joeyId], a = w.pets[adultId];
+  if (!j || !a || j.kind !== 'joey' || a.kind !== 'kangaroo' || j.roomId !== a.roomId) return fail('no_pouch');
+  if (Object.values(w.pets).some((p) => p.id !== joeyId && p.carriedBy === adultId)) return fail('pouch_taken');
+  j.carriedBy = adultId; j.seat = null; j.sleeping = false; delete j.inItem;
+  j.x = a.x; j.y = a.y;
+  return ok(w);
+}
+/** Кто сидит в кармане этого кенгуру. */
+export const inPouch = (w: World, adultId: string): Pet | undefined => Object.values(w.pets).find((p) => p.carriedBy === adultId && p.roomId === w.pets[adultId]?.roomId);
 
 export const charactersIn = (w: World, roomId: RoomId): Character[] => Object.values(w.characters).filter((c) => c.roomId === roomId);
 

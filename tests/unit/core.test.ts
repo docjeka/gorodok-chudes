@@ -6,6 +6,7 @@ import {
 } from '../../src/game/rules';
 import { itemPlace } from '../../src/game/geometry';
 import { ITEMS } from '../../src/content/items';
+import { OUTFITS } from '../../src/content/wardrobe';
 import { FURNITURE } from '../../src/content/furniture';
 import { IDEA_KITS } from '../../src/content/ideaKits';
 import charSprites from '../../src/content/charSprites.json';
@@ -369,7 +370,7 @@ describe('фермер и кенгуру', () => {
     const old: any = JSON.parse(JSON.stringify(createWorld()));
     delete old.characters.farm_worker_lev; delete old.pets.farm_kangaroo_adult; delete old.pets.farm_kangaroo_joey; delete old.rooms.farm_pen; old.schemaVersion = 7;
     const m = parseWorld(JSON.stringify(old));
-    expect(m.ok && [Object.keys(m.world.characters).length, Object.keys(m.world.pets).length, m.world.schemaVersion]).toEqual([7, 15, 8]);
+    expect(m.ok && [Object.keys(m.world.characters).length, Object.keys(m.world.pets).length, m.world.schemaVersion]).toEqual([7, 15, 9]);
     const again = m.ok ? parseWorld(JSON.stringify(m.world)) : m;
     expect(again.ok && [Object.keys(again.world.characters).length, Object.keys(again.world.pets).length]).toEqual([7, 15]);
   });
@@ -456,7 +457,7 @@ describe('сохранения', () => {
     for (const f of Object.values<any>(w.furniture)) { delete f.homeX; delete f.homeY; }
     const r = parseWorld(JSON.stringify(w));
     expect(r.ok).toBe(true);
-    if (r.ok) { expect(r.world.schemaVersion).toBe(8); expect(Object.keys(r.world.pets)).toHaveLength(15); }
+    if (r.ok) { expect(r.world.schemaVersion).toBe(9); expect(Object.keys(r.world.pets)).toHaveLength(15); }
   });
   it('миграция v2 → v8 добавляет локации города, Парк животных и трёх новых питомцев и ничего не трогает в домиках', () => {
     let w: any = createWorld();
@@ -476,7 +477,7 @@ describe('сохранения', () => {
     const r = parseWorld(JSON.stringify(w));
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(r.world.schemaVersion).toBe(8);
+    expect(r.world.schemaVersion).toBe(9);
     expect(validateWorld(r.world)).toEqual([]);
     expect(r.world.furniture.cl_table.roomId).toBe('club');
     expect(Object.values(r.world.items).filter((i) => i.definitionId === 'giftbox' && i.owner.kind === 'room' && i.owner.roomId === 'toys_workshop')).toHaveLength(1);
@@ -508,7 +509,7 @@ describe('сохранения', () => {
     const r = parseWorld(JSON.stringify(w));
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(r.world.schemaVersion).toBe(8);
+    expect(r.world.schemaVersion).toBe(9);
     expect(validateWorld(r.world)).toEqual([]);
     expect(Object.keys(r.world.items).length).toBe(Object.keys(before.items).length + 8); // коробка, капкейк, мешок корма и пять вещей фермы
     for (const [id, it] of Object.entries<any>(before.items)) expect(r.world.items[id]).toEqual(it);
@@ -607,5 +608,122 @@ describe('карусель: живые места', () => {
       expect(charPos(w, w.characters.hero_mila)).toEqual({ x: 1000, y: 400 });
     } finally { setLiveSeats(null); }
     expect(charPos(w, w.characters.hero_mila)).toEqual({ x: rest.x, y: rest.y });
+  });
+});
+
+describe('наряды пластилиновых героев', () => {
+  it('список нарядов — только свои нарисованные (стоя и сидя); игровой Лев и фермер — разные герои', async () => {
+    const { heroCostumes, costumeFits } = await import('../../src/content/wardrobe');
+    expect(heroCostumes('hero_lev')).toEqual(['sport', 'astronaut', 'rain', 'pajama']);
+    expect(heroCostumes('farm_worker_lev')).toEqual(['farmer_work', 'farmer_rain', 'farmer_harvest']);
+    expect(heroCostumes('hero_mila')).toEqual(['summer', 'princess', 'pajama', 'fairy', 'dj']); // поза верхом не обязательна и нарядом не считается
+    expect(costumeFits('hero_lev', 'chef')).toBe(false);
+    expect(costumeFits('hero_lev', 'farmer_work')).toBe(false);
+    expect(costumeFits('farm_worker_lev', 'sport')).toBe(false);
+    expect(heroCostumes('custom_1')).toEqual([]); // рисованный герой
+    expect(costumeFits('custom_1', 'chef')).toBe(true);
+  });
+  it('неподходящий наряд не надевается, подходящий — надевается', () => {
+    let w = createWorld();
+    for (const set of ['chef', 'cat']) { const r = wearSet(w, 'hero_lev', set); expect(r.ok).toBe(false); if (!r.ok) expect(r.reason).toBe('no_costume_for_hero'); }
+    expect(w.characters.hero_lev.costume).toBe('sport');
+    const r = wearSet(w, 'hero_lev', 'astronaut');
+    expect(r.ok).toBe(true);
+    if (r.ok) w = r.world;
+    expect(w.characters.hero_lev.costume).toBe('astronaut');
+  });
+  it('старое сохранение с неподдерживаемым нарядом: герой получает свой штатный, мир, вещи и место не меняются', () => {
+    const w = createWorld();
+    w.schemaVersion = 8;
+    Object.assign(w.characters.hero_lev, { costume: 'chef', outfit: structuredClone(OUTFITS.chef.outfit), roomId: 'kitchen', x: 432, y: 801 });
+    delete w.characters.hero_nora.costume;
+    w.characters.farm_worker_lev.costume = 'farmer_rain';
+    const items = JSON.stringify(w.items);
+    const r = parseWorld(JSON.stringify(w));
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    const lev = r.world.characters.hero_lev;
+    expect(lev.costume).toBe('sport');
+    expect(lev.outfit).toEqual(OUTFITS.sport.outfit);
+    expect([lev.roomId, lev.x, lev.y]).toEqual(['kitchen', 432, 801]);
+    expect(r.world.characters.hero_nora.costume).toBe('gardener');
+    expect(r.world.characters.farm_worker_lev.costume).toBe('farmer_rain'); // свой наряд фермера не тронут
+    expect(r.world.characters.hero_mila.costume).toBe('summer');
+    expect(JSON.stringify(r.world.items)).toBe(items);
+    expect(validateWorld(r.world)).toEqual([]);
+    // и то же без миграции: починка при запуске
+    const bad = createWorld();
+    bad.characters.hero_lev.costume = 'cat';
+    expect(validateWorld(bad)).toContain('bad_costume:hero_lev');
+    expect(repairWorld(bad).characters.hero_lev.costume).toBe('sport');
+  });
+});
+
+describe('игрушки на подушках дивана и кресла', () => {
+  const toyOf = (w: any, def: string) => (Object.values(w.items) as any[]).find((i) => i.definitionId === def).instanceId as string;
+  it('игрушка ложится на подушку в небольшой зоне; мимо зоны — обычный перенос; не игрушка на подушку не кладётся', async () => {
+    const { resolveItemDrop } = await import('../../src/game/drop');
+    let w = createWorld();
+    const sofa = w.furniture.lv_sofa, teddy = toyOf(w, 'teddy');
+    const on = resolveItemDrop(w, teddy, { x: sofa.x, y: sofa.y - 92 - 31 }, 'living');
+    expect(on).toEqual({ type: 'surface', furnitureId: 'lv_sofa', slot: 1 });
+    expect(resolveItemDrop(w, teddy, { x: sofa.x, y: sofa.y - 230 }, 'living').type).toBe('floor'); // спинка — не зона
+    w = must(moveItem(w, teddy, { kind: 'surface', furnitureId: 'lv_sofa', slot: 1 }));
+    expect(itemPlace(w, w.items[teddy])).toMatchObject({ roomId: 'living', x: sofa.x, y: sofa.y - 92, visible: true });
+    const cup = toyOf(w, 'cup');
+    expect(moveItem(w, cup, { kind: 'surface', furnitureId: 'lv_sofa', slot: 0 }).ok).toBe(false);
+    expect(resolveItemDrop(w, cup, { x: sofa.x - 105, y: sofa.y - 110 }, 'living').type).not.toBe('surface');
+    // мебель переставили — игрушка едет вместе с ней; после сохранения и загрузки она там же
+    w = must(moveFurniture(w, 'lv_sofa', sofa.x + 200, sofa.y));
+    expect(itemPlace(w, w.items[teddy]).x).toBe(sofa.x + 200);
+    const back = parseWorld(JSON.stringify(w));
+    expect(back.ok && back.world.items[teddy].owner).toEqual({ kind: 'surface', furnitureId: 'lv_sofa', slot: 1 });
+  });
+  it('занятое место игрушку не принимает, а севший герой игрушку под собой не прячет', () => {
+    let w = createWorld();
+    const teddy = toyOf(w, 'teddy'), bunny = toyOf(w, 'bunnytoy');
+    w = must(placeCharacter(w, 'hero_mila', { furnitureId: 'lv_sofa', slot: 0 }, 'living'));
+    w = must(moveItem(w, teddy, { kind: 'surface', furnitureId: 'lv_sofa', slot: 0 })); // место занято — рядом, на свободную подушку
+    expect(w.items[teddy].owner).toEqual({ kind: 'surface', furnitureId: 'lv_sofa', slot: 1 });
+    w = must(placeCharacter(w, 'hero_timur', { furnitureId: 'lv_sofa', slot: 1 }, 'living'));     // сел на подушку с мишкой
+    expect(w.items[teddy].owner).toEqual({ kind: 'surface', furnitureId: 'lv_sofa', slot: 2 });
+    w = must(placeCharacter(w, 'hero_lev', { furnitureId: 'lv_sofa', slot: 2 }, 'living'));       // свободных подушек нет — на пол перед диваном
+    expect(w.items[teddy].owner.kind).toBe('room');
+    expect(moveItem(w, bunny, { kind: 'surface', furnitureId: 'lv_sofa', slot: 0 }).ok).toBe(false);
+    // кресло: одно место
+    w = must(moveItem(w, bunny, { kind: 'surface', furnitureId: 'lv_armchair', slot: 0 }));
+    expect(moveItem(w, teddy, { kind: 'surface', furnitureId: 'lv_armchair', slot: 0 }).ok).toBe(false);
+    expect(validateWorld(w)).toEqual([]);
+  });
+});
+
+describe('карман кенгуру', () => {
+  it('в карман садится только детёныш и только к взрослому; связь хранится в сохранении без копий', async () => {
+    const { pouchJoey, placePet: put } = await import('../../src/game/rules');
+    const { resolvePetDrop, resolveItemDrop } = await import('../../src/game/drop');
+    let w = createWorld();
+    const adult = Object.values(w.pets).find((p) => p.kind === 'kangaroo')!, joey = Object.values(w.pets).find((p) => p.kind === 'joey')!;
+    const n = Object.keys(w.pets).length;
+    expect(resolvePetDrop(w, joey.id, { x: adult.x, y: adult.y - 60 }, 'farm_pen')).toEqual({ type: 'pouch', adultId: adult.id });
+    expect(resolvePetDrop(w, joey.id, { x: adult.x + 400, y: adult.y }, 'farm_pen').type).toBe('floor');
+    expect(pouchJoey(w, adult.id, joey.id).ok).toBe(false);
+    expect(pouchJoey(w, 'pet_cat', adult.id).ok).toBe(false);
+    w = must(pouchJoey(w, joey.id, adult.id));
+    expect(w.pets[joey.id].carriedBy).toBe(adult.id);
+    expect(Object.keys(w.pets).length).toBe(n);
+    // вещь, отпущенная над карманом, малыша в нём не «находит»
+    const hay = Object.values(w.items).find((i) => i.definitionId === 'farm_hay');
+    if (hay) { const d = resolveItemDrop(w, hay.instanceId, { x: adult.x, y: adult.y - 60 }, 'farm_pen') as any; expect(d.petId).not.toBe(joey.id); }
+    const back = parseWorld(JSON.stringify(w));
+    expect(back.ok && back.world.pets[joey.id].carriedBy).toBe(adult.id);
+    expect(validateWorld(w)).toEqual([]);
+    // достали на землю — связь снята, зверь тот же
+    w = must(put(w, joey.id, { x: adult.x + 200, y: 800 }));
+    expect(w.pets[joey.id].carriedBy).toBeUndefined();
+    expect(Object.keys(w.pets).length).toBe(n);
+    // битая связь в сохранении просто снимается
+    w.pets[joey.id].carriedBy = 'pet_cat';
+    expect(validateWorld(w)).toContain(`bad_pouch:${joey.id}`);
+    expect(repairWorld(w).pets[joey.id].carriedBy).toBeUndefined();
   });
 });

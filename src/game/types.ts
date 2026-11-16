@@ -1,6 +1,6 @@
 // Типы данных мира. Модель — единственный источник правды; сцена строится из неё.
 
-export const SCHEMA_VERSION = 8;
+export const SCHEMA_VERSION = 9;
 export const ROOM_W = 1600;
 export const ROOM_H = 900;
 export const FLOOR_TOP = 600;
@@ -103,6 +103,8 @@ export interface Pet {
   flipped: boolean;
   /** кот забрался в корзину или коробку */
   inItem?: string;
+  /** кенгурёнок сидит в кармане этого взрослого кенгуру */
+  carriedBy?: string;
 }
 
 export interface FurnitureInst {
@@ -194,6 +196,10 @@ export interface FurnitureDef {
   seats?: (Pt & { pose: Pose })[];
   petSeats?: Pt[];
   surfaces?: Pt[];
+  /** surfaces — подушки сидений (по одной на место): туда кладут только игрушки, и только на свободное место */
+  cushions?: boolean;
+  /** ближние подлокотники: рисуются поверх игрушки на подушке, но под сидящим героем */
+  arms?: { x0: number; y0: number; x1: number; y1: number }[];
   container?: { capacity: number; slots: Pt[] };
   workspace?: Workspace;
   tap?: 'toggleOpen' | 'toggleOn' | 'tv' | 'light' | 'water' | 'wardrobe' | 'stove';

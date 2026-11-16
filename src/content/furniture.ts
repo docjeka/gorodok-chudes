@@ -17,7 +17,8 @@ export const CAROUSEL = {
   bob: 9,                                 // подъём и опускание лошадки
   bobs: 2,                                // сколько раз лошадка поднимется за круг
   period: 9000,                           // мс на круг
-  ramp: 1800,                             // мс на разгон и плавную остановку
+  ramp: 1800,                             // мс на разгон
+  stop: 1300,                             // мс на плавную остановку с полной скорости (чуть дольше, если иначе лошадка встала бы ребром)
   start: 0.95,                            // угол в покое: одна лошадка ближе и справа, другая дальше и слева
   far: 0.9,                               // дальняя лошадка чуть меньше
   turn: 0.22,                             // доля круга у края, где лошадка разворачивается по ходу движения
@@ -38,8 +39,10 @@ export function carouselSeat(angle: number) {
 
 export const FURNITURE_LIST: FurnitureDef[] = [
   // гостиная
-  { id: 'sofa', category: 'seats', w: 430, h: 250, layer: 'floor', seats: [{ x: -118, y: -98, pose: 'sitting' }, { x: 0, y: -98, pose: 'sitting' }, { x: 118, y: -98, pose: 'sitting' }] },
-  { id: 'armchair', category: 'seats', w: 250, h: 255, layer: 'floor', seats: [{ x: 0, y: -112, pose: 'sitting' }] },
+  { id: 'sofa', category: 'seats', w: 430, h: 250, layer: 'floor', seats: [{ x: -118, y: -98, pose: 'sitting' }, { x: 0, y: -98, pose: 'sitting' }, { x: 118, y: -98, pose: 'sitting' }],
+    cushions: true, surfaces: [{ x: -105, y: -92 }, { x: 0, y: -92 }, { x: 105, y: -92 }], arms: [{ x0: -215, y0: -172, x1: -150, y1: -30 }, { x0: 150, y0: -172, x1: 215, y1: -30 }] },
+  { id: 'armchair', category: 'seats', w: 250, h: 255, layer: 'floor', seats: [{ x: 0, y: -112, pose: 'sitting' }],
+    cushions: true, surfaces: [{ x: 0, y: -100 }], arms: [{ x0: -125, y0: -162, x1: -62, y1: -28 }, { x0: 62, y0: -162, x1: 125, y1: -28 }] },
   { id: 'coffeetable', category: 'tables', w: 250, h: 105, layer: 'floor', surfaces: row(4, -84, 56, -96) },
   { id: 'shelf', category: 'storage', w: 300, h: 62, layer: 'wall', surfaces: row(5, -110, 55, -56) },
   { id: 'tv', category: 'decor', w: 290, h: 250, layer: 'floor', tap: 'tv', surfaces: [{ x: -118, y: -112 }, { x: 118, y: -112 }] },
@@ -191,6 +194,14 @@ export const groupOf = (roomId: RoomId): string => Object.keys(ROOM_GROUPS).find
 export const WALLPAPERS = 6;
 export const FLOORS = 5;
 export const TV_SCENES = 4;
+
+/** Карман кенгуру, в единицах комнаты от опорной точки взрослого (низ лап). */
+export const POUCH = {
+  head: { x0: -36, y0: -102, x1: 30, y1: -40 }, // голова малыша в кармане: за неё его достают
+  spot: { x: -5, y: -62, r: 44 },               // подсветка кармана
+  over: { dx: 95, up: 210, down: 70 },          // зона, над которой отпускают малыша
+  feet: { x: -5, y: 10 },                       // где оказываются лапы малыша, когда его вынимают за голову
+};
 
 /** Диско-шар нарисован на фоне клуба: центр и радиус в единицах комнаты. Анимация ложится точно поверх него. */
 export const DISCO_BALL = { x: 799, y: 181, r: 92 };

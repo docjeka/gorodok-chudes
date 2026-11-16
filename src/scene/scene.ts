@@ -9,7 +9,7 @@ import charSprites from '../content/charSprites.json';
 import furnSprites from '../content/furnSprites.json';
 import itemSprites from '../content/itemSprites.json';
 import petSprites from '../content/petSprites.json';
-import { CAROUSEL, DISCO_BALL, FURNITURE, HOUSE_ROOMS, TV_SCREEN } from '../content/furniture';
+import { CAROUSEL, DISCO_BALL, POUCH, FURNITURE, HOUSE_ROOMS, TV_SCREEN } from '../content/furniture';
 import { ITEMS } from '../content/items';
 import { HAIR_COLORS } from '../content/wardrobe';
 import { charPos, itemPlace, liveSeat, petPos, setLiveSeats, type LiveSeat } from '../game/geometry';
@@ -29,7 +29,7 @@ const PET_SPRITES = petSprites as unknown as Record<string, SpriteMeta>;
 interface FaceWant { eyes: number; brows: number; emotion: Character['emotion']; color: string; sp: CharSprite; closed: boolean; ink: string }
 interface Want {
   id: string; kind: Kind; ref: string; x: number; y: number; z: number; flip: boolean; rot: number;
-  key: string; load: () => Promise<Tex>; face?: FaceWant; overlay?: { key: string; load: () => Promise<Tex> };
+  key: string; load: () => Promise<Tex>; /** запасной рисунок, если нужный кадр не загрузился */ spare?: { key: string; load: () => Promise<Tex> }; face?: FaceWant; overlay?: { key: string; load: () => Promise<Tex> };
   /** налитое в чашку: цвет и место «зеркала» жидкости */
   liquid?: { color: number; x: number; y: number; rx: number };
   /** двойная миска: вода слева и гранулы справа — отдельными слоями */
@@ -90,7 +90,7 @@ export class Scene {
   private talking = new Set<string>();
   private animating = new Set<string>();
   /** карусели: угол поворота и скорость; живут в сцене и в сохранение не попадают */
-  private rides = new Map<string, { a: number; v: number }>();
+  private rides = new Map<string, { a: number; v: number; on: boolean; brake?: { from: number; to: number; t: number; dur: number } }>();
   private talkFrame = 0;
 
   async init(host: HTMLElement) {
@@ -169,7 +169,7 @@ export class Scene {
     this.world = world;
     const roomId = world.currentRoomId;
     const room = world.rooms[roomId];
-    if (roomId !== this.roomId) { this.roomId = roomId; this.camX = Math.max(0, (ROOM_W - this.viewW) / 2); this.camY = Math.max(0, ROOM_H - this.viewH); this.panBy(0, 0); this.clearFx(); }
+    if (roomId !== this.roomId) { this.roomId = roomId; this.camX = Math.max(0, (ROOM_W - this.viewW) / 2); this.camY = Math.max(0, ROOM_H - this.viewH); this.panBy(0, 0); this.clearFx(); this.grooming?.stop(); }
     const house = HOUSE_ROOMS.has(roomId); // у локаций города свой постоянный фон
     const bgKey = house ? `room${room.wallpaper % 4}` : roomId;
     if (bgKey !== this.bgKey) {
@@ -195,7 +195,7 @@ export class Scene {
         this.layer.addChild(n.c);
         this.nodes.set(w.id, n);
       }
-      if ((this.dragging !== w.ref && !this.animating.has(w.ref)) || w.kind === 'front') {
+      if ((this.dragging !== w.ref && !this.animating.has(w.ref) && this.grooming?.item !== w.ref) || w.kind === 'front') {
         n.c.position.set(w.x, w.y);
         n.by = w.y;
         n.c.zIndex = w.z;
@@ -206,7 +206,13 @@ export class Scene {
         n.key = w.key;
         const cached = getTex(w.key);
         if (cached) this.applyTex(n, cached);
-        else { const node = n; void w.load().then((t) => { if (node.key === w.key) this.applyTex(node, t); }).catch(() => undefined); }
+        else {
+          const node = n;
+          void w.load().then((t) => { if (node.key === w.key) this.applyTex(node, t); }).catch(() => {
+            // кадра реакции нет или он не загрузился — показываем обычный кадр того же питомца, а не пустоту
+            if (w.spare && node.key === w.key) void w.spare.load().then((t) => { if (node.key === w.key) this.applyTex(node, t); }).catch(() => undefined);
+          });
+        }
       } else if (n.tex) n.tex.used = performance.now();
       this.syncFace(n, w.face);
       this.syncOverlay(n, w.overlay);
@@ -254,6 +260,12 @@ export class Scene {
         want.overlay = { key: k, load: () => artTex(k, () => tvSceneArt(on, frame)) };
       }
       out.push(want);
+      // ближние подлокотники: поверх игрушки на подушке (z + 0.1), но под сидящим героем (z + 0.2) — посадка героев не меняется
+      (def.arms ?? []).forEach((r, i) => {
+        const crop = { x: meta.ox + r.x0 / meta.upp, y: meta.oy + r.y0 / meta.upp, w: (r.x1 - r.x0) / meta.upp, h: (r.y1 - r.y0) / meta.upp };
+        const key = `FA:${name}:${i}`;
+        out.push({ id: `fa2:${f.id}:${i}`, kind: 'front', ref: f.id, x: f.x, y: f.y, z: z + 0.15, flip: f.flipped, rot: 0, key, load: () => imageTex(key, url, { upp: meta.upp, ox: meta.ox, oy: meta.oy, crop }) });
+      });
       const fr = (name.endsWith('_on') ? def.frontOn : undefined) ?? def.front;
       (fr ? [fr] : def.fronts ?? []).forEach((r, i) => {
         const crop = { x: meta.ox + r.x0 / meta.upp, y: meta.oy + r.y0 / meta.upp, w: (r.x1 - r.x0) / meta.upp, h: (r.y1 - r.y0) / meta.upp };
@@ -280,21 +292,33 @@ export class Scene {
     }
     for (const p of Object.values(w.pets)) {
       if (p.roomId !== roomId) continue;
-      const pos = petPos(w, p);
+      // малыш в кармане: отдельной фигурки нет, пока его не потянули за голову
+      const carrier = p.carriedBy ? w.pets[p.carriedBy] : undefined;
+      if (carrier && this.dragging !== p.id) continue;
+      const pos = carrier ? this.pouchFeet(w, carrier) : petPos(w, p);
       const box = p.inItem ? w.items[p.inItem] : undefined;
       const inBox = box && box.owner.kind === 'room' && box.owner.roomId === roomId;
       const mood: PetMood = p.sleeping ? 'sleep' : this.moodOf(p.id);
       // у жителей фермы две позы: обычная и радостная
-      const name = PET_SPRITES[`${p.kind}_${mood}`] ? `${p.kind}_${mood}` : `${p.kind}_${mood === 'idle' || mood === 'sleep' ? 'idle' : 'happy'}`;
+      const rider = p.kind === 'kangaroo' && Object.values(w.pets).some((j) => j.carriedBy === p.id && j.roomId === roomId && this.dragging !== j.id);
+      // с малышом в кармане — один общий спрайт той же высоты и с той же опорой лап
+      const name = rider ? `kangaroo_pouch_${mood === 'idle' || mood === 'sleep' ? 'idle' : 'happy'}` : PET_SPRITES[`${p.kind}_${mood}`] ? `${p.kind}_${mood}` : `${p.kind}_${mood === 'idle' || mood === 'sleep' ? 'idle' : 'happy'}`;
       const meta = PET_SPRITES[name];
       const key = 'P:' + name;
-      out.push({ id: 'p:' + p.id, kind: 'pet', ref: p.id, x: pos.x, y: inBox ? pos.y - 20 : pos.y, z: p.seat ? zOfFurn(p.seat.furnitureId) + 0.3 : 200 + pos.y + (inBox ? -0.5 : 0), flip: p.flipped, rot: 0, key, load: () => imageTex(key, `${BASE}assets/pets/${name}.png`, meta) });
+      const idle = PET_SPRITES[`${p.kind}_idle`], idleKey = `P:${p.kind}_idle`;
+      // питомец стоит на коврике или лежанке (проснулся на ней или его поставили рядом с серединой): он виден поверх неё, а не прячется за ней
+      let floorZ = 200 + pos.y + (inBox ? -0.5 : 0);
+      if (!p.seat) for (const f of Object.values(w.furniture)) {
+        const fd = FURNITURE[f.definitionId];
+        if (f.roomId === roomId && fd.petSeats && Math.abs(pos.x - f.x) < fd.w / 2 && pos.y > f.y - fd.h && pos.y <= f.y + 4) floorZ = Math.max(floorZ, 200 + f.y + 0.3);
+      }
+      out.push({ spare: idle && idleKey !== key ? { key: idleKey, load: () => imageTex(idleKey, `${BASE}assets/pets/${p.kind}_idle.png`, { upp: idle.upp, ox: idle.ox, oy: idle.oy }) } : undefined, id: 'p:' + p.id, kind: 'pet', ref: p.id, x: pos.x, y: inBox ? pos.y - 20 : pos.y, z: p.seat ? zOfFurn(p.seat.furnitureId) + 0.3 : floorZ, flip: p.flipped, rot: 0, key, load: () => imageTex(key, `${BASE}assets/pets/${name}.png`, meta) });
     }
     for (const it of Object.values(w.items)) {
       const pl = this.heldPlace(w, it);
       if (!pl || pl.roomId !== roomId || !pl.visible) continue;
       const o = it.owner;
-      const z = o.kind === 'hand' ? (charZ.get(o.characterId) ?? 200) + 0.05 : o.kind === 'surface' ? zOfFurn(o.furnitureId) + 0.6 + o.slot * 0.001 : o.kind === 'furniture' ? zOfFurn(o.furnitureId) + 0.3 + o.slot * 0.001 : 200 + pl.y;
+      const z = o.kind === 'hand' ? (charZ.get(o.characterId) ?? 200) + 0.05 : o.kind === 'surface' ? zOfFurn(o.furnitureId) + (FURNITURE[w.furniture[o.furnitureId]?.definitionId]?.cushions ? 0.1 : 0.6) + o.slot * 0.001 : o.kind === 'furniture' ? zOfFurn(o.furnitureId) + 0.3 + o.slot * 0.001 : 200 + pl.y;
       const LIQ: Record<string, number> = { water: 0x8fd0f5, milk: 0xffffff, tea: 0xc98c4f };
       const liquid = it.state.contents ? (it.definitionId === 'glass' ? { color: LIQ[it.state.contents], x: 0, y: -45, rx: 10 } : { color: LIQ[it.state.contents], x: -5, y: -40, rx: 13 }) : undefined;
       out.push({ id: 'i:' + it.instanceId, kind: 'item', ref: it.instanceId, x: pl.x, y: pl.y, z, flip: false, rot: 0, liquid, bowl: it.definitionId === 'pet_double_bowl' ? { water: !!it.state.water, kibble: !!it.state.kibble } : undefined, ...this.itemTex(it) });
@@ -382,7 +406,7 @@ export class Scene {
   /** Где сейчас лошадка: точка седла, глубина (1 — ближе всех, −1 — дальше всех), размер и разворот по ходу. */
   private horseAt(f: FurnitureInst, i: number) {
     let st = this.rides.get(f.id);
-    if (!st) { st = { a: CAROUSEL.start, v: 0 }; this.rides.set(f.id, st); }
+    if (!st) { st = { a: CAROUSEL.start, v: 0, on: false }; this.rides.set(f.id, st); }
     const C = CAROUSEL, o = C.orbit, ang = st.a + i * Math.PI;
     const depth = Math.cos(ang);
     const bob = C.bob * Math.sin(st.a * C.bobs + i * Math.PI);
@@ -411,15 +435,31 @@ export class Scene {
       if (f.definitionId !== C.furn || f.roomId !== this.roomId) continue;
       const base = this.nodes.get('f:' + f.id);
       if (!base) continue;
-      const st = this.rides.get(f.id) ?? { a: C.start, v: 0 };
+      const st = this.rides.get(f.id) ?? { a: C.start, v: 0, on: false };
       this.rides.set(f.id, st);
       const top = (Math.PI * 2) / C.period;
-      // ребром к зрителю не останавливаемся: доезжаем до места, где лошадок хорошо видно
-      const edge = Math.abs(Math.cos(st.a)) < C.turn * 1.6;
-      const want = f.on ? top : edge && st.v > 0 ? top * 0.3 : 0;
-      const step = (top / C.ramp) * dt;
-      st.v += Math.max(-step, Math.min(step, want - st.v));
-      st.a = (st.a + st.v * dt) % (Math.PI * 2);
+      const on = f.on > 0;
+      if (on !== st.on) {
+        st.on = on;
+        st.brake = undefined;
+        if (!on && st.v > 0) {
+          // остановка: сразу ровно тормозим до места, где лошадок хорошо видно (не ребром к зрителю)
+          let to = st.a + (st.v * C.stop * (st.v / top)) / 2;
+          for (let n = 0; n < 200 && Math.abs(Math.cos(to)) < C.turn * 1.15; n++) to += 0.01;
+          st.brake = { from: st.a, to, t: 0, dur: (2 * (to - st.a)) / st.v };
+        }
+      }
+      if (st.brake) {
+        const b = st.brake;
+        b.t = Math.min(b.dur, b.t + dt);
+        const k = b.t / b.dur;
+        st.a = b.from + (b.to - b.from) * (2 * k - k * k);
+        st.v = ((b.to - b.from) * 2 * (1 - k)) / b.dur;
+        if (k >= 1) { st.v = 0; st.a %= Math.PI * 2; st.brake = undefined; }
+      } else if (on) {
+        st.v = Math.min(top, st.v + (top / C.ramp) * dt);
+        st.a = (st.a + st.v * dt) % (Math.PI * 2);
+      } else st.v = 0;
       C.horses.forEach((h, i) => {
         const at = this.horseAt(f, i);
         const z = base.c.zIndex + at.z;
@@ -568,7 +608,8 @@ export class Scene {
 
   // ---------- касания ----------
   /** Верхний реально видимый объект под точкой; маленьким предметам помогает расширенная зона. */
-  pick(pt: Pt, opts: { furniture?: boolean; except?: string } = {}): { kind: Kind; ref: string } | null {
+  /** moving — попали в едущую часть мебели (лошадку карусели), а не в неподвижную основу. */
+  pick(pt: Pt, opts: { furniture?: boolean; except?: string } = {}): { kind: Kind; ref: string; moving?: boolean } | null {
     const list = [...this.nodes.values()].sort((a, b) => b.c.zIndex - a.c.zIndex);
     let exact: Node | null = null;
     for (const n of list) {
@@ -581,6 +622,12 @@ export class Scene {
       const rider = list.find((n) => n.kind === 'char' && n.tex && n.ref !== opts.except && !this.animating.has(n.ref) && this.world?.characters[n.ref]?.seat?.furnitureId === seatOn && this.hitNode(n, pt));
       if (rider) exact = rider;
     }
+    // голова малыша в кармане кенгуру: за неё его берут; зона считается от фигурки взрослого и едет вместе с прыжком
+    if (exact && exact.kind === 'pet' && this.world?.pets[exact.ref]?.kind === 'kangaroo') {
+      const joey = Object.values(this.world.pets).find((j) => j.carriedBy === exact!.ref && j.id !== opts.except);
+      const k = exact.c.scale.x < 0 ? -1 : 1, lx = (pt.x - exact.c.x) * k, ly = pt.y - exact.c.y, h = POUCH.head;
+      if (joey && lx >= h.x0 && lx <= h.x1 && ly >= h.y0 && ly <= h.y1) return { kind: 'pet', ref: joey.id };
+    }
     if (exact && (exact.kind === 'item' || exact.kind === 'pet' || exact.kind === 'char')) return { kind: exact.kind, ref: exact.ref };
     // рядом с маленьким предметом — выбираем его, если точное попадание пришлось на мебель или пустое место
     let near: { n: Node; d: number } | null = null;
@@ -592,18 +639,35 @@ export class Scene {
       if (d < Math.max(30, 24 / this.scale + def.w * 0.25) && (!near || d < near.d)) near = { n, d };
     }
     if (near) return { kind: 'item', ref: near.n.ref };
-    if (exact) return { kind: exact.kind === 'front' ? 'furn' : exact.kind, ref: exact.ref };
+    if (exact) return { kind: exact.kind === 'front' ? 'furn' : exact.kind, ref: exact.ref, moving: exact.id.startsWith('rh:') };
     return null;
   }
   private hitNode(n: Node, pt: Pt): boolean {
     let dx = pt.x - n.c.x, dy = pt.y - n.c.y;
     if (n.c.rotation) { const r = -n.c.rotation, cs = Math.cos(r), sn = Math.sin(r); [dx, dy] = [dx * cs - dy * sn, dx * sn + dy * cs]; }
-    dx /= n.c.scale.x; dy /= n.c.scale.y;
+    // на развороте карусели фигурка сужается, но область касания остаётся в полную ширину
+    const sx = Math.abs(n.c.scale.x) < Math.abs(n.c.scale.y) ? (Math.sign(n.c.scale.x) || 1) * Math.abs(n.c.scale.y) : n.c.scale.x;
+    dx /= sx; dy /= n.c.scale.y;
     return hitTex(n.tex!, dx, dy);
+  }
+  /** Где окажутся лапы малыша, когда его тянут из кармана: голова остаётся под пальцем. Считается от взрослого на экране — вместе с его прыжком. */
+  private pouchFeet(w: World, adult: Pet): Pt {
+    const n = this.nodes.get('p:' + adult.id);
+    const at = n ? { x: n.c.x, y: n.c.y } : petPos(w, adult);
+    return { x: at.x + (adult.flipped ? -1 : 1) * POUCH.feet.x, y: at.y + POUCH.feet.y };
   }
   nodePos(ref: string): Pt | null {
     for (const n of this.nodes.values()) if (n.ref === ref && n.kind !== 'front') return { x: n.c.x, y: n.c.y };
+    const carrier = this.world?.pets[ref]?.carriedBy;
+    if (this.world && carrier && this.world.pets[carrier]) return this.pouchFeet(this.world, this.world.pets[carrier]);
     return null;
+  }
+  /** Для проверок: виден ли объект — есть ли у него живая текстура нужного кадра, не скрыт ли он и не ушёл ли под фон. */
+  shown(ref: string) {
+    const n = this.nodeOf(ref);
+    if (!n) return null;
+    const src = n.tex?.texture.source as { destroyed?: boolean } | undefined;
+    return { key: n.key, drawn: !!n.tex && n.tex.key === n.key && !n.tex.texture.destroyed && !src?.destroyed, visible: n.c.visible && n.body.visible && n.c.alpha > 0.9 && n.body.alpha > 0.9, z: n.c.zIndex, scale: [n.c.scale.x, n.c.scale.y], grooming: this.grooming?.item ?? null };
   }
   /** Для проверок: какой рисунок сейчас у героя и как повёрнута карусель. */
   spriteOf(ref: string): string { return this.nodeOf(ref)?.key ?? ''; }
@@ -615,8 +679,11 @@ export class Scene {
 
   // ---------- перетаскивание ----------
   dragStart(ref: string) {
+    // малыша тянут из кармана: его фигурка появляется под пальцем, а взрослый снова рисуется без него
+    if (!this.nodeOf(ref) && this.world?.pets[ref]?.carriedBy) { this.dragging = ref; this.sync(this.world); }
     const n = this.nodeOf(ref);
     if (!n) return;
+    if (this.grooming?.item === ref) this.grooming.stop(); // щётку забрали посреди движения
     this.dragging = ref;
     n.c.zIndex = 1e6;
     n.c.rotation = 0;
@@ -783,6 +850,51 @@ export class Scene {
    * Вещь подлетает ко рту: еду герой откусывает, из чашки пьёт (чашка наклоняется).
    * Пока идёт анимация, вещь нельзя схватить; состояние мира меняется в done.
    */
+  /** Щётка, которая сейчас расчёсывает: её можно взять пальцем посреди движения. */
+  private grooming: { item: string; stop: () => void } | null = null;
+  /**
+   * Расчёсывание: щётка ложится поверх шерсти и делает три коротких движения от плеч к спинке.
+   * Путь привязан к телу питомца: учитывает его размер и разворот, идёт ниже морды. В мире ничего не меняется.
+   */
+  groom(itemId: string, petId: string, done: (finished: boolean) => void) {
+    const n = this.nodeOf(itemId), pet = this.nodeOf(petId);
+    if (!n || !n.tex || !pet || !pet.tex) { done(false); return; }
+    this.grooming?.stop();
+    const dir = pet.c.scale.x < 0 ? -1 : 1; // морда слева, спинка справа; у развёрнутого — наоборот
+    const W = pet.tex.w * pet.tex.upp * Math.abs(pet.c.scale.y), H = pet.tex.oy * pet.tex.upp * Math.abs(pet.c.scale.y);
+    const bh = n.tex.oy * n.tex.upp;
+    const from = { x: 0.02 * W, y: -0.44 * H }, to = { x: 0.3 * W, y: -0.26 * H };
+    const x0 = n.c.x, y0 = n.c.y;
+    let live = true;
+    const end = (finished: boolean) => {
+      if (!live) return;
+      live = false;
+      this.grooming = null;
+      try { n.c.rotation = 0; } catch { /* щётку уже убрали */ }
+      done(finished);
+    };
+    this.grooming = { item: itemId, stop: () => end(false) };
+    const STROKES = 3, REACH = 200, EACH = 420;
+    const total = REACH + STROKES * EACH;
+    this.tween(total, (kk) => {
+      if (!live) return;
+      const t = kk * total;
+      // питомец мог подпрыгнуть или его переставили — щётка идёт за ним
+      const bx = pet.c.x, by = pet.c.y;
+      let lx: number, ly: number;
+      if (t < REACH) { const e = t / REACH; lx = from.x; ly = from.y - 14 * (1 - e); const sx = bx + dir * lx, sy = by + ly + bh * 0.5; n.c.position.set(x0 + (sx - x0) * e, y0 + (sy - y0) * e); }
+      else {
+        const s = ((t - REACH) % EACH) / EACH;
+        if (s < 0.68) { const e = s / 0.68, m = e * e * (3 - 2 * e); lx = from.x + (to.x - from.x) * m; ly = from.y + (to.y - from.y) * m; }      // по шерсти
+        else { const e = (s - 0.68) / 0.32, m = e * e * (3 - 2 * e); lx = to.x + (from.x - to.x) * m; ly = to.y + (from.y - to.y) * m - 16 * Math.sin(e * Math.PI); } // приподнялась и вернулась к плечам
+        n.c.position.set(bx + dir * lx, by + ly + bh * 0.5);
+      }
+      n.c.rotation = dir * 0.5;
+      n.c.scale.set(dir, 1);
+      n.c.zIndex = pet.c.zIndex + 0.4;
+    }, () => end(true));
+  }
+
   consume(ref: string, mouth: Pt, kind: 'eat' | 'drink' | 'scrub' | 'stroke' | 'rub' | 'tilt', done: () => void) {
     const n = this.nodeOf(ref);
     if (!n || !n.tex) { done(); return; }

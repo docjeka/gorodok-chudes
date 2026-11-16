@@ -62,7 +62,7 @@ test('карусель: Мила садится верхом, тап запус�
   // второй тап плавно останавливает
   await page.touchscreen.tap(tap[0], tap[1]);
   expect((await world(page)).furniture.pk_carousel.on).toBe(0);
-  await page.waitForFunction(() => window.__game.scene.rideOf('pk_carousel')!.speed === 0, null, { timeout: 15_000 });
+  await page.waitForFunction(() => window.__game.scene.rideOf('pk_carousel')!.speed === 0, null, { timeout: 6_000 });
   const stopped = await at(page, 'hero_mila');
   await page.waitForTimeout(400);
   expect(await at(page, 'hero_mila')).toEqual(stopped);
@@ -90,4 +90,56 @@ test('карусель: Мила садится верхом, тап запус�
   expect(await sprite(page, 'hero_mila')).toContain('stand');
   expect(JSON.stringify(w.characters.hero_mila.outfit) + w.characters.hero_mila.costume).toBe(outfit);
   expect(Object.keys(w.characters).length).toBe(heroes);
+});
+
+test('карусель-кнопка: пуск → стоп → пуск на основании, пустая и с Милой; долгий и дрожащий тап, выбранный герой и двойное срабатывание не мешают', async ({ page }) => {
+  await page.goto('./');
+  await page.waitForFunction(() => !!window.__game);
+  await page.evaluate(() => window.__game.game.update((w: any) => { w.settings.tutorialDone = true; }));
+  await page.click('#play');
+  await page.evaluate(() => { const g = window.__game; g.map.enter('houses'); g.game.commit(g.rules.travel(g.game.world, 'park', ['hero_mila'])); g.scene.setZoom(0.1); });
+  await page.waitForTimeout(600);
+  const on = () => page.evaluate(() => window.__game.game.world.furniture.pk_carousel.on as number);
+  const speed = async () => (await ride(page))!.speed;
+  const stopped = () => page.waitForFunction(() => window.__game.scene.rideOf('pk_carousel')!.speed === 0, null, { timeout: 6_000 });
+  const base = await roomPt(page, 861, 545); // борт платформы — неподвижная часть
+
+  for (const withMila of [false, true]) {
+    if (withMila) { await drag(page, await at(page, 'hero_mila', -120), await seatPt(page, 0)); expect((await world(page)).characters.hero_mila.seat?.furnitureId).toBe('pk_carousel'); }
+    await page.touchscreen.tap(base[0], base[1]);            // первый тап — поехали
+    expect(await on()).toBe(1);
+    await page.waitForTimeout(2600);
+    expect(await speed()).toBeGreaterThan(0);
+    await page.touchscreen.tap(base[0], base[1]);            // второй — плавно тормозит до полной остановки
+    expect(await on()).toBe(0);
+    await stopped();
+    await page.touchscreen.tap(base[0], base[1]);            // третий — снова поехали
+    expect(await on()).toBe(1);
+    await page.waitForTimeout(1200);
+    expect(await speed()).toBeGreaterThan(0);
+    await page.touchscreen.tap(base[0], base[1]);
+    await stopped();
+  }
+
+  // долгое нажатие и палец, съехавший на полтора десятка точек, — всё равно тап; карусель при этом не «поднимается»
+  await page.mouse.move(base[0], base[1]); await page.mouse.down(); await page.waitForTimeout(700); await page.mouse.up();
+  expect(await on()).toBe(1);
+  await page.waitForTimeout(500);
+  await page.mouse.move(base[0], base[1]); await page.mouse.down(); await page.mouse.move(base[0] + 12, base[1] + 9, { steps: 3 }); await page.mouse.up();
+  expect(await on()).toBe(0);
+  await stopped();
+
+  // выбранный герой: тап по основанию всё равно переключает карусель и не пересаживает героя
+  const seat = (await world(page)).characters.hero_mila.seat;
+  const m = await at(page, 'hero_mila', -20);
+  await page.touchscreen.tap(m[0], m[1]);
+  await page.waitForTimeout(450);
+  await page.touchscreen.tap(base[0], base[1]);
+  expect(await on()).toBe(1);
+  expect((await world(page)).characters.hero_mila.seat).toEqual(seat);
+  await page.waitForTimeout(500);
+
+  // одно касание, пришедшее дважды подряд, переключает один раз
+  await page.evaluate(() => { const g = window.__game; const t = { kind: 'furn', ref: 'pk_carousel' }; g.play.tap(t, { x: 861, y: 545 }); g.play.tap(t, { x: 861, y: 545 }); });
+  expect(await on()).toBe(0);
 });

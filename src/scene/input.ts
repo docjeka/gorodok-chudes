@@ -6,6 +6,7 @@ import type { Scene } from './scene';
 const HOLD_MS = 420; // долгое нажатие на мебель поднимает её
 const PET_PULL = 64; // CSS px от места касания: дальше питомца уже несут
 const PET_STROKE = 70; // столько пути пальца по зверю считается поглаживанием
+const TAP_SLACK = 26; // CSS px: столько может съехать палец при тапе по неподвижной мебели-кнопке
 const DRAG_THRESHOLD = 9; // CSS px: нажатие не должно случайно двигать вещи
 
 interface Press { pointerId: number; target: Target | null; startX: number; startY: number; lastX: number; lastY: number; grab: Pt; dragging: boolean; panning: boolean; path: number; stroking: boolean; strokeAt: number }
@@ -58,7 +59,7 @@ export class Input {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     const pt = this.scene.toRoom(e.clientX, e.clientY);
     const hit = this.scene.pick(pt);
-    const target: Target | null = hit ? { kind: hit.kind === 'front' ? 'furn' : hit.kind, ref: hit.ref } : null;
+    const target: Target | null = hit ? { kind: hit.kind === 'front' ? 'furn' : hit.kind, ref: hit.ref, moving: hit.moving } : null;
     const pos = target ? this.scene.nodePos(target.ref) : null;
     this.press = { pointerId: e.pointerId, target, startX: e.clientX, startY: e.clientY, lastX: e.clientX, lastY: e.clientY, grab: pos ? { x: pos.x - pt.x, y: pos.y - pt.y } : { x: 0, y: 0 }, dragging: false, panning: false, path: 0, stroking: false, strokeAt: 0 };
     try { this.scene.app.canvas.setPointerCapture(e.pointerId); } catch { /* не критично */ }
@@ -95,7 +96,9 @@ export class Input {
       else if (p.path > PET_STROKE && performance.now() - p.strokeAt > 900) { p.stroking = true; p.strokeAt = performance.now(); this.play.petStroke(p.target.ref); }
       if (!p.dragging) { p.lastX = e.clientX; p.lastY = e.clientY; return; }
     }
-    if (!p.dragging && !p.panning && moved > DRAG_THRESHOLD) {
+    // кнопка-мебель, которую нельзя ни тащить, ни поднять (карусель): палец на стекле дрожит — это всё ещё тап
+    const slack = p.target?.kind === 'furn' && !this.play.canDrag(p.target) && !this.play.canLift(p.target) ? TAP_SLACK : DRAG_THRESHOLD;
+    if (!p.dragging && !p.panning && moved > slack) {
       if (p.target && this.play.canDrag(p.target)) { p.dragging = true; this.scene.dragStart(p.target.ref); }
       else { p.panning = true; window.clearTimeout(this.hold); }
     }

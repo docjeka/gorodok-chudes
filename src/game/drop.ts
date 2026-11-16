@@ -1,9 +1,9 @@
 // Выбор цели при отпускании предмета, героя или питомца. Чистая логика: принимает мир и точку в координатах комнаты.
 // Приоритет: рука/рот героя → питомец → контейнер-предмет → поверхность/контейнер мебели → пол.
-import { FURNITURE, GRAIN_EATERS, HAY_EATERS } from '../content/furniture';
+import { POUCH, FURNITURE, GRAIN_EATERS, HAY_EATERS } from '../content/furniture';
 import { ITEMS } from '../content/items';
 import { charBox, charPos, clampFloor, dist, itemPlace, petPos, seatPos, slotPos } from './geometry';
-import { FILLABLE, HEADWEAR, PET_BRUSHES, isWaterSource, POURS, handItems, isInside, seatTaken } from './rules';
+import { FILLABLE, HEADWEAR, PET_BRUSHES, cushionFree, isWaterSource, POURS, handItems, isInside, seatTaken } from './rules';
 import type { HandSlot, Pt, RoomId, World } from './types';
 
 export type ItemDrop =
@@ -25,6 +25,7 @@ export type ItemDrop =
   | { type: 'reject' };
 
 const SURFACE_R = 78;
+const CUSHION_R = 62;
 
 export function resolveItemDrop(w: World, itemId: string, pt: Pt, roomId: RoomId): ItemDrop {
   const it = w.items[itemId];
@@ -37,7 +38,7 @@ export function resolveItemDrop(w: World, itemId: string, pt: Pt, roomId: RoomId
   if (farmFood) {
     // точно в кормушку — в кормушку, даже если рядом стоит зверь
     for (const f of Object.values(w.furniture)) if (f.roomId === roomId && FURNITURE[f.definitionId].farm === farmFood && Math.abs(pt.x - f.x) < FURNITURE[f.definitionId].w / 2 && Math.abs(pt.y - (f.y - 20)) < 55) return { type: 'feeder', furnitureId: f.id };
-    for (const p of Object.values(w.pets).filter((x) => x.roomId === roomId)) {
+    for (const p of Object.values(w.pets).filter((x) => x.roomId === roomId && !x.carriedBy)) {
       const pp = petPos(w, p);
       if (Math.abs(pt.x - pp.x) < 80 && pt.y > pp.y - 150 && pt.y < pp.y + 20 && (farmFood === 'trough' ? HAY_EATERS : GRAIN_EATERS).has(p.kind)) return { type: 'farmfeed', petId: p.id };
     }
@@ -93,7 +94,7 @@ export function resolveItemDrop(w: World, itemId: string, pt: Pt, roomId: RoomId
   }
 
   // 2. питомцы
-  for (const p of Object.values(w.pets).filter((x) => x.roomId === roomId)) {
+  for (const p of Object.values(w.pets).filter((x) => x.roomId === roomId && !x.carriedBy)) {
     const pp = petPos(w, p);
     if (Math.abs(pt.x - pp.x) > 70 || pt.y < pp.y - 110 || pt.y > pp.y + 20) continue;
     if (has('petfood')) return { type: 'pet', petId: p.id, action: 'feed' };
@@ -124,6 +125,8 @@ export function resolveItemDrop(w: World, itemId: string, pt: Pt, roomId: RoomId
     fd.surfaces?.forEach((s, slot) => {
       const sp = slotPos(f, s);
       const d = dist(pt, { x: sp.x, y: sp.y - def.h / 2 });
+      // подушка сиденья: небольшая зона, только для игрушек и только если на этом месте никто не сидит и ничего не лежит
+      if (fd.cushions && (!has('toy') || d >= CUSHION_R || !cushionFree(w, f.id, slot, itemId))) return;
       if (d < SURFACE_R && (!bestF || d < bestF.d)) bestF = { drop: { type: 'surface', furnitureId: f.id, slot }, d };
     });
     if (fd.container) {
@@ -169,10 +172,19 @@ export function resolveCharDrop(w: World, characterId: string, pt: Pt, roomId: R
   return { type: 'floor', x: p.x, y: p.y };
 }
 
-export type PetDrop = { type: 'seat'; furnitureId: string; slot: number } | { type: 'intoItem'; itemId: string; x: number; y: number } | { type: 'floor'; x: number; y: number };
+export type PetDrop = { type: 'pouch'; adultId: string } | { type: 'seat'; furnitureId: string; slot: number } | { type: 'intoItem'; itemId: string; x: number; y: number } | { type: 'floor'; x: number; y: number };
 
 export function resolvePetDrop(w: World, petId: string, pt: Pt, roomId: RoomId): PetDrop {
   const pet = w.pets[petId];
+  // детёныша кенгуру отпустили над взрослым — в карман (если он свободен); других зверей и вещи карман не принимает
+  if (pet?.kind === 'joey') {
+    for (const a of Object.values(w.pets)) {
+      if (a.kind !== 'kangaroo' || a.roomId !== roomId || a.sleeping) continue;
+      if (Object.values(w.pets).some((o) => o.id !== petId && o.carriedBy === a.id)) continue;
+      const ap = petPos(w, a);
+      if (Math.abs(pt.x - ap.x) < POUCH.over.dx && pt.y > ap.y - POUCH.over.up && pt.y < ap.y + POUCH.over.down) return { type: 'pouch', adultId: a.id };
+    }
+  }
   for (const f of Object.values(w.furniture)) {
     if (f.roomId !== roomId) continue;
     const seats = FURNITURE[f.definitionId].petSeats ?? [];

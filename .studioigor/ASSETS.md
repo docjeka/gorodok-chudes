@@ -41,3 +41,4 @@
 | public/assets/rooms/farm_*.webp, public/assets/pets/{cow,sheep,pig,goat,hen,chick,pony}_*.png, public/assets/items/farm_*.png, map/town-back.webp (v4) | набор «Ферма» от пользователя (gorodok-chudes-farm-v2.zip) | авторские, от пользователя |
 | public/assets/chars/farm_worker_lev_*.webp, public/assets/pets/{kangaroo,joey}_*.png, public/assets/rooms/farm_pen.webp | набор «Ферма: дополнение» от пользователя (gorodok-chudes-farm-extra.zip) | авторские, от пользователя |
 | public/assets/furn/carousel.png (основа), carousel_horse_{mint,coral}.png, public/assets/chars/hero_mila_summer_ride.webp | набор «Карусель: пилот» от пользователя (gorodok-chudes-carousel-pilot.zip) | авторские, от пользователя |
+| public/assets/pets/kangaroo_pouch_{idle,happy}.png | лист farm-kangaroo-pouch.png от пользователя | авторские, от пользователя |

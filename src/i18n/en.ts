@@ -31,6 +31,7 @@ export const en: Record<Key, string> = {
   'toast.full': 'No more room here.',
   'toast.notFood': 'That is not food.',
   'toast.cant': 'That will not work.',
+  'toast.noOutfit': "This outfit isn't available for this character yet.",
   'recover.title': 'The save is damaged',
   'recover.text': 'The saved world could not be read. The old data has not been deleted.',
   'recover.backup': 'Restore the backup',

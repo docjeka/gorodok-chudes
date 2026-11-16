@@ -2,7 +2,7 @@
 import { toSvg } from '../art/base';
 import { eyeArt, eyeStateFor, mouthArt } from '../art/face';
 import { ROOM_GROUPS, charAllowedIn, groupOf, petAllowedIn } from '../content/furniture';
-import { HERO_COSTUMES, OUTFIT_SETS } from '../content/wardrobe';
+import { OUTFIT_SETS, heroCostumes } from '../content/wardrobe';
 import type { Game } from '../game/game';
 import { charPos, itemPlace } from '../game/geometry';
 import { flipCharacter, setEmotion, wearSet } from '../game/rules';
@@ -320,13 +320,16 @@ export class Hud {
     const c = this.sel?.kind === 'char' ? w.characters[this.sel.ref] : undefined;
     this.charBar.classList.toggle('hidden', !c || c.roomId !== w.currentRoomId);
     if (c) {
-      const sets = HERO_COSTUMES[c.id] ?? OUTFIT_SETS.map((s) => s.id);
+      const own = heroCostumes(c.id); // у пластилинового героя — только его нарисованные наряды
+      const sets = own.length ? own : OUTFIT_SETS.map((s) => s.id);
       const cur = Math.max(0, sets.indexOf(c.costume ?? ''));
       this.charBar.innerHTML = '';
       const name = h('div', 'charname', c.name);
       const step = (d: number, label: Key, ic: 'prev' | 'next') => { const b = h('button', 'round', icon(ic)); b.setAttribute('aria-label', t(label)); b.onclick = () => { if (this.game.commit(wearSet(this.game.world, c.id, sets[(cur + d + sets.length) % sets.length]), true)) { this.audio.play('sparkle'); this.scene.pop(c.id, 0.08); } }; return b; };
       const costume = h('div', 'group');
-      costume.append(step(-1, 'char.prev', 'prev'), h('span', 'grouplabel', has('costume.' + sets[cur]) ? t(('costume.' + sets[cur]) as Key) : `${t('char.costume')} ${cur + 1}/${sets.length}`), step(1, 'char.next', 'next'));
+      const label = h('span', 'grouplabel', has('costume.' + sets[cur]) ? t(('costume.' + sets[cur]) as Key) : `${t('char.costume')} ${cur + 1}/${sets.length}`);
+      if (sets.length > 1) costume.append(step(-1, 'char.prev', 'prev'), label, step(1, 'char.next', 'next'));
+      else costume.append(label); // один наряд — листать нечего
       const moods = h('div', 'group moods');
       for (const e of EMOTIONS) {
         const b = h('button', 'mood' + (c.emotion === e ? ' current' : ''), emotionSvg(e));

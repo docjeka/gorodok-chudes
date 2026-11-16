@@ -1,7 +1,7 @@
 // Создание нового мира, проверка целостности, миграции и разбор импорта.
 import { FURNITURE, charAllowedIn, initialFurniture, petAllowedIn, ROOM_IDS } from '../content/furniture';
 import { ITEMS } from '../content/items';
-import { GARMENTS, PRESET_HEROES, presetCharacter } from '../content/wardrobe';
+import { GARMENTS, OUTFITS, PRESET_HEROES, costumeFits, homeCostume, presetCharacter } from '../content/wardrobe';
 import { isInside, isValidOutfit, moveItem, spawnItem } from './rules';
 import type { ItemInst, Owner, RoomId, World } from './types';
 import { BAG_CAPACITY, MAX_ITEMS, SCHEMA_VERSION } from './types';
@@ -179,6 +179,7 @@ export function validateWorld(w: World): string[] {
     if (c.id !== id || !ID_RE.test(id)) errs.push(`bad_id:${id}`);
     if (c.roomId !== null && !w.rooms[c.roomId]) errs.push(`bad_room:${id}`);
     if (!isValidOutfit(c.outfit)) errs.push(`bad_outfit:${id}`);
+    if (homeCostume(id) && (!c.costume || !costumeFits(id, c.costume))) errs.push(`bad_costume:${id}`);
     if (c.seat) {
       const f = w.furniture[c.seat.furnitureId];
       if (!f || !FURNITURE[f.definitionId]?.seats?.[c.seat.slot] || f.roomId !== c.roomId) errs.push(`bad_seat:${id}`);
@@ -193,12 +194,27 @@ export function validateWorld(w: World): string[] {
   }
   for (const [id, p] of Object.entries(w.pets)) if (p.id !== id || !w.rooms[p.roomId]) errs.push(`bad_pet:${id}`);
   for (const p of Object.values(w.pets)) if (!petAllowedIn(p.kind, p.roomId)) errs.push(`farm_pet:${p.id}`);
+  for (const p of Object.values(w.pets)) {
+    if (p.carriedBy === undefined) continue;
+    const a = w.pets[p.carriedBy];
+    if (p.kind !== 'joey' || !a || a.kind !== 'kangaroo' || a.roomId !== p.roomId || Object.values(w.pets).some((o) => o.id < p.id && o.carriedBy === p.carriedBy)) errs.push(`bad_pouch:${p.id}`);
+  }
   for (const c of Object.values(w.characters)) if (!charAllowedIn(c.id, c.roomId)) errs.push(`farm_char:${c.id}`);
   if (!w.rooms[w.currentRoomId]) errs.push('bad_current_room');
   return errs;
 }
 
 /** Мягкая починка: осиротевшие вещи отправляются в корзину найденных вещей, а не удаляются. */
+/** Пластилиновый герой в наряде, которого для него нет: возвращаем его штатный наряд. Мир, вещи и место героя не трогаем. */
+export function fixCostumes(w: { characters: Record<string, { id: string; costume?: string; outfit: unknown }> }) {
+  for (const c of Object.values(w.characters ?? {})) {
+    const home = homeCostume(c.id);
+    if (!home || (c.costume && costumeFits(c.id, c.costume))) continue;
+    c.costume = home;
+    c.outfit = structuredClone(OUTFITS[home].outfit);
+  }
+}
+
 export function repairWorld(world: World): World {
   let w: World = JSON.parse(JSON.stringify(world));
   for (let pass = 0; pass < 3; pass++) {
@@ -209,8 +225,10 @@ export function repairWorld(world: World): World {
       if (['orphan', 'cycle', 'double', 'bad_owner', 'bad_hand', 'bad_room'].includes(kind) && w.items[id]) w.items[id].owner = { kind: 'lost' };
       if (kind === 'farm_pet' && w.pets[id]) { const p = w.pets[id]; p.roomId = FARM_HOME[id] ?? 'farm_yard'; p.x = 800; p.y = 780; p.seat = null; p.sleeping = false; } // житель фермы возвращается домой
       if (kind === 'farm_char' && w.characters[id]) Object.assign(w.characters[id], { roomId: FARMER_SPOT.roomId, x: FARMER_SPOT.x, y: FARMER_SPOT.y, seat: null, pose: 'standing' });
+      if (kind === 'bad_pouch' && w.pets[id]) delete w.pets[id].carriedBy;
       if (kind === 'no_def') delete w.items[id];
       if ((kind === 'bad_seat' || kind === 'double_seat') && w.characters[id]) { w.characters[id].seat = null; w.characters[id].pose = 'standing'; }
+      if (kind === 'bad_costume') fixCostumes(w);
       if (kind === 'bad_outfit' && w.characters[id]) w.characters[id].outfit = { top: { id: 'tee', color: 0 }, bottom: { id: 'shorts', color: 0 } };
     }
   }
@@ -280,6 +298,12 @@ export const MIGRATIONS: Record<number, Migration> = {
     for (const [id, p] of Object.entries(PEN_PETS)) if (!raw.pets[id]) raw.pets[id] = structuredClone(p);
     if (!raw.characters.farm_worker_lev) raw.characters.farm_worker_lev = farmer();
     raw.schemaVersion = 8;
+    return raw;
+  },
+  // 8 → 9: пластилиновый герой мог оказаться в наряде, которого для него не нарисовано, — возвращаем штатный
+  8: (raw) => {
+    fixCostumes(raw);
+    raw.schemaVersion = 9;
     return raw;
   },
 };

@@ -1,20 +1,21 @@
 // Игровые взаимодействия: что происходит при нажатии и при отпускании. Связывает правила, сцену и звук.
 import type { GameAudio } from '../audio/audio';
-import { BOUND_CHARS, DISCO_BALL, FARM_KINDS, FURNITURE, PEN_KINDS, GRAIN_EATERS, HAY_EATERS, TV_SCENES } from '../content/furniture';
+import { BOUND_CHARS, CAROUSEL, DISCO_BALL, POUCH, FARM_KINDS, FURNITURE, PEN_KINDS, GRAIN_EATERS, HAY_EATERS, TV_SCENES } from '../content/furniture';
 import { ITEMS } from '../content/items';
 import { resolveCharDrop, resolveItemDrop, resolvePetDrop, freeFloorSpot, type ItemDrop } from '../game/drop';
 import type { Game } from '../game/game';
 import { charBox, charPos, clampFloor, dist, itemPlace, petPos, slotPos } from '../game/geometry';
 import {
   HEADWEAR, POURS, clone, collectEgg, eatFromFeeder, emptyBowl, fillBowl, fillFeeder, henFed, waterBed, cook, cookables, drink, feed, fill, moveItem, openGift, patchPet, placeCharacter, placePet, recipeAt, seatTaken, setFurnitureOn,
-  setRoomStyle, toggleOpen, travel, wake, wearSet, moveFurniture,
+  setRoomStyle, toggleOpen, travel, wake, wearSet, moveFurniture, cushionFree, pouchJoey,
 } from '../game/rules';
 import type { Pt, RoomId, World } from '../game/types';
 import type { Scene } from './scene';
 import type { Talk } from './talk';
 
 export type Selection = { kind: 'item' | 'char' | 'furn'; ref: string } | null;
-export type Target = { kind: 'item' | 'char' | 'pet' | 'furn'; ref: string };
+const TOGGLE_GAP = 350; // мс: повторное срабатывание того же касания не переключает обратно
+export type Target = { kind: 'item' | 'char' | 'pet' | 'furn'; ref: string; moving?: boolean };
 
 export interface PlayUi {
   toast(key: string): void;
@@ -49,7 +50,7 @@ export class Play {
     return t.kind !== 'furn'; // в обычном режиме мебель защищена от случайного движения: её поднимают долгим нажатием
   }
   /** Долгое нажатие на мебель поднимает её и в обычной игре. */
-  canLift(t: Target): boolean { return t.kind === 'furn' && !!this.w.furniture[t.ref]?.roomId; }
+  canLift(t: Target): boolean { const f = t.kind === 'furn' ? this.w.furniture[t.ref] : undefined; return !!f?.roomId && !FURNITURE[f.definitionId]?.fixed; } // закреплённую (карусель) долгое нажатие не поднимает: это просто тап
   lifted(t: Target) { this.select(null); this.scene.pop(t.ref, 0.06); this.audio.play('pop'); try { navigator.vibrate?.(15); } catch { /* нет вибрации */ }
   }
 
@@ -62,6 +63,11 @@ export class Play {
     } else if (t.kind === 'char') {
       const d = resolveCharDrop(w, t.ref, pt, this.room);
       if (d.type === 'seat') { const f = w.furniture[d.furnitureId]; const s = slotPos(f, FURNITURE[f.definitionId].seats![d.slot]); this.scene.setHighlight({ x: s.x, y: s.y - 30, r: 70 }); }
+      else this.scene.setHighlight(null);
+    } else if (t.kind === 'pet') {
+      // малыш кенгуру над взрослым — подсвечиваем карман
+      const d = resolvePetDrop(w, t.ref, pt, this.room);
+      if (d.type === 'pouch') { const a = petPos(w, w.pets[d.adultId]); const k = w.pets[d.adultId].flipped ? -1 : 1; this.scene.setHighlight({ x: a.x + k * POUCH.spot.x, y: a.y + POUCH.spot.y, r: POUCH.spot.r }); }
       else this.scene.setHighlight(null);
     } else this.scene.setHighlight(null);
   }
@@ -233,7 +239,10 @@ export class Play {
         return;
       }
       case 'wear': {
-        if (!this.game.commit(wearSet(w, d.characterId, d.setId), true)) return fail('toast.cant');
+        const worn = wearSet(w, d.characterId, d.setId);
+        // наряда для этого героя нет: он остаётся в прежнем, а одежда возвращается туда, откуда её взяли
+        if (!worn.ok) return fail(worn.reason === 'no_costume_for_hero' ? 'toast.noOutfit' : 'toast.cant');
+        this.game.commit(worn, true);
         const p = charPos(this.w, this.w.characters[d.characterId]);
         this.scene.burst('star', { x: p.x, y: p.y - 130 }, 10);
         this.scene.pop(d.characterId);
@@ -400,6 +409,7 @@ export class Play {
 
   /** Питомца погладили: он прикрывает глаза, над ним сердечко. Ничего не сохраняется — это просто ласка. */
   petStroke(id: string) {
+    { const carrier = this.w.pets[id]?.carriedBy; if (carrier) { this.petStroke(carrier); return; } } // малыша в кармане гладят вместе со взрослым
     const p = this.w.pets[id];
     if (!p || p.roomId !== this.room) return;
     const pos = petPos(this.w, p);
@@ -418,9 +428,16 @@ export class Play {
       this.scene.burst('crumb', { x: pos.x, y: pos.y - 60 }, 5);
       this.audio.play('munch');
     } else if (action === 'brush') {
-      this.scene.setPetMood(petId, 'happy', 1600);
-      this.scene.burst('star', { x: pos.x, y: pos.y - 70 }, 7);
-      this.audio.play('sparkle');
+      // щётка проходит по шерсти; звёздочки — короткой реакцией в конце. Щётка не расходуется и возвращается на место
+      this.scene.setPetMood(petId, 'happy', 2400);
+      this.audio.play('scrub');
+      this.scene.groom(itemId, petId, (finished) => {
+        this.scene.sync(this.w);
+        if (!finished || !this.w.pets[petId] || this.w.pets[petId].roomId !== this.room) return;
+        const at = petPos(this.w, this.w.pets[petId]);
+        this.scene.burst('star', { x: at.x, y: at.y - 70 }, 5);
+        this.audio.play('sparkle');
+      });
     } else {
       const p = clampFloor(pt.x + 70, Math.max(pt.y, pos.y));
       this.game.commit(moveItem(this.w, itemId, { kind: 'room', roomId: this.room, x: p.x, y: p.y }));
@@ -491,6 +508,14 @@ export class Play {
 
   dropPet(id: string, pt: Pt) {
     const d = resolvePetDrop(this.w, id, pt, this.room);
+    if (d.type === 'pouch') {
+      // малыш в кармане: дальше рисуется один общий спрайт
+      if (!this.game.commit(pouchJoey(this.w, id, d.adultId), true)) { this.audio.play('nope'); return; }
+      this.scene.setPetMood(d.adultId, 'happy', 1600);
+      this.scene.hop(d.adultId, 12);
+      this.audio.play('pet');
+      return;
+    }
     if (d.type === 'seat') { this.game.commit(placePet(this.w, id, { furnitureId: d.furnitureId, slot: d.slot })); this.audio.play('sleep'); return; }
     if (d.type === 'intoItem') {
       this.game.update((w) => { const p = w.pets[id]; p.x = d.x; p.y = d.y; p.seat = null; p.sleeping = false; p.inItem = d.itemId; });
@@ -498,7 +523,7 @@ export class Play {
       this.audio.play('pet');
       return;
     }
-    this.game.update((w) => { const p = w.pets[id]; const c = clampFloor(d.x, d.y); p.x = c.x; p.y = c.y; p.seat = null; p.sleeping = false; delete p.inItem; });
+    this.game.update((w) => { const p = w.pets[id]; const c = clampFloor(d.x, d.y); p.x = c.x; p.y = c.y; p.seat = null; p.sleeping = false; delete p.inItem; delete p.carriedBy; });
     this.scene.hop(id, 14);
     this.audio.play('put');
     if (this.feederMeal(id) || this.bowlMeal(id)) return;
@@ -566,6 +591,7 @@ export class Play {
   // ---------- нажатие ----------
   tap(t: Target | null, pt: Pt) {
     const w = this.w;
+    if (t?.kind === 'pet' && w.pets[t.ref]?.carriedBy) { this.tap({ kind: 'pet', ref: w.pets[t.ref].carriedBy! }, pt); return; } // тап по малышу в кармане — это тап по взрослому: прыгают вместе
     const sel = this.selection;
     if (this.decorate) { if (t?.kind === 'furn') { this.select(sel?.ref === t.ref ? null : { kind: 'furn', ref: t.ref }); this.audio.play('click'); } else this.select(null); return; }
     if (!t && this.room === 'club' && Math.hypot(pt.x - DISCO_BALL.x, pt.y - DISCO_BALL.y) < DISCO_BALL.r + 8) {
@@ -631,10 +657,14 @@ export class Play {
     const fd = FURNITURE[f.definitionId];
     if (sel?.kind === 'item') {
       const used = (kind: 'surface' | 'furniture') => new Set(Object.values(w.items).filter((i) => i.owner.kind === kind && (i.owner as { furnitureId: string }).furnitureId === f.id && i.instanceId !== sel.ref).map((i) => (i.owner as { slot: number }).slot));
-      const sFree = fd.surfaces ? fd.surfaces.findIndex((_, i) => !used('surface').has(i)) : -1;
+      const toy = !!ITEMS[w.items[sel.ref]?.definitionId]?.tags.includes('toy');
+      const sFree = fd.surfaces && (!fd.cushions || toy) ? fd.surfaces.findIndex((_, i) => !used('surface').has(i) && (!fd.cushions || cushionFree(w, f.id, i, sel.ref))) : -1;
       if (sFree >= 0) { this.dropItem(sel.ref, pt, { type: 'surface', furnitureId: f.id, slot: sFree }); this.select(null); return; }
       if (fd.container) { this.dropItem(sel.ref, pt, { type: 'furniture', furnitureId: f.id, slot: 0 }); this.select(null); return; }
     }
+    // неподвижная часть карусели — кнопка «пуск/стоп»: работает всегда, даже если выбран герой или вещь
+    const button = f.definitionId === CAROUSEL.furn && !t.moving;
+    if (button) { this.furnitureAction(t.ref, pt); return; }
     if (sel?.kind === 'char' && fd.seats) {
       const slot = fd.seats.findIndex((_, i) => !seatTaken(w, f.id, i, sel.ref));
       if (slot >= 0) { const s = slotPos(f, fd.seats[slot]); const pose = fd.seats[slot].pose; this.dropChar(sel.ref, pose === 'sleeping' ? { x: s.x - 150, y: s.y - 20 } : pose === 'bathing' ? { x: s.x, y: s.y - 150 } : { x: s.x, y: s.y - 70 }); return; }
@@ -642,6 +672,7 @@ export class Play {
     this.furnitureAction(t.ref, pt);
   }
 
+  private toggledAt = new Map<string, number>();
   private furnitureAction(id: string, pt: Pt) {
     const w = this.w;
     const f = w.furniture[id];
@@ -661,7 +692,11 @@ export class Play {
         setTimeout(() => { if (this.w.furniture[id]?.on) this.game.commit(setFurnitureOn(this.w, id, 0)); }, 1800);
         break;
       }
-      case 'toggleOn': this.game.commit(setFurnitureOn(w, id, f.on ? 0 : 1)); this.audio.play(f.definitionId === 'carousel' ? (f.on ? 'click' : 'whoosh') : 'light'); this.select(null); break; // прожектор клуба: звёздочки
+      case 'toggleOn':
+        // одно касание — одно переключение, даже если оно пришло дважды
+        if (performance.now() - (this.toggledAt.get(id) ?? -1e9) < TOGGLE_GAP) break;
+        this.toggledAt.set(id, performance.now());
+        this.game.commit(setFurnitureOn(w, id, f.on ? 0 : 1)); this.audio.play(f.definitionId === 'carousel' ? (f.on ? 'click' : 'whoosh') : 'light'); this.select(null); break; // прожектор клуба: звёздочки
       case 'wardrobe': this.ui.openWardrobe(this.selection?.kind === 'char' ? this.selection.ref : null); this.audio.play('door'); break;
       default: this.select(null); void pt;
     }

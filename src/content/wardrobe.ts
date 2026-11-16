@@ -1,3 +1,4 @@
+import charSprites from './charSprites.json';
 import type { GarmentDef, GarmentSlot, OutfitSetDef, Look, Outfit, Character } from '../game/types';
 
 // Согласованные палитры: [основной, дополнительный]
@@ -109,5 +110,27 @@ export const HERO_COSTUMES: Record<string, string[]> = {
   hero_nora: ['gardener', 'summer', 'chef', 'princess'],
   hero_yuki: ['casual', 'winter', 'dragon', 'ballerina'],
 };
+/**
+ * Наряды пластилинового героя — только те, для которых у него самого зарегистрированы оба кадра: стоя и сидя.
+ * Порядок — как в HERO_COSTUMES, затем остальные. Пустой список — герой рисованный (2D), ему подходит любой набор.
+ */
+export function heroCostumes(heroId: string): string[] {
+  const has = (set: string) => OUTFITS[set] && `${heroId}:${set}:stand` in charSprites && `${heroId}:${set}:sit` in charSprites;
+  const found = new Set<string>();
+  for (const key of Object.keys(charSprites)) { const [h, set] = key.split(':'); if (h === heroId && has(set)) found.add(set); }
+  return [...(HERO_COSTUMES[heroId] ?? []).filter((s) => found.has(s)), ...[...found].filter((s) => !(HERO_COSTUMES[heroId] ?? []).includes(s))];
+}
+/** Подходит ли набор герою: пластилиновому — только свой нарисованный, рисованному — любой. */
+export function costumeFits(heroId: string, setId: string): boolean {
+  const own = heroCostumes(heroId);
+  return own.length === 0 || own.includes(setId);
+}
+/** Штатный наряд пластилинового героя: его исходный, а если того нет среди нарисованных — первый из своих. */
+export function homeCostume(heroId: string): string | null {
+  const own = heroCostumes(heroId);
+  if (!own.length) return null;
+  const preset = [...PRESET_HEROES, FARMER].find((h) => h[0] === heroId)?.[3];
+  return preset && own.includes(preset) ? preset : own[0];
+}
 /** Пилот, для которого фигурки уже нарисованы. */
 export const PILOT_SPRITES: Record<string, string[]> = { hero_mila: ['summer', 'princess', 'pajama'], hero_timur: ['casual', 'chef', 'dragon'] };
