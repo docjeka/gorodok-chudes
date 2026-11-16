@@ -1,8 +1,8 @@
 // Короткие реплики героев. Текст показывается в пузырьке, звук лежит в public/assets/voice/<id>.mp3.
 // Формулировки без рода: у героев игры пол не задаётся.
-export type LineEvent = 'tap' | 'hello' | 'reply' | 'food' | 'sit' | 'gift' | 'party' | 'farmer';
+export type LineEvent = 'tap' | 'hello' | 'reply' | 'food' | 'sit' | 'gift' | 'party' | 'farmer' | 'liza';
 /** text: true — готовой озвучки нет, реплика показывается только текстом в пузырьке. */
-export interface Line { id: string; event: LineEvent; ru: string; en: string; text?: boolean }
+export interface Line { id: string; event: LineEvent; ru: string; en: string; text?: boolean; /** своя запись голоса для этой фразы */ file?: string }
 
 export const LINES: Line[] = [
   { id: 'tap1', event: 'tap', ru: 'Привет! Поиграем?', en: 'Hi! Shall we play?' },
@@ -19,6 +19,7 @@ export const LINES: Line[] = [
   { id: 'gift1', event: 'gift', ru: 'Ого, подарок! Спасибо!', en: 'Wow, a gift! Thank you!' },
   // подарок вручили в Клубе друзей
   // фермер Лев — по тапу
+  { id: 'liza1', event: 'liza', ru: 'Привет! Что тебе подать?', en: 'Hi! What can I get you?', file: 'liza/hello' },
   { id: 'farmer1', event: 'farmer', ru: 'Привет! Поможешь на ферме?', en: 'Hi! Will you help on the farm?', text: true },
   { id: 'farmer2', event: 'farmer', ru: 'Загляни к кенгуру!', en: 'Go and see the kangaroos!', text: true },
   { id: 'party1', event: 'party', ru: 'Это мне? Спасибо!', en: 'Is this for me? Thank you!', text: true },

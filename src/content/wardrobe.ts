@@ -47,6 +47,14 @@ const o = (parts: Record<string, [string, number]>): Outfit =>
   Object.fromEntries(Object.entries(parts).map(([slot, [id, color]]) => [slot, { id, color }])) as Outfit;
 
 export const OUTFIT_SETS: OutfitSetDef[] = [
+  // наряды Лизы и Искорки: готовые фигурки; набор вещей нужен только как запись в мире
+  { id: 'liza_work', outfit: o({ top: ['chefcoat', 0], bottom: ['trousers', 1], shoes: ['sneakers', 0] }) },
+  { id: 'liza_casual', outfit: o({ top: ['sweater', 2], bottom: ['trousers', 0], shoes: ['sneakers', 1] }) },
+  { id: 'liza_party', outfit: o({ top: ['tee', 0], bottom: ['trousers', 2], shoes: ['sneakers', 3] }) },
+  { id: 'emerald_party', outfit: o({ dress: ['tutu', 0], shoes: ['sneakers', 0], hat: ['hairbow', 0] }) },
+  { id: 'iskorka_pajama', outfit: o({ top: ['pajamatop', 2], bottom: ['pajamabottom', 2], shoes: ['slippers', 2] }) },
+  { id: 'iskorka_rain', outfit: o({ top: ['raincoat', 0], bottom: ['trousers', 0], shoes: ['boots', 1] }) },
+  { id: 'iskorka_cosmic', outfit: o({ dress: ['spacesuit', 0], shoes: ['sneakers', 3] }) },
   { id: 'casual', outfit: o({ top: ['tee', 0], bottom: ['shorts', 0], shoes: ['sneakers', 0] }) },
   { id: 'pajama', outfit: o({ top: ['pajamatop', 2], bottom: ['pajamabottom', 2], shoes: ['slippers', 2] }) },
   { id: 'winter', outfit: o({ top: ['sweater', 2], bottom: ['snowpants', 1], shoes: ['boots', 0], hat: ['beanie', 0], jewelry: ['scarf', 0] }) },
@@ -87,7 +95,12 @@ export const PRESET_HEROES: Preset[] = [
   ['hero_lev', 'Лев', L(1, 2, 1, 2, 7, 5, true), 'sport'],
   ['hero_nora', 'Нора', L(2, 0, 4, 0, 6, 1, false, 0, true), 'gardener'],
   ['hero_yuki', 'Юки', L(5, 1, 3, 1, 1, 6), 'casual'],
+  ['hero_iskorka', 'Искорка', L(3, 0, 2, 0, 3, 7), 'emerald_party'],
+  // Лиза начинает за прилавком кафе, но дальше — обычная героиня: её можно взять куда угодно
+  ['npc_liza', 'Лиза', L(1, 0, 2, 0, 3, 1), 'liza_work'],
 ];
+/** Где Лиза стоит в новом мире и при первом открытии старого сохранения: место за прилавком кафе. */
+export const LIZA_SPOT = { furnitureId: 'cf_counter', slot: 0 };
 /** Постоянный житель фермы — не из набора героев игрока. */
 export const FARMER: Preset = ['farm_worker_lev', 'Фермер Лев', L(1, 2, 1, 2, 7, 5, true), 'farmer_work'];
 
@@ -109,6 +122,8 @@ export const HERO_COSTUMES: Record<string, string[]> = {
   hero_lev: ['sport', 'astronaut', 'rain', 'pajama'],
   hero_nora: ['gardener', 'summer', 'chef', 'princess'],
   hero_yuki: ['casual', 'winter', 'dragon', 'ballerina'],
+  hero_iskorka: ['emerald_party', 'iskorka_pajama', 'iskorka_rain', 'iskorka_cosmic'],
+  npc_liza: ['liza_work', 'liza_casual', 'liza_party'],
 };
 /**
  * Наряды пластилинового героя — только те, для которых у него самого зарегистрированы оба кадра: стоя и сидя.

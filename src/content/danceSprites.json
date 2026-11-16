@@ -4028,5 +4028,1090 @@
   ],
   "w": 457,
   "h": 669
+ },
+ "npc_liza:liza_casual": {
+  "unit": 2,
+  "origin": {
+   "x": 225,
+   "y": 671
+  },
+  "frames": [
+   {
+    "file": "npc_liza_liza_casual_1.webp",
+    "found": true,
+    "eyeL": {
+     "x": 221,
+     "y": 214
+    },
+    "eyeR": {
+     "x": 298,
+     "y": 214
+    },
+    "browL": {
+     "x": 221,
+     "y": 188
+    },
+    "browR": {
+     "x": 298,
+     "y": 188
+    },
+    "mouth": {
+     "x": 259,
+     "y": 261
+    }
+   },
+   {
+    "file": "npc_liza_liza_casual_2.webp",
+    "found": true,
+    "eyeL": {
+     "x": 165,
+     "y": 219
+    },
+    "eyeR": {
+     "x": 242,
+     "y": 219
+    },
+    "browL": {
+     "x": 165,
+     "y": 193
+    },
+    "browR": {
+     "x": 242,
+     "y": 193
+    },
+    "mouth": {
+     "x": 204,
+     "y": 266
+    }
+   },
+   {
+    "file": "npc_liza_liza_casual_3.webp",
+    "found": true,
+    "eyeL": {
+     "x": 152,
+     "y": 221
+    },
+    "eyeR": {
+     "x": 229,
+     "y": 221
+    },
+    "browL": {
+     "x": 152,
+     "y": 195
+    },
+    "browR": {
+     "x": 229,
+     "y": 195
+    },
+    "mouth": {
+     "x": 191,
+     "y": 268
+    }
+   },
+   {
+    "file": "npc_liza_liza_casual_4.webp",
+    "found": true,
+    "eyeL": {
+     "x": 221,
+     "y": 205
+    },
+    "eyeR": {
+     "x": 298,
+     "y": 205
+    },
+    "browL": {
+     "x": 221,
+     "y": 179
+    },
+    "browR": {
+     "x": 298,
+     "y": 179
+    },
+    "mouth": {
+     "x": 259,
+     "y": 252
+    }
+   },
+   {
+    "file": "npc_liza_liza_casual_5.webp",
+    "found": true,
+    "eyeL": {
+     "x": 179,
+     "y": 235
+    },
+    "eyeR": {
+     "x": 256,
+     "y": 235
+    },
+    "browL": {
+     "x": 179,
+     "y": 209
+    },
+    "browR": {
+     "x": 256,
+     "y": 209
+    },
+    "mouth": {
+     "x": 218,
+     "y": 282
+    }
+   },
+   {
+    "file": "npc_liza_liza_casual_6.webp",
+    "found": true,
+    "eyeL": {
+     "x": 157,
+     "y": 204
+    },
+    "eyeR": {
+     "x": 234,
+     "y": 204
+    },
+    "browL": {
+     "x": 157,
+     "y": 178
+    },
+    "browR": {
+     "x": 234,
+     "y": 178
+    },
+    "mouth": {
+     "x": 196,
+     "y": 250
+    }
+   }
+  ],
+  "w": 465,
+  "h": 674
+ },
+ "npc_liza:liza_party": {
+  "unit": 2,
+  "origin": {
+   "x": 234,
+   "y": 714
+  },
+  "frames": [
+   {
+    "file": "npc_liza_liza_party_1.webp",
+    "found": true,
+    "eyeL": {
+     "x": 206,
+     "y": 222
+    },
+    "eyeR": {
+     "x": 283,
+     "y": 222
+    },
+    "browL": {
+     "x": 206,
+     "y": 196
+    },
+    "browR": {
+     "x": 283,
+     "y": 196
+    },
+    "mouth": {
+     "x": 244,
+     "y": 269
+    }
+   },
+   {
+    "file": "npc_liza_liza_party_2.webp",
+    "found": true,
+    "eyeL": {
+     "x": 182,
+     "y": 220
+    },
+    "eyeR": {
+     "x": 259,
+     "y": 220
+    },
+    "browL": {
+     "x": 182,
+     "y": 194
+    },
+    "browR": {
+     "x": 259,
+     "y": 194
+    },
+    "mouth": {
+     "x": 221,
+     "y": 267
+    }
+   },
+   {
+    "file": "npc_liza_liza_party_3.webp",
+    "found": true,
+    "eyeL": {
+     "x": 180,
+     "y": 219
+    },
+    "eyeR": {
+     "x": 257,
+     "y": 219
+    },
+    "browL": {
+     "x": 180,
+     "y": 193
+    },
+    "browR": {
+     "x": 257,
+     "y": 193
+    },
+    "mouth": {
+     "x": 219,
+     "y": 266
+    }
+   },
+   {
+    "file": "npc_liza_liza_party_4.webp",
+    "found": true,
+    "eyeL": {
+     "x": 210,
+     "y": 247
+    },
+    "eyeR": {
+     "x": 287,
+     "y": 247
+    },
+    "browL": {
+     "x": 210,
+     "y": 221
+    },
+    "browR": {
+     "x": 287,
+     "y": 221
+    },
+    "mouth": {
+     "x": 249,
+     "y": 294
+    }
+   },
+   {
+    "file": "npc_liza_liza_party_5.webp",
+    "found": true,
+    "eyeL": {
+     "x": 190,
+     "y": 252
+    },
+    "eyeR": {
+     "x": 267,
+     "y": 252
+    },
+    "browL": {
+     "x": 190,
+     "y": 226
+    },
+    "browR": {
+     "x": 267,
+     "y": 226
+    },
+    "mouth": {
+     "x": 229,
+     "y": 298
+    }
+   },
+   {
+    "file": "npc_liza_liza_party_6.webp",
+    "found": true,
+    "eyeL": {
+     "x": 189,
+     "y": 204
+    },
+    "eyeR": {
+     "x": 266,
+     "y": 204
+    },
+    "browL": {
+     "x": 189,
+     "y": 178
+    },
+    "browR": {
+     "x": 266,
+     "y": 178
+    },
+    "mouth": {
+     "x": 227,
+     "y": 251
+    }
+   }
+  ],
+  "w": 475,
+  "h": 717
+ },
+ "npc_liza:liza_work": {
+  "unit": 2,
+  "origin": {
+   "x": 229,
+   "y": 704
+  },
+  "frames": [
+   {
+    "file": "npc_liza_liza_work_1.webp",
+    "found": true,
+    "eyeL": {
+     "x": 213,
+     "y": 217
+    },
+    "eyeR": {
+     "x": 290,
+     "y": 217
+    },
+    "browL": {
+     "x": 213,
+     "y": 191
+    },
+    "browR": {
+     "x": 290,
+     "y": 191
+    },
+    "mouth": {
+     "x": 252,
+     "y": 264
+    }
+   },
+   {
+    "file": "npc_liza_liza_work_2.webp",
+    "found": true,
+    "eyeL": {
+     "x": 194,
+     "y": 225
+    },
+    "eyeR": {
+     "x": 271,
+     "y": 225
+    },
+    "browL": {
+     "x": 194,
+     "y": 199
+    },
+    "browR": {
+     "x": 271,
+     "y": 199
+    },
+    "mouth": {
+     "x": 233,
+     "y": 271
+    }
+   },
+   {
+    "file": "npc_liza_liza_work_3.webp",
+    "found": true,
+    "eyeL": {
+     "x": 160,
+     "y": 221
+    },
+    "eyeR": {
+     "x": 237,
+     "y": 221
+    },
+    "browL": {
+     "x": 160,
+     "y": 195
+    },
+    "browR": {
+     "x": 237,
+     "y": 195
+    },
+    "mouth": {
+     "x": 199,
+     "y": 268
+    }
+   },
+   {
+    "file": "npc_liza_liza_work_4.webp",
+    "found": true,
+    "eyeL": {
+     "x": 220,
+     "y": 211
+    },
+    "eyeR": {
+     "x": 297,
+     "y": 211
+    },
+    "browL": {
+     "x": 220,
+     "y": 185
+    },
+    "browR": {
+     "x": 297,
+     "y": 185
+    },
+    "mouth": {
+     "x": 259,
+     "y": 257
+    }
+   },
+   {
+    "file": "npc_liza_liza_work_5.webp",
+    "found": true,
+    "eyeL": {
+     "x": 193,
+     "y": 243
+    },
+    "eyeR": {
+     "x": 270,
+     "y": 243
+    },
+    "browL": {
+     "x": 193,
+     "y": 217
+    },
+    "browR": {
+     "x": 270,
+     "y": 217
+    },
+    "mouth": {
+     "x": 232,
+     "y": 290
+    }
+   },
+   {
+    "file": "npc_liza_liza_work_6.webp",
+    "found": true,
+    "eyeL": {
+     "x": 164,
+     "y": 205
+    },
+    "eyeR": {
+     "x": 241,
+     "y": 205
+    },
+    "browL": {
+     "x": 164,
+     "y": 179
+    },
+    "browR": {
+     "x": 241,
+     "y": 179
+    },
+    "mouth": {
+     "x": 203,
+     "y": 251
+    }
+   }
+  ],
+  "w": 473,
+  "h": 707
+ },
+ "hero_iskorka:emerald_party": {
+  "unit": 2,
+  "origin": {
+   "x": 270,
+   "y": 695
+  },
+  "frames": [
+   {
+    "file": "hero_iskorka_emerald_party_1.webp",
+    "found": true,
+    "eyeL": {
+     "x": 267,
+     "y": 215
+    },
+    "eyeR": {
+     "x": 344,
+     "y": 215
+    },
+    "browL": {
+     "x": 267,
+     "y": 189
+    },
+    "browR": {
+     "x": 344,
+     "y": 189
+    },
+    "mouth": {
+     "x": 306,
+     "y": 262
+    }
+   },
+   {
+    "file": "hero_iskorka_emerald_party_2.webp",
+    "found": true,
+    "eyeL": {
+     "x": 221,
+     "y": 218
+    },
+    "eyeR": {
+     "x": 298,
+     "y": 218
+    },
+    "browL": {
+     "x": 221,
+     "y": 192
+    },
+    "browR": {
+     "x": 298,
+     "y": 192
+    },
+    "mouth": {
+     "x": 259,
+     "y": 264
+    }
+   },
+   {
+    "file": "hero_iskorka_emerald_party_3.webp",
+    "found": true,
+    "eyeL": {
+     "x": 179,
+     "y": 215
+    },
+    "eyeR": {
+     "x": 256,
+     "y": 215
+    },
+    "browL": {
+     "x": 179,
+     "y": 189
+    },
+    "browR": {
+     "x": 256,
+     "y": 189
+    },
+    "mouth": {
+     "x": 218,
+     "y": 262
+    }
+   },
+   {
+    "file": "hero_iskorka_emerald_party_4.webp",
+    "found": true,
+    "eyeL": {
+     "x": 267,
+     "y": 189
+    },
+    "eyeR": {
+     "x": 344,
+     "y": 189
+    },
+    "browL": {
+     "x": 267,
+     "y": 163
+    },
+    "browR": {
+     "x": 344,
+     "y": 163
+    },
+    "mouth": {
+     "x": 305,
+     "y": 236
+    }
+   },
+   {
+    "file": "hero_iskorka_emerald_party_5.webp",
+    "found": true,
+    "eyeL": {
+     "x": 220,
+     "y": 241
+    },
+    "eyeR": {
+     "x": 297,
+     "y": 241
+    },
+    "browL": {
+     "x": 220,
+     "y": 215
+    },
+    "browR": {
+     "x": 297,
+     "y": 215
+    },
+    "mouth": {
+     "x": 258,
+     "y": 288
+    }
+   },
+   {
+    "file": "hero_iskorka_emerald_party_6.webp",
+    "found": true,
+    "eyeL": {
+     "x": 180,
+     "y": 206
+    },
+    "eyeR": {
+     "x": 257,
+     "y": 206
+    },
+    "browL": {
+     "x": 180,
+     "y": 180
+    },
+    "browR": {
+     "x": 257,
+     "y": 180
+    },
+    "mouth": {
+     "x": 218,
+     "y": 253
+    }
+   }
+  ],
+  "w": 524,
+  "h": 698
+ },
+ "hero_iskorka:iskorka_cosmic": {
+  "unit": 2,
+  "origin": {
+   "x": 240,
+   "y": 672
+  },
+  "frames": [
+   {
+    "file": "hero_iskorka_iskorka_cosmic_1.webp",
+    "found": true,
+    "eyeL": {
+     "x": 251,
+     "y": 205
+    },
+    "eyeR": {
+     "x": 328,
+     "y": 205
+    },
+    "browL": {
+     "x": 251,
+     "y": 179
+    },
+    "browR": {
+     "x": 328,
+     "y": 179
+    },
+    "mouth": {
+     "x": 290,
+     "y": 252
+    }
+   },
+   {
+    "file": "hero_iskorka_iskorka_cosmic_2.webp",
+    "found": true,
+    "eyeL": {
+     "x": 206,
+     "y": 211
+    },
+    "eyeR": {
+     "x": 283,
+     "y": 211
+    },
+    "browL": {
+     "x": 206,
+     "y": 185
+    },
+    "browR": {
+     "x": 283,
+     "y": 185
+    },
+    "mouth": {
+     "x": 244,
+     "y": 258
+    }
+   },
+   {
+    "file": "hero_iskorka_iskorka_cosmic_3.webp",
+    "found": true,
+    "eyeL": {
+     "x": 181,
+     "y": 216
+    },
+    "eyeR": {
+     "x": 258,
+     "y": 216
+    },
+    "browL": {
+     "x": 181,
+     "y": 190
+    },
+    "browR": {
+     "x": 258,
+     "y": 190
+    },
+    "mouth": {
+     "x": 219,
+     "y": 263
+    }
+   },
+   {
+    "file": "hero_iskorka_iskorka_cosmic_4.webp",
+    "found": true,
+    "eyeL": {
+     "x": 234,
+     "y": 180
+    },
+    "eyeR": {
+     "x": 311,
+     "y": 180
+    },
+    "browL": {
+     "x": 234,
+     "y": 154
+    },
+    "browR": {
+     "x": 311,
+     "y": 154
+    },
+    "mouth": {
+     "x": 273,
+     "y": 227
+    }
+   },
+   {
+    "file": "hero_iskorka_iskorka_cosmic_5.webp",
+    "found": true,
+    "eyeL": {
+     "x": 203,
+     "y": 242
+    },
+    "eyeR": {
+     "x": 280,
+     "y": 242
+    },
+    "browL": {
+     "x": 203,
+     "y": 216
+    },
+    "browR": {
+     "x": 280,
+     "y": 216
+    },
+    "mouth": {
+     "x": 242,
+     "y": 289
+    }
+   },
+   {
+    "file": "hero_iskorka_iskorka_cosmic_6.webp",
+    "found": true,
+    "eyeL": {
+     "x": 182,
+     "y": 194
+    },
+    "eyeR": {
+     "x": 259,
+     "y": 194
+    },
+    "browL": {
+     "x": 182,
+     "y": 168
+    },
+    "browR": {
+     "x": 259,
+     "y": 168
+    },
+    "mouth": {
+     "x": 221,
+     "y": 240
+    }
+   }
+  ],
+  "w": 509,
+  "h": 675
+ },
+ "hero_iskorka:iskorka_pajama": {
+  "unit": 2,
+  "origin": {
+   "x": 224,
+   "y": 741
+  },
+  "frames": [
+   {
+    "file": "hero_iskorka_iskorka_pajama_1.webp",
+    "found": true,
+    "eyeL": {
+     "x": 204,
+     "y": 238
+    },
+    "eyeR": {
+     "x": 281,
+     "y": 238
+    },
+    "browL": {
+     "x": 204,
+     "y": 212
+    },
+    "browR": {
+     "x": 281,
+     "y": 212
+    },
+    "mouth": {
+     "x": 242,
+     "y": 285
+    }
+   },
+   {
+    "file": "hero_iskorka_iskorka_pajama_2.webp",
+    "found": true,
+    "eyeL": {
+     "x": 173,
+     "y": 247
+    },
+    "eyeR": {
+     "x": 250,
+     "y": 247
+    },
+    "browL": {
+     "x": 173,
+     "y": 221
+    },
+    "browR": {
+     "x": 250,
+     "y": 221
+    },
+    "mouth": {
+     "x": 212,
+     "y": 294
+    }
+   },
+   {
+    "file": "hero_iskorka_iskorka_pajama_3.webp",
+    "found": true,
+    "eyeL": {
+     "x": 186,
+     "y": 237
+    },
+    "eyeR": {
+     "x": 263,
+     "y": 237
+    },
+    "browL": {
+     "x": 186,
+     "y": 211
+    },
+    "browR": {
+     "x": 263,
+     "y": 211
+    },
+    "mouth": {
+     "x": 225,
+     "y": 284
+    }
+   },
+   {
+    "file": "hero_iskorka_iskorka_pajama_4.webp",
+    "found": true,
+    "eyeL": {
+     "x": 205,
+     "y": 198
+    },
+    "eyeR": {
+     "x": 282,
+     "y": 198
+    },
+    "browL": {
+     "x": 205,
+     "y": 172
+    },
+    "browR": {
+     "x": 282,
+     "y": 172
+    },
+    "mouth": {
+     "x": 243,
+     "y": 245
+    }
+   },
+   {
+    "file": "hero_iskorka_iskorka_pajama_5.webp",
+    "found": true,
+    "eyeL": {
+     "x": 182,
+     "y": 267
+    },
+    "eyeR": {
+     "x": 259,
+     "y": 267
+    },
+    "browL": {
+     "x": 182,
+     "y": 241
+    },
+    "browR": {
+     "x": 259,
+     "y": 241
+    },
+    "mouth": {
+     "x": 221,
+     "y": 314
+    }
+   },
+   {
+    "file": "hero_iskorka_iskorka_pajama_6.webp",
+    "found": true,
+    "eyeL": {
+     "x": 187,
+     "y": 227
+    },
+    "eyeR": {
+     "x": 264,
+     "y": 227
+    },
+    "browL": {
+     "x": 187,
+     "y": 201
+    },
+    "browR": {
+     "x": 264,
+     "y": 201
+    },
+    "mouth": {
+     "x": 225,
+     "y": 274
+    }
+   }
+  ],
+  "w": 462,
+  "h": 744
+ },
+ "hero_iskorka:iskorka_rain": {
+  "unit": 2,
+  "origin": {
+   "x": 260,
+   "y": 681
+  },
+  "frames": [
+   {
+    "file": "hero_iskorka_iskorka_rain_1.webp",
+    "found": true,
+    "eyeL": {
+     "x": 230,
+     "y": 209
+    },
+    "eyeR": {
+     "x": 307,
+     "y": 209
+    },
+    "browL": {
+     "x": 230,
+     "y": 183
+    },
+    "browR": {
+     "x": 307,
+     "y": 183
+    },
+    "mouth": {
+     "x": 269,
+     "y": 255
+    }
+   },
+   {
+    "file": "hero_iskorka_iskorka_rain_2.webp",
+    "found": true,
+    "eyeL": {
+     "x": 225,
+     "y": 216
+    },
+    "eyeR": {
+     "x": 302,
+     "y": 216
+    },
+    "browL": {
+     "x": 225,
+     "y": 190
+    },
+    "browR": {
+     "x": 302,
+     "y": 190
+    },
+    "mouth": {
+     "x": 264,
+     "y": 262
+    }
+   },
+   {
+    "file": "hero_iskorka_iskorka_rain_3.webp",
+    "found": true,
+    "eyeL": {
+     "x": 174,
+     "y": 208
+    },
+    "eyeR": {
+     "x": 251,
+     "y": 208
+    },
+    "browL": {
+     "x": 174,
+     "y": 182
+    },
+    "browR": {
+     "x": 251,
+     "y": 182
+    },
+    "mouth": {
+     "x": 212,
+     "y": 255
+    }
+   },
+   {
+    "file": "hero_iskorka_iskorka_rain_4.webp",
+    "found": true,
+    "eyeL": {
+     "x": 227,
+     "y": 189
+    },
+    "eyeR": {
+     "x": 304,
+     "y": 189
+    },
+    "browL": {
+     "x": 227,
+     "y": 163
+    },
+    "browR": {
+     "x": 304,
+     "y": 163
+    },
+    "mouth": {
+     "x": 266,
+     "y": 236
+    }
+   },
+   {
+    "file": "hero_iskorka_iskorka_rain_5.webp",
+    "found": true,
+    "eyeL": {
+     "x": 226,
+     "y": 243
+    },
+    "eyeR": {
+     "x": 303,
+     "y": 243
+    },
+    "browL": {
+     "x": 226,
+     "y": 217
+    },
+    "browR": {
+     "x": 303,
+     "y": 217
+    },
+    "mouth": {
+     "x": 264,
+     "y": 290
+    }
+   },
+   {
+    "file": "hero_iskorka_iskorka_rain_6.webp",
+    "found": true,
+    "eyeL": {
+     "x": 174,
+     "y": 203
+    },
+    "eyeR": {
+     "x": 251,
+     "y": 203
+    },
+    "browL": {
+     "x": 174,
+     "y": 177
+    },
+    "browR": {
+     "x": 251,
+     "y": 177
+    },
+    "mouth": {
+     "x": 213,
+     "y": 250
+    }
+   }
+  ],
+  "w": 487,
+  "h": 684
  }
 }

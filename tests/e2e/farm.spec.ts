@@ -257,10 +257,10 @@ for (const [name, vw, vh] of [['4:3', 1024, 768], ['16:9', 1280, 720]] as const)
     await page.waitForFunction(() => !!window.__game);
     w = await world(page);
     expect(w.characters.farm_worker_lev).toMatchObject({ roomId: 'farm_pen', costume: 'farmer_harvest' });
-    expect(Object.keys(w.characters)).toHaveLength(7); expect(Object.keys(w.pets)).toHaveLength(15);
+    expect(Object.keys(w.characters)).toHaveLength(9); expect(Object.keys(w.pets)).toHaveLength(15);
     await page.click('#play'); await enterFarm(); await page.click('#tomap'); await enterFarm();
     w = await world(page);
     expect(w.characters.farm_worker_lev).toMatchObject({ roomId: 'farm_yard', pose: 'standing', costume: 'farmer_harvest' }); // при входе на ферму Лев уже во дворе
-    expect(Object.keys(w.characters)).toHaveLength(7); expect(Object.keys(w.pets)).toHaveLength(15);
+    expect(Object.keys(w.characters)).toHaveLength(9); expect(Object.keys(w.pets)).toHaveLength(15);
   });
 }

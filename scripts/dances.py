@@ -8,13 +8,17 @@ from scipy import ndimage as ndi
 SRC = sys.argv[1]
 FACE_UNITS = 104  # ширина лица в единицах комнаты — как у обычных фигурок
 MAN = json.load(open(os.path.join(SRC, 'MANIFEST.json')))
+# два вида манифеста: общий (sets) и на одного героя (heroId + outfits)
+if 'sets' not in MAN:
+    g = MAN['danceGroundAnchor']; g = g if isinstance(g, dict) else {'x': g[0], 'y': g[1]}
+    MAN = {'groundAnchor': g, 'sets': {f"{MAN['heroId']}:{c}": {'heroId': MAN['heroId'], 'costumeId': c, 'frames': o['dance']} for c, o in MAN['outfits'].items()}}
 GX, GY = MAN['groundAnchor']['x'], MAN['groundAnchor']['y']
 OUT = 'public/assets/chars/dance'; os.makedirs(OUT, exist_ok=True)
 OVR = json.load(open('art-src/dance-overrides.json')) if os.path.exists('art-src/dance-overrides.json') else {}
 
 def face(a):
     # румянец ярче у светлой кожи и мягче у тёмной: сначала строгий порог, потом мягкий
-    return face_at(a, 85) or face_at(a, 68)
+    return face_at(a, 85) or face_at(a, 68) or []
 def face_at(a, redder):
     h, w = a.shape[:2]; op = a[..., 3] > 60
     r, g, b = [a[..., k].astype(int) for k in range(3)]
@@ -25,7 +29,7 @@ def face_at(a, redder):
         area = (pl[sl] == j).sum()
         if area < 60 or area > 2500: continue
         ys, xs = np.nonzero(pl[sl] == j); blobs.append((xs.mean() + sl[1].start, ys.mean() + sl[0].start, area))
-    best = None
+    cands = []
     for p in blobs:
         for q in blobs:
             if q[0] <= p[0] or abs(p[1] - q[1]) > 14: continue
@@ -35,15 +39,19 @@ def face_at(a, redder):
             if any(abs(c - pts[1]).sum() > 40 for c in pts): continue
             if pts[1][0] - pts[1][2] < 40 or pink[my, int((p[0] + q[0]) / 2)]: continue
             # лицо — самая верхняя подходящая пара: ниже бывают ладони, рукава и узоры того же розового цвета
-            score = -(p[1] + q[1])
-            if best is None or score > best[3]: best = (p, q, sep, score)
-    return best
+            cands.append((p, q, sep, -(p[1] + q[1])))
+    return cands
 
-out = {}; dbg = []
+out = json.load(open('src/content/danceSprites.json')) if os.path.exists('src/content/danceSprites.json') else {}; dbg = []; fresh = []
 for key, st in sorted(MAN['sets'].items()):
     frames = [Image.open(os.path.join(SRC, f)).convert('RGBA') for f in st['frames']]
     arrs = [np.array(f) for f in frames]
-    found = [face(a) for a in arrs]
+    cand = [face(a) for a in arrs]
+    # сначала верхняя пара в каждом кадре, затем сверка с остальными фазами: лицо там, где оно в большинстве кадров
+    top = [max(c, key=lambda t: t[3]) if c else None for c in cand]
+    ok = [t for t in top if t]
+    msep = float(np.median([t[2] for t in ok])); mx = float(np.median([(t[0][0] + t[1][0]) / 2 for t in ok])); my = float(np.median([(t[0][1] + t[1][1]) / 2 for t in ok]))
+    found = [min(c, key=lambda t: abs(t[2] - msep) / msep * 2 + np.hypot((t[0][0] + t[1][0]) / 2 - mx, (t[0][1] + t[1][1]) / 2 - my) / msep) if c else None for c in cand]
     seps = [f[2] for f in found if f]
     if len(seps) < 3: print('!!', key, 'румянец найден только в', len(seps), 'кадрах', seps)
     assert seps, key
@@ -77,15 +85,15 @@ for key, st in sorted(MAN['sets'].items()):
     odd = [i + 1 for i, f in enumerate(found) if f and abs(f[2] - sep) > sep * 0.12]
     jump = [i + 1 for i in range(6) if abs(ys[i] - float(np.median(ys))) > faceW * k * 0.75 or abs(xs[i] - float(np.median(xs))) > faceW * k * 0.75]
     if odd or jump: print('??', key, 'ширина лица не как в других кадрах:', odd, 'лицо далеко от обычного места:', jump)
-    out[key] = entry
+    out[key] = entry; fresh.append(key)
     print(key, 'k=%.3f' % k, entry['w'], entry['h'], 'found', sum(1 for f in found if f))
 json.dump(out, open('src/content/danceSprites.json', 'w'), indent=1)
 os.makedirs('art-src/debug', exist_ok=True)
-keys = sorted(out)
+keys = sorted(fresh); TAG = os.path.basename(os.path.normpath(SRC))
 for part in range(0, len(keys), 7):
     ks = keys[part:part + 7]; W = 150; H = 190
     sheet = Image.new('RGB', (6 * W, len(ks) * H), '#fff')
     for (key, i, t, ok) in dbg:
         if key not in ks: continue
         t = t.copy(); t.thumbnail((W - 4, H - 4)); sheet.paste(t.convert('RGB'), (i * W + 2, ks.index(key) * H + 2))
-    sheet.save(f'art-src/debug/dance-{part // 7}.png')
+    sheet.save(f'art-src/debug/dance-{TAG}-{part // 7}.png')

@@ -47,3 +47,6 @@
 | public/assets/chars/dance/*.webp | набор gorodok-chudes-dances-all-26-outfits-webp.zip от пользователя, нарезан scripts/dances.py | авторские, от пользователя |
 | public/assets/items/farm_egg_special.png | вырезано из farm_eggs.png (набор «Ферма» от пользователя) | авторские, от пользователя |
 | public/assets/voice/liza/hello.mp3 | фраза Лизы от пользователя (ещё не подключена) | от пользователя |
+| public/assets/chars/npc_liza_*.webp, hero_iskorka_*.webp, chars/dance/npc_liza_*, hero_iskorka_* | наборы gorodok-chudes-liza.zip и gorodok-chudes-iskorka-complete.zip от пользователя | авторские, от пользователя |
+| public/assets/rooms/park.webp (без нарисованного колеса), public/assets/furn/ferris*.png | набор gorodok-chudes-ferris-wheel.zip от пользователя | авторские, от пользователя |
+| public/assets/ui/*.png | набор gorodok-chudes-plasticine-menu.zip от пользователя | авторские, от пользователя |

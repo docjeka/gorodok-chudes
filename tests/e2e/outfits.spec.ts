@@ -71,7 +71,7 @@ test('наряды: игровой Лев остаётся пластилино�
   await page.evaluate(() => { const g = window.__game; g.map.enter('houses'); g.scene.setZoom(0.1); });
   await page.waitForTimeout(600);
   const w = await world(page);
-  expect(w.schemaVersion).toBe(10);
+  expect(w.schemaVersion).toBe(11);
   expect(w.characters.hero_lev.costume).toBe('sport');
   expect(w.characters.hero_lev.seat).toEqual(was.seat);
   expect(w.characters.hero_lev.roomId).toBe(was.roomId);

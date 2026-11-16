@@ -2299,5 +2299,551 @@
    "y": 315
   },
   "faceScale": 1.18
+ },
+ "npc_liza:liza_work:stand": {
+  "file": "npc_liza_liza_work_stand.webp",
+  "w": 278,
+  "h": 695,
+  "unit": 2,
+  "origin": {
+   "x": 138,
+   "y": 693
+  },
+  "eyeL": {
+   "x": 100,
+   "y": 198
+  },
+  "eyeR": {
+   "x": 177,
+   "y": 198
+  },
+  "browL": {
+   "x": 100,
+   "y": 172
+  },
+  "browR": {
+   "x": 177,
+   "y": 172
+  },
+  "mouth": {
+   "x": 138,
+   "y": 245
+  },
+  "handL": {
+   "x": 27,
+   "y": 455
+  },
+  "handR": {
+   "x": 249,
+   "y": 455
+  },
+  "faceScale": 1.18
+ },
+ "npc_liza:liza_work:sit": {
+  "file": "npc_liza_liza_work_sit.webp",
+  "w": 310,
+  "h": 611,
+  "unit": 2,
+  "origin": {
+   "x": 155,
+   "y": 526
+  },
+  "eyeL": {
+   "x": 116,
+   "y": 199
+  },
+  "eyeR": {
+   "x": 193,
+   "y": 199
+  },
+  "browL": {
+   "x": 116,
+   "y": 173
+  },
+  "browR": {
+   "x": 193,
+   "y": 173
+  },
+  "mouth": {
+   "x": 155,
+   "y": 246
+  },
+  "handL": {
+   "x": 27,
+   "y": 465
+  },
+  "handR": {
+   "x": 282,
+   "y": 465
+  },
+  "faceScale": 1.18
+ },
+ "npc_liza:liza_casual:stand": {
+  "file": "npc_liza_liza_casual_stand.webp",
+  "w": 280,
+  "h": 699,
+  "unit": 2,
+  "origin": {
+   "x": 140,
+   "y": 696
+  },
+  "eyeL": {
+   "x": 101,
+   "y": 199
+  },
+  "eyeR": {
+   "x": 178,
+   "y": 199
+  },
+  "browL": {
+   "x": 101,
+   "y": 173
+  },
+  "browR": {
+   "x": 178,
+   "y": 173
+  },
+  "mouth": {
+   "x": 140,
+   "y": 246
+  },
+  "handL": {
+   "x": 29,
+   "y": 465
+  },
+  "handR": {
+   "x": 253,
+   "y": 465
+  },
+  "faceScale": 1.18
+ },
+ "npc_liza:liza_casual:sit": {
+  "file": "npc_liza_liza_casual_sit.webp",
+  "w": 308,
+  "h": 614,
+  "unit": 2,
+  "origin": {
+   "x": 154,
+   "y": 527
+  },
+  "eyeL": {
+   "x": 115,
+   "y": 200
+  },
+  "eyeR": {
+   "x": 192,
+   "y": 200
+  },
+  "browL": {
+   "x": 115,
+   "y": 174
+  },
+  "browR": {
+   "x": 192,
+   "y": 174
+  },
+  "mouth": {
+   "x": 154,
+   "y": 247
+  },
+  "handL": {
+   "x": 25,
+   "y": 473
+  },
+  "handR": {
+   "x": 282,
+   "y": 471
+  },
+  "faceScale": 1.18
+ },
+ "npc_liza:liza_party:stand": {
+  "file": "npc_liza_liza_party_stand.webp",
+  "w": 281,
+  "h": 698,
+  "unit": 2,
+  "origin": {
+   "x": 140,
+   "y": 696
+  },
+  "eyeL": {
+   "x": 102,
+   "y": 200
+  },
+  "eyeR": {
+   "x": 179,
+   "y": 200
+  },
+  "browL": {
+   "x": 102,
+   "y": 174
+  },
+  "browR": {
+   "x": 179,
+   "y": 174
+  },
+  "mouth": {
+   "x": 140,
+   "y": 247
+  },
+  "handL": {
+   "x": 29,
+   "y": 461
+  },
+  "handR": {
+   "x": 251,
+   "y": 461
+  },
+  "faceScale": 1.18
+ },
+ "npc_liza:liza_party:sit": {
+  "file": "npc_liza_liza_party_sit.webp",
+  "w": 310,
+  "h": 612,
+  "unit": 2,
+  "origin": {
+   "x": 155,
+   "y": 527
+  },
+  "eyeL": {
+   "x": 116,
+   "y": 200
+  },
+  "eyeR": {
+   "x": 193,
+   "y": 200
+  },
+  "browL": {
+   "x": 116,
+   "y": 174
+  },
+  "browR": {
+   "x": 193,
+   "y": 174
+  },
+  "mouth": {
+   "x": 155,
+   "y": 246
+  },
+  "handL": {
+   "x": 27,
+   "y": 472
+  },
+  "handR": {
+   "x": 282,
+   "y": 467
+  },
+  "faceScale": 1.18
+ },
+ "hero_iskorka:emerald_party:stand": {
+  "file": "hero_iskorka_emerald_party_stand.webp",
+  "w": 417,
+  "h": 650,
+  "unit": 2,
+  "origin": {
+   "x": 209,
+   "y": 647
+  },
+  "eyeL": {
+   "x": 170,
+   "y": 184
+  },
+  "eyeR": {
+   "x": 247,
+   "y": 184
+  },
+  "browL": {
+   "x": 170,
+   "y": 158
+  },
+  "browR": {
+   "x": 247,
+   "y": 158
+  },
+  "mouth": {
+   "x": 209,
+   "y": 231
+  },
+  "handL": {
+   "x": 83,
+   "y": 428
+  },
+  "handR": {
+   "x": 322,
+   "y": 427
+  },
+  "faceScale": 1.18
+ },
+ "hero_iskorka:emerald_party:sit": {
+  "file": "hero_iskorka_emerald_party_sit.webp",
+  "w": 419,
+  "h": 572,
+  "unit": 2,
+  "origin": {
+   "x": 209,
+   "y": 492
+  },
+  "eyeL": {
+   "x": 170,
+   "y": 185
+  },
+  "eyeR": {
+   "x": 247,
+   "y": 185
+  },
+  "browL": {
+   "x": 170,
+   "y": 159
+  },
+  "browR": {
+   "x": 247,
+   "y": 159
+  },
+  "mouth": {
+   "x": 209,
+   "y": 232
+  },
+  "handL": {
+   "x": 69,
+   "y": 434
+  },
+  "handR": {
+   "x": 341,
+   "y": 430
+  },
+  "faceScale": 1.18
+ },
+ "hero_iskorka:iskorka_pajama:stand": {
+  "file": "hero_iskorka_iskorka_pajama_stand.webp",
+  "w": 420,
+  "h": 656,
+  "unit": 2,
+  "origin": {
+   "x": 210,
+   "y": 653
+  },
+  "eyeL": {
+   "x": 172,
+   "y": 187
+  },
+  "eyeR": {
+   "x": 249,
+   "y": 187
+  },
+  "browL": {
+   "x": 172,
+   "y": 161
+  },
+  "browR": {
+   "x": 249,
+   "y": 161
+  },
+  "mouth": {
+   "x": 210,
+   "y": 234
+  },
+  "handL": {
+   "x": 84,
+   "y": 442
+  },
+  "handR": {
+   "x": 328,
+   "y": 441
+  },
+  "faceScale": 1.18
+ },
+ "hero_iskorka:iskorka_pajama:sit": {
+  "file": "hero_iskorka_iskorka_pajama_sit.webp",
+  "w": 419,
+  "h": 575,
+  "unit": 2,
+  "origin": {
+   "x": 210,
+   "y": 494
+  },
+  "eyeL": {
+   "x": 171,
+   "y": 187
+  },
+  "eyeR": {
+   "x": 248,
+   "y": 187
+  },
+  "browL": {
+   "x": 171,
+   "y": 161
+  },
+  "browR": {
+   "x": 248,
+   "y": 161
+  },
+  "mouth": {
+   "x": 210,
+   "y": 233
+  },
+  "handL": {
+   "x": 70,
+   "y": 441
+  },
+  "handR": {
+   "x": 345,
+   "y": 439
+  },
+  "faceScale": 1.18
+ },
+ "hero_iskorka:iskorka_rain:stand": {
+  "file": "hero_iskorka_iskorka_rain_stand.webp",
+  "w": 420,
+  "h": 654,
+  "unit": 2,
+  "origin": {
+   "x": 210,
+   "y": 652
+  },
+  "eyeL": {
+   "x": 172,
+   "y": 186
+  },
+  "eyeR": {
+   "x": 249,
+   "y": 186
+  },
+  "browL": {
+   "x": 172,
+   "y": 160
+  },
+  "browR": {
+   "x": 249,
+   "y": 160
+  },
+  "mouth": {
+   "x": 210,
+   "y": 232
+  },
+  "handL": {
+   "x": 85,
+   "y": 437
+  },
+  "handR": {
+   "x": 327,
+   "y": 435
+  },
+  "faceScale": 1.18
+ },
+ "hero_iskorka:iskorka_rain:sit": {
+  "file": "hero_iskorka_iskorka_rain_sit.webp",
+  "w": 421,
+  "h": 576,
+  "unit": 2,
+  "origin": {
+   "x": 211,
+   "y": 492
+  },
+  "eyeL": {
+   "x": 172,
+   "y": 185
+  },
+  "eyeR": {
+   "x": 249,
+   "y": 185
+  },
+  "browL": {
+   "x": 172,
+   "y": 159
+  },
+  "browR": {
+   "x": 249,
+   "y": 159
+  },
+  "mouth": {
+   "x": 211,
+   "y": 232
+  },
+  "handL": {
+   "x": 75,
+   "y": 439
+  },
+  "handR": {
+   "x": 347,
+   "y": 434
+  },
+  "faceScale": 1.18
+ },
+ "hero_iskorka:iskorka_cosmic:stand": {
+  "file": "hero_iskorka_iskorka_cosmic_stand.webp",
+  "w": 422,
+  "h": 654,
+  "unit": 2,
+  "origin": {
+   "x": 210,
+   "y": 652
+  },
+  "eyeL": {
+   "x": 172,
+   "y": 186
+  },
+  "eyeR": {
+   "x": 249,
+   "y": 186
+  },
+  "browL": {
+   "x": 172,
+   "y": 160
+  },
+  "browR": {
+   "x": 249,
+   "y": 160
+  },
+  "mouth": {
+   "x": 210,
+   "y": 233
+  },
+  "handL": {
+   "x": 89,
+   "y": 433
+  },
+  "handR": {
+   "x": 321,
+   "y": 432
+  },
+  "faceScale": 1.18
+ },
+ "hero_iskorka:iskorka_cosmic:sit": {
+  "file": "hero_iskorka_iskorka_cosmic_sit.webp",
+  "w": 422,
+  "h": 574,
+  "unit": 2,
+  "origin": {
+   "x": 211,
+   "y": 493
+  },
+  "eyeL": {
+   "x": 172,
+   "y": 186
+  },
+  "eyeR": {
+   "x": 249,
+   "y": 186
+  },
+  "browL": {
+   "x": 172,
+   "y": 160
+  },
+  "browR": {
+   "x": 249,
+   "y": 160
+  },
+  "mouth": {
+   "x": 211,
+   "y": 233
+  },
+  "handL": {
+   "x": 73,
+   "y": 435
+  },
+  "handR": {
+   "x": 342,
+   "y": 433
+  },
+  "faceScale": 1.18
  }
 }

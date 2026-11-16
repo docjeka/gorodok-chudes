@@ -6,6 +6,30 @@ const grid = (cols: number, rows: number, x0: number, dx: number, y0: number, dy
 
 // Координаты слотов — относительно опорной точки мебели (низ по центру), y вверх отрицательный.
 /**
+ * Колесо обозрения в парке. Опора стоит, ротор крутится, шесть кабинок едут по кругу и остаются вертикальными.
+ * Точки — в единицах комнаты от опорной точки мебели (низ опоры на каменной площадке).
+ */
+export const FERRIS = {
+  furn: 'ferris',
+  axle: { x: 0, y: -191 },   // ось над площадкой
+  radius: 142,               // радиус подвеса кабинок
+  period: 20000,             // мс на круг
+  ramp: 2500,                // мс на разгон и на плавную остановку
+  start: 0.26,               // угол в покое: верхняя кабинка чуть в стороне от вершины
+  cabins: ['coral', 'mint', 'lavender', 'coral', 'mint', 'lavender'],
+  rider: 0.24,               // седок в кабинке меньше обычной фигурки
+  face: 59,                  // на сколько ниже точки подвеса середина окна
+  eyes: 131,                 // обычное расстояние от точки сиденья до середины лица у сидящей фигурки
+  inside: { x0: -48, y0: 39, x1: 48, y1: 117 }, // внутренность кабинки от точки подвеса: за её пределы седок не выглядывает
+};
+/** Точка сиденья кабинки относительно опорной точки колеса. */
+export function ferrisSeat(angle: number) {
+  return { x: Math.round(FERRIS.axle.x + FERRIS.radius * Math.sin(angle)), y: Math.round(FERRIS.axle.y - FERRIS.radius * Math.cos(angle) + FERRIS.face + FERRIS.eyes * FERRIS.rider) };
+}
+/** Аттракционы с движущимися местами: неподвижная часть — кнопка «пуск/стоп». */
+export const isRide = (definitionId: string | undefined) => definitionId === 'carousel' || definitionId === 'ferris';
+
+/**
  * Карусель в парке. Все точки — в координатах исходного рисунка основы 1312×1199 (до обрезки полей),
  * unit переводит их в единицы комнаты. Настраивается здесь, код только читает.
  */
@@ -89,6 +113,8 @@ export const FURNITURE_LIST: FurnitureDef[] = [
   { id: 'loc_oven', category: 'kitchen', w: 430, h: 40, layer: 'wall', fixed: true, invisible: true, workspace: 'stove', surfaces: row(4, -120, 80, 0) },
   { id: 'loc_worktable', category: 'kitchen', w: 820, h: 40, layer: 'wall', fixed: true, invisible: true, workspace: 'board', surfaces: row(8, -350, 100, 0) },
   { id: 'loc_wallshelves', category: 'storage', w: 430, h: 240, layer: 'wall', fixed: true, invisible: true, surfaces: [...row(5, -170, 85, -193), ...row(5, -170, 85, -95), ...row(5, -170, 85, 0)] },
+  // место продавщицы в окне кафе: герой стоит за прилавком, кусок фона (прилавок и стена под ним) рисуется поверх ног
+  { id: 'loc_seller', category: 'seats', w: 380, h: 40, layer: 'wall', fixed: true, invisible: true, seats: [{ x: 0, y: 152, pose: 'standing' }], bgFront: [{ x0: 570, y0: 440, x1: 990, y1: 660 }, { x0: 590, y0: 190, x1: 970, y1: 300 }] }, // прилавок со стеной под ним и козырёк окна
   { id: 'loc_counter5', category: 'tables', w: 430, h: 40, layer: 'wall', fixed: true, invisible: true, surfaces: row(5, -170, 85, 0) },
   { id: 'loc_stall', category: 'storage', w: 430, h: 120, layer: 'wall', fixed: true, invisible: true, surfaces: [...row(3, -110, 110, -73), ...row(5, -170, 85, 0)] },
   { id: 'loc_pier', category: 'tables', w: 300, h: 40, layer: 'wall', fixed: true, invisible: true, surfaces: row(3, -90, 90, 0) },
@@ -115,6 +141,9 @@ export const FURNITURE_LIST: FurnitureDef[] = [
   { id: 'fair_ticket_machine', category: 'decor', w: 150, h: 201, layer: 'floor' },
   // отдельные предметы локаций
   // у каждой лошадки своё седло; ближняя часть лошадки рисуется поверх героя, чтобы он сидел верхом, а не перед ней
+  // колесо обозрения: рисунок мебели — неподвижная опора; ротор и кабинки рисует сцена (FERRIS)
+  { id: 'ferris', category: 'decor', w: 216, h: 230, layer: 'floor', fixed: true, tap: 'toggleOn',
+    seats: FERRIS.cabins.map((_, i) => ({ ...ferrisSeat(FERRIS.start + (i * Math.PI) / 3), pose: 'sitting' as const })) },
   // карусель из слоёв: основа стоит, лошадки ходят по кругу (CAROUSEL); колонна и крыша — передние слои поверх дальней лошадки
   { id: 'carousel', category: 'decor', w: Math.round(872 * CAROUSEL.unit), h: Math.round(1132 * CAROUSEL.unit), layer: 'floor', fixed: true, tap: 'toggleOn',
     seats: [0, 1].map((i) => ({ ...carouselSeat(CAROUSEL.start + i * Math.PI), pose: 'sitting' as const })),
@@ -152,9 +181,9 @@ const LAYOUT: Record<RoomId, Place[]> = {
     ['bt_tub', 'bathtub', 430, 720], ['bt_sink', 'bathsink', 900, 650], ['bt_laundry', 'laundry', 1440, 700],
     ['bt_plant', 'plant', 1300, 660, 2], ['bt_mat', 'bathmat', 760, 870], ['bt_stool', 'stool', 1180, 820, 1],
   ],
-  park: [['pk_carousel', 'carousel', 861, 582]],
+  park: [['pk_ferris', 'ferris', 474, 404], ['pk_carousel', 'carousel', 861, 582]],
   park_games: [['pg_left', 'loc_counter5', 397, 457], ['pg_right', 'loc_stall', 1230, 461], ['pg_rings', 'fair_ring_toss', 820, 730], ['pg_tickets', 'fair_ticket_machine', 110, 700]],
-  cafe: [['cf_sill', 'loc_sill5', 780, 448], ['cf_case', 'loc_case', 1410, 505]],
+  cafe: [['cf_counter', 'loc_seller', 780, 440], ['cf_sill', 'loc_sill5', 780, 448], ['cf_case', 'loc_case', 1410, 505]],
   cafe_bakery: [['cb_oven', 'loc_oven', 285, 483], ['cb_table', 'loc_worktable', 926, 469], ['cb_shelves', 'loc_wallshelves', 1306, 351]],
   toys: [['ty_left', 'loc_shelf3x5', 294, 553], ['ty_right', 'loc_shelf3x5', 1311, 553]],
   toys_workshop: [['tw_bench', 'loc_bench8', 347, 481], ['tw_cubby', 'loc_cubby3x2', 1292, 522]],

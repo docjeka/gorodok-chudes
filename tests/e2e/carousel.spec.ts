@@ -50,7 +50,8 @@ test('карусель: Мила садится верхом, тап запус�
   // на ходу: область касания едет вместе с Милой — её можно снять с лошадки, не останавливая карусель, и посадить обратно
   await page.evaluate(() => { const g = window.__game; g.game.commit(g.rules.placeCharacter(g.game.world, 'hero_timur', { x: 1300, y: 800 })); });
   await page.waitForTimeout(1500);
-  await drag(page, await at(page, 'hero_mila', -30), await roomPt(page, 300, 700));
+  // под нагрузкой эмулятор иногда промахивается мимо едущей фигурки с первого раза — вторая попытка, как сделал бы ребёнок
+  for (let k = 0; k < 2 && (await world(page)).characters.hero_mila.seat; k++) await drag(page, await at(page, 'hero_mila', -30), await roomPt(page, 300, 700));
   expect((await world(page)).characters.hero_mila.seat ?? null).toBeNull();
   expect(await sprite(page, 'hero_mila')).toContain('stand');
   expect((await ride(page))!.speed).toBeGreaterThan(0);

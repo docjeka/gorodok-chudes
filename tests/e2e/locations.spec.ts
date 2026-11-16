@@ -75,6 +75,7 @@ test('все локации открываются с карты, у каждо�
     expect((await world(page)).currentRoomId).toBe(room);
     await page.click(`.roombtn:has-text("${second}")`);
     await page.waitForTimeout(400);
+    if (await page.locator('.travelcard').isVisible()) { await page.click('.travelcard .pill:not(.plain)'); await page.waitForTimeout(400); } // в кафе теперь стоит Лиза: игра спрашивает, кто идёт
     expect((await world(page)).currentRoomId).toBe(secondId);
     expect(await page.evaluate(() => window.__game.scene.stats().nodes)).toBeGreaterThan(0);
     await page.click('#tomap');

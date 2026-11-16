@@ -79,7 +79,10 @@ export class Panels {
       settings: '<circle cx="20" cy="20" r="5"/><path d="M20 5v5M20 30v5M5 20h5M30 20h5M9.500 9.500l3.500 3.500M27 27l3.500 3.500M30.500 9.500L27 13M13 27l-3.500 3.500"/>',
     };
     for (const id of ['heroes', 'things', 'gifts', 'decorate', 'ideas', 'settings'] as PanelId[]) {
-      const b = el('button', 'dockbtn', `<svg viewBox="0 0 40 40" width="34" height="34" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[id]}</svg>`);
+      // пластилиновые иконки: картинка декоративная и не перехватывает касания (в том числе перенос вещи на сумку)
+      const clay: Record<PanelId, string> = { heroes: 'heroes', things: 'bag', gifts: 'gift', decorate: 'decorate', ideas: 'ideas', settings: 'day' };
+      void icons;
+      const b = el('button', 'dockbtn', `<img class="clay" src="${import.meta.env.BASE_URL}assets/ui/${clay[id]}.png" width="32" height="32" alt="" aria-hidden="true" draggable="false">`);
       b.dataset.panel = id;
       b.setAttribute('aria-label', t(('panel.' + id) as Key));
       if (id === 'things') b.dataset.drop = 'bag';

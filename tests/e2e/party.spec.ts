@@ -253,7 +253,7 @@ test('новые наряды: Мила-диджей и Тимур-кондит�
   await expect(page.locator('.grouplabel').first()).toHaveText('Кондитер');
   // старые наряды на месте, новых героев нет
   let w = await world(page);
-  expect(Object.keys(w.characters)).toHaveLength(7); // шесть героев и фермер Лев; новых не появилось
+  expect(Object.keys(w.characters)).toHaveLength(9); // семь героев, Лиза и фермер Лев; новых не появилось
   await page.click('[aria-label="Следующий наряд"]');
   expect((await world(page)).characters.hero_timur.costume).toBe('casual');
   await page.click('[aria-label="Предыдущий наряд"]');

@@ -168,3 +168,10 @@ button:disabled { opacity: 0.4; cursor: default; }
 .idea-row { display: flex; align-items: center; gap: 8px; font-size: 14px; background: var(--mint-soft); border-radius: 12px; padding: 3px 8px; }
 .idea-row.found { background: #fff3d6; } .idea-row.eaten { background: #ffe4dc; }
 .idea-row span { flex: 1; }
+
+/* пластилиновые иконки меню: картинка не перехватывает касания и перенос на карту или сумку */
+img.clay { width: 46px; height: 46px; margin: -6px; display: block; pointer-events: none; user-select: none; -webkit-user-drag: none; filter: drop-shadow(0 1px 0 rgba(90, 74, 92, 0.25)); }
+.round, .roombtn, .dockbtn { background: #fff8ec; border-color: rgba(90, 74, 92, 0.85); }
+.roombtn.current, .dockbtn.current { background: var(--sun); border-width: 4px; border-color: var(--ink); }
+.round:active, .roombtn:active, .dockbtn:active { transform: scale(0.94); }
+@media (prefers-reduced-motion: reduce) { .round:active, .roombtn:active, .dockbtn:active { transform: none; } }

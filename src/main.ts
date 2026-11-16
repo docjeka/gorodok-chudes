@@ -184,6 +184,12 @@ async function run(kv: KV, initial: World) {
     lastRoom[groupOf(w.currentRoomId)] = w.currentRoomId;
     if (!djSeated(w) || w.settings.mute) audio.setClub(false);
   });
+  // колесо обозрения: после загрузки и при выходе из парка оно стоит; кто в какой кабинке — сохраняется
+  const stopWheel = (w: World) => { if (w.furniture.pk_ferris?.on && w.currentRoomId !== 'park') game.update((x) => { x.furniture.pk_ferris.on = 0; }); };
+  if (game.world.furniture.pk_ferris?.on) game.update((x) => { x.furniture.pk_ferris.on = 0; });
+  game.subscribe(stopWheel);
+  // кафе: кто стоит за прилавком, подаёт кекс, положенный на прилавок, — тот же кекс, на тарелке
+  game.subscribe((w) => { const r = rules.serveCupcakes(w); if (r.ok && game.commit(r)) play.served(r.info!.served as string[], r.info!.sellerId as string); });
   // танцы: пока играет клубный трек, свободные стоящие герои на танцполе танцуют; диджей, сидящие и те, кого несут, — нет
   const dancers = () => {
     const w = game.world;

@@ -1,10 +1,10 @@
 // Игровые взаимодействия: что происходит при нажатии и при отпускании. Связывает правила, сцену и звук.
 import { GameAudio } from '../audio/audio';
-import { BOUND_CHARS, CAROUSEL, DISCO_BALL, HATCH, POUCH, FARM_KINDS, FURNITURE, PEN_KINDS, GRAIN_EATERS, HAY_EATERS, TV_SCENES } from '../content/furniture';
+import { BOUND_CHARS, FERRIS, isRide, DISCO_BALL, HATCH, POUCH, FARM_KINDS, FURNITURE, PEN_KINDS, GRAIN_EATERS, HAY_EATERS, TV_SCENES } from '../content/furniture';
 import { ITEMS } from '../content/items';
 import { resolveCharDrop, resolveItemDrop, resolvePetDrop, freeFloorSpot, type ItemDrop } from '../game/drop';
 import type { Game } from '../game/game';
-import { charBox, charPos, clampFloor, dist, itemPlace, petPos, slotPos } from '../game/geometry';
+import { charBox, charPos, clampFloor, dist, itemPlace, petPos, seatPos, slotPos } from '../game/geometry';
 import {
   HEADWEAR, POURS, clone, collectEgg, eatFromFeeder, emptyBowl, fillBowl, fillFeeder, henFed, waterBed, cook, cookables, drink, feed, fill, moveItem, openGift, patchPet, placeCharacter, placePet, recipeAt, seatTaken, setFurnitureOn,
   setRoomStyle, toggleOpen, travel, wake, wearSet, moveFurniture, cushionFree, pouchJoey, eggInNest, hatchStep,
@@ -33,6 +33,12 @@ export class Play {
   talk: Talk | null = null;
   constructor(private game: Game, private scene: Scene, private audio: GameAudio, private ui: PlayUi) {
     window.setInterval(() => this.hatchTick(), HATCH.stepMs);
+  }
+  /** Продавец подал кекс: короткая реакция. */
+  served(ids: string[], sellerId: string) {
+    this.audio.play('clink');
+    this.scene.hop(sellerId, 8);
+    for (const id of ids) { this.scene.pop(id, 0.2); const pl = itemPlace(this.w, this.w.items[id]); this.scene.burst('star', { x: pl.x, y: pl.y - 30 }, 4); }
   }
   /** Особое яйцо в тёплом гнезде: каждые полторы секунды игры — следующий шаг (дрожит → трещинки → цыплёнок). */
   private hatchTick() {
@@ -80,7 +86,7 @@ export class Play {
       this.scene.setHighlight(this.dropSpot(d));
     } else if (t.kind === 'char') {
       const d = resolveCharDrop(w, t.ref, pt, this.room);
-      if (d.type === 'seat') { const f = w.furniture[d.furnitureId]; const s = slotPos(f, FURNITURE[f.definitionId].seats![d.slot]); this.scene.setHighlight({ x: s.x, y: s.y - 30, r: 70 }); }
+      if (d.type === 'seat') { const f = w.furniture[d.furnitureId]; const s = seatPos(f, d.slot); this.scene.setHighlight({ x: s.x, y: s.y - 30 * s.s, r: 70 * Math.max(0.6, s.s) }); } // у движущихся мест подсветка едет вместе с ними
       else this.scene.setHighlight(null);
     } else if (t.kind === 'pet') {
       // малыш кенгуру над взрослым — подсвечиваем карман
@@ -651,6 +657,8 @@ export class Play {
       this.scene.pop(t.ref, 0.05);
       // фермер машет и иногда говорит своё
       if (BOUND_CHARS[t.ref]) { this.game.update((x) => { x.characters[t.ref].emotion = 'joy'; }); this.scene.hop(t.ref, 10); this.talk?.say(t.ref, 'farmer', 120); }
+      // за прилавком кафе герой — продавец: приветствует покупателя (у Лизы это её собственная фраза и голос)
+      else if (c.roomId === 'cafe' && c.seat?.furnitureId === 'cf_counter') { this.game.update((x) => { x.characters[t.ref].emotion = 'joy'; }); this.talk?.say(t.ref, t.ref === 'npc_liza' ? 'liza' : 'tap', 120); }
       else this.talk?.say(t.ref, 'tap', 120);
       return;
     }
@@ -685,12 +693,13 @@ export class Play {
       if (fd.container) { this.dropItem(sel.ref, pt, { type: 'furniture', furnitureId: f.id, slot: 0 }); this.select(null); return; }
     }
     // неподвижная часть карусели — кнопка «пуск/стоп»: работает всегда, даже если выбран герой или вещь
-    const button = f.definitionId === CAROUSEL.furn && !t.moving;
+    const button = isRide(f.definitionId) && !t.moving;
     if (button) { this.furnitureAction(t.ref, pt); return; }
     if (sel?.kind === 'char' && fd.seats) {
       const slot = fd.seats.findIndex((_, i) => !seatTaken(w, f.id, i, sel.ref));
-      if (slot >= 0) { const s = slotPos(f, fd.seats[slot]); const pose = fd.seats[slot].pose; this.dropChar(sel.ref, pose === 'sleeping' ? { x: s.x - 150, y: s.y - 20 } : pose === 'bathing' ? { x: s.x, y: s.y - 150 } : { x: s.x, y: s.y - 70 }); return; }
+      if (slot >= 0) { const s = seatPos(f, slot); const pose = fd.seats[slot].pose; this.dropChar(sel.ref, pose === 'sleeping' ? { x: s.x - 150, y: s.y - 20 } : pose === 'bathing' ? { x: s.x, y: s.y - 150 } : { x: s.x, y: s.y - 70 }); return; }
     }
+    if (f.definitionId === FERRIS.furn && t.moving) { this.select(null); return; } // ротор и кабинки колеса — не кнопка: пуск и стоп только на опоре
     this.furnitureAction(t.ref, pt);
   }
 
@@ -718,7 +727,7 @@ export class Play {
         // одно касание — одно переключение, даже если оно пришло дважды
         if (performance.now() - (this.toggledAt.get(id) ?? -1e9) < TOGGLE_GAP) break;
         this.toggledAt.set(id, performance.now());
-        this.game.commit(setFurnitureOn(w, id, f.on ? 0 : 1)); this.audio.play(f.definitionId === 'carousel' ? (f.on ? 'click' : 'whoosh') : 'light'); this.select(null); break; // прожектор клуба: звёздочки
+        this.game.commit(setFurnitureOn(w, id, f.on ? 0 : 1)); this.audio.play(isRide(f.definitionId) ? (f.on ? 'click' : 'whoosh') : 'light'); this.select(null); break; // прожектор клуба: звёздочки
       case 'wardrobe': this.ui.openWardrobe(this.selection?.kind === 'char' ? this.selection.ref : null); this.audio.play('door'); break;
       default: this.select(null); void pt;
     }

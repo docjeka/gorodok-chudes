@@ -1,7 +1,7 @@
 // Создание нового мира, проверка целостности, миграции и разбор импорта.
 import { FURNITURE, HATCH, charAllowedIn, initialFurniture, petAllowedIn, ROOM_IDS } from '../content/furniture';
 import { ITEMS } from '../content/items';
-import { GARMENTS, OUTFITS, PRESET_HEROES, costumeFits, homeCostume, presetCharacter } from '../content/wardrobe';
+import { GARMENTS, LIZA_SPOT, OUTFITS, PRESET_HEROES, costumeFits, homeCostume, presetCharacter } from '../content/wardrobe';
 import { isInside, isValidOutfit, moveItem, spawnItem } from './rules';
 import type { ItemInst, Owner, RoomId, World } from './types';
 import { BAG_CAPACITY, MAX_ITEMS, SCHEMA_VERSION } from './types';
@@ -110,6 +110,7 @@ export function createWorld(lang: 'ru' | 'en' = 'ru'): World {
   for (const [id] of PRESET_HEROES) w.characters[id] = presetCharacter(id)!;
   Object.assign(w.characters.hero_mila, { roomId: 'living', x: 760, y: 800 });
   Object.assign(w.characters.hero_timur, { roomId: 'living', x: 300, y: 820 });
+  Object.assign(w.characters.npc_liza, { roomId: 'cafe', seat: { ...LIZA_SPOT }, pose: 'standing', x: 780, y: 760 });
   w.pets = {
     pet_cat: { id: 'pet_cat', kind: 'cat', roomId: 'living', x: 1340, y: 800, sleeping: false, seat: null, collar: 0, flipped: false },
     pet_dog: { id: 'pet_dog', kind: 'dog', roomId: 'bedroom', x: 900, y: 830, sleeping: false, seat: null, collar: 1, flipped: false },
@@ -314,6 +315,19 @@ export const MIGRATIONS: Record<number, Migration> = {
     const next = has ? raw : seedLocations(raw, HATCH_SEEDS);
     next.schemaVersion = 10;
     return next;
+  },
+  // 10 → 11: Искорка среди героев и Лиза за прилавком кафе — по одному разу; место продавщицы в кафе
+  10: (raw) => {
+    const fresh = createWorld(raw.settings?.lang === 'en' ? 'en' : 'ru');
+    if (!raw.furniture.cf_counter) raw.furniture.cf_counter = structuredClone(fresh.furniture.cf_counter);
+    if (!raw.furniture.pk_ferris) raw.furniture.pk_ferris = structuredClone(fresh.furniture.pk_ferris); // колесо обозрения в парке; места карусели прежние
+    if (!raw.characters.hero_iskorka) raw.characters.hero_iskorka = presetCharacter('hero_iskorka');
+    if (!raw.characters.npc_liza) {
+      const taken = Object.values<any>(raw.characters).some((c) => c.seat?.furnitureId === LIZA_SPOT.furnitureId);
+      raw.characters.npc_liza = { ...presetCharacter('npc_liza')!, roomId: 'cafe', x: 780, y: 760, ...(taken ? {} : { seat: { ...LIZA_SPOT } }) };
+    }
+    raw.schemaVersion = 11;
+    return raw;
   },
 };
 

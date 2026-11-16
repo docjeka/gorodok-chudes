@@ -805,6 +805,19 @@ export function collectEgg(world: World, nestId: string): Result {
   r.world.furniture[nestId].on = 1;
   return ok(r.world, { instanceId: r.info!.instanceId, inBasket: !!basket && r.world.items[r.info!.instanceId as string].owner.kind === 'item' });
 }
+/**
+ * Продавщица за прилавком кафе подаёт кекс, который игрок положил на прилавок: тот же самый кекс оказывается на тарелке.
+ * Без оплаты и без копий; кекс можно забрать.
+ */
+export function serveCupcakes(world: World): Result {
+  const seller = Object.values(world.characters).find((c) => c.roomId === 'cafe' && c.seat?.furnitureId === 'cf_counter');
+  if (!seller) return fail('no_seller');
+  const ids = Object.values(world.items).filter((i) => i.definitionId === 'cupcake' && !i.state.plated && i.owner.kind === 'surface' && i.owner.furnitureId === 'cf_sill').map((i) => i.instanceId);
+  if (!ids.length) return fail('nothing_to_serve');
+  const w = clone(world);
+  for (const id of ids) w.items[id].state.plated = true;
+  return ok(w, { served: ids, sellerId: seller.id });
+}
 /** Особое яйцо, которое сейчас лежит в тёплом гнезде этой комнаты (если малыш ещё не вылупился). */
 export function eggInNest(w: World, roomId: RoomId): ItemInst | undefined {
   if (w.pets[HATCH.chick]) return undefined;

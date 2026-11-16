@@ -10,7 +10,7 @@ import danceSprites from '../content/danceSprites.json';
 import furnSprites from '../content/furnSprites.json';
 import itemSprites from '../content/itemSprites.json';
 import petSprites from '../content/petSprites.json';
-import { CAROUSEL, DISCO_BALL, HATCH, POUCH, FURNITURE, HOUSE_ROOMS, TV_SCREEN } from '../content/furniture';
+import { CAROUSEL, FERRIS, DISCO_BALL, HATCH, POUCH, FURNITURE, HOUSE_ROOMS, TV_SCREEN } from '../content/furniture';
 import { ITEMS } from '../content/items';
 import { HAIR_COLORS } from '../content/wardrobe';
 import { charPos, itemPlace, liveSeat, petPos, setLiveSeats, type LiveSeat } from '../game/geometry';
@@ -41,6 +41,8 @@ interface Want {
   bowl?: { water: boolean; kibble: boolean };
   /** особое яйцо: золотая искорка всегда; в гнезде оно дрожит (warm ≥ 1) и покрывается трещинками (warm ≥ 2) */
   egg?: { warm: number; nest: boolean };
+  /** кекс подан: под ним тарелка */
+  plate?: boolean;
 }
 interface Node {
   id: string; kind: Kind; ref: string; c: Container; body: Sprite; key: string; tex?: Tex;
@@ -50,7 +52,7 @@ interface Node {
   by: number;
   /** шест лошадки карусели */
   pole?: Graphics;
-  egg?: { warm: number; nest: boolean }; eggG?: Graphics; spark?: Graphics; eggKey?: string;
+  plateG?: Graphics; egg?: { warm: number; nest: boolean }; eggG?: Graphics; spark?: Graphics; eggKey?: string;
 }
 interface Tween { t: number; dur: number; step: (k: number) => void; done?: () => void }
 interface Particle { s: Sprite | Graphics; vx: number; vy: number; g: number; life: number; max: number; spin: number }
@@ -99,6 +101,8 @@ export class Scene {
   private animating = new Set<string>();
   /** карусели: угол поворота и скорость; живут в сцене и в сохранение не попадают */
   private rides = new Map<string, { a: number; v: number; on: boolean; brake?: { from: number; to: number; t: number; dur: number } }>();
+  /** маски седоков колеса обозрения: фигурка видна только внутри кабинки */
+  private cabinMasks = new Map<string, Graphics>();
   private talkFrame = 0;
 
   async init(host: HTMLElement) {
@@ -230,10 +234,12 @@ export class Scene {
       this.syncLiquid(n, w.liquid);
       this.syncBowl(n, w.bowl);
       this.syncEgg(n, w.egg);
+      if (!!w.plate !== !!n.plateG) { if (w.plate) { const g = new Graphics(); g.ellipse(0, -3, 34, 9).fill({ color: 0xfffaf2 }).stroke({ color: 0xd9c7b4, width: 2 }); g.ellipse(0, -5, 23, 5).stroke({ color: 0xe9dccb, width: 1.5 }); n.c.addChildAt(g, 0); n.plateG = g; } else { n.plateG?.destroy(); n.plateG = undefined; } }
     }
     for (const [id, n] of this.nodes) if (!seen.has(id)) { n.c.destroy({ children: true }); this.nodes.delete(id); }
     this.syncGlow(world, roomId);
     this.rideTick(0); // лошадки и седоки сразу на своих местах
+    this.ferrisTick(0);
     if (this.debug) this.drawDebug(world, roomId);
   }
 
@@ -254,6 +260,13 @@ export class Scene {
       if (def.invisible) {
         // места фермы: сено в кормушке, зерно на земле, яйцо в гнезде, росток или цветок на грядке — отдельными слоями поверх фона
         const art = def.farm ? farmArt(def.farm, f.on) : null;
+        if (def.bgFront && Object.values(w.characters).some((c) => c.seat?.furnitureId === f.id && c.roomId === roomId)) {
+          // прилавок закрывает ноги того, кто за ним стоит: кусок фона комнаты рисуется поверх фигурки
+          def.bgFront.forEach((r, n) => {
+            const key = `BGF:${roomId}:${f.id}:${n}`;
+            out.push({ id: `bf:${f.id}:${n}`, kind: 'front', ref: f.id, x: r.x0, y: r.y0, z: 200 + f.y + 0.5, flip: false, rot: 0, key, load: () => imageTex(key, `${BASE}assets/rooms/${roomId}.webp`, { upp: 1, ox: r.x0, oy: r.y0, crop: { x: r.x0, y: r.y0, w: r.x1 - r.x0, h: r.y1 - r.y0 } }) });
+          });
+        }
         if (art) { const key = `farm:${def.farm}:${f.on}`; out.push({ id: 'fa:' + f.id, kind: 'front', ref: f.id, x: f.x, y: f.y, z: 20 + f.y * 0.001, flip: false, rot: 0, key, load: () => artTex(key, () => art) }); }
         continue;
       }
@@ -291,6 +304,15 @@ export class Scene {
       CAROUSEL.horses.forEach((h, i) => {
         const meta = FURN_SPRITES[h.sprite], key = 'F:' + h.sprite, at = this.horseAt(f, i);
         out.push({ id: `rh:${f.id}:${i}`, kind: 'front', ref: f.id, x: at.x, y: at.y, z: 200 + f.y + at.z, flip: false, rot: 0, key, load: () => imageTex(key, `${BASE}assets/furn/${h.sprite}.png`, { upp: meta.upp, ox: meta.ox, oy: meta.oy }) });
+      });
+    }
+    for (const f of Object.values(w.furniture)) {
+      if (f.roomId !== roomId || f.definitionId !== FERRIS.furn) continue;
+      const z = 200 + f.y, rm = FURN_SPRITES.ferris_rotor;
+      out.push({ id: `rw:${f.id}:rotor`, kind: 'front', ref: f.id, x: f.x + FERRIS.axle.x, y: f.y + FERRIS.axle.y, z: z - 0.2, flip: false, rot: this.wheelAngle(f.id), key: 'F:ferris_rotor', load: () => imageTex('F:ferris_rotor', `${BASE}assets/furn/ferris_rotor.png`, { upp: rm.upp, ox: rm.ox, oy: rm.oy }) });
+      FERRIS.cabins.forEach((color, i) => {
+        const name = `ferris_cabin_${color}`, meta = FURN_SPRITES[name], key = 'F:' + name, at = this.cabinAt(f, i);
+        out.push({ id: `rw:${f.id}:c${i}`, kind: 'front', ref: f.id, x: at.x, y: at.y, z: z + 0.6 + i * 0.01, flip: false, rot: 0, key, load: () => imageTex(key, `${BASE}assets/furn/${name}.png`, { upp: meta.upp, ox: meta.ox, oy: meta.oy }) });
       });
     }
     const zOfFurn = (id: string) => 200 + (w.furniture[id]?.y ?? 0);
@@ -333,7 +355,7 @@ export class Scene {
       const z = o.kind === 'hand' ? (charZ.get(o.characterId) ?? 200) + 0.05 : o.kind === 'surface' ? zOfFurn(o.furnitureId) + (FURNITURE[w.furniture[o.furnitureId]?.definitionId]?.cushions ? 0.1 : 0.6) + o.slot * 0.001 : o.kind === 'furniture' ? zOfFurn(o.furnitureId) + 0.3 + o.slot * 0.001 : 200 + pl.y;
       const LIQ: Record<string, number> = { water: 0x8fd0f5, milk: 0xffffff, tea: 0xc98c4f };
       const liquid = it.state.contents ? (it.definitionId === 'glass' ? { color: LIQ[it.state.contents], x: 0, y: -45, rx: 10 } : { color: LIQ[it.state.contents], x: -5, y: -40, rx: 13 }) : undefined;
-      out.push({ id: 'i:' + it.instanceId, kind: 'item', ref: it.instanceId, x: pl.x, y: pl.y, z, flip: false, rot: 0, liquid, bowl: it.definitionId === 'pet_double_bowl' ? { water: !!it.state.water, kibble: !!it.state.kibble } : undefined, egg: it.definitionId === HATCH.egg ? { warm: it.state.warm ?? 0, nest: o.kind === 'surface' && !!FURNITURE[w.furniture[o.furnitureId]?.definitionId]?.hatch } : undefined, ...this.itemTex(it) });
+      out.push({ id: 'i:' + it.instanceId, kind: 'item', ref: it.instanceId, x: pl.x, y: pl.y, z, flip: false, rot: 0, liquid, bowl: it.definitionId === 'pet_double_bowl' ? { water: !!it.state.water, kibble: !!it.state.kibble } : undefined, plate: !!it.state.plated, egg: it.definitionId === HATCH.egg ? { warm: it.state.warm ?? 0, nest: o.kind === 'surface' && !!FURNITURE[w.furniture[o.furnitureId]?.definitionId]?.hatch } : undefined, ...this.itemTex(it) });
     }
     return out;
   }
@@ -440,9 +462,72 @@ export class Scene {
       floor: f.y + (C.pole.floor + o.b * depth - C.foot.y) * C.unit, top: f.y + (C.pole.top - C.foot.y) * C.unit,
     };
   }
+  // ---------- колесо обозрения ----------
+  private wheelAngle(id: string) { let st = this.rides.get(id); if (!st) { st = { a: FERRIS.start, v: 0, on: false }; this.rides.set(id, st); } return st.a; }
+  /** Точка подвеса кабинки: она едет по кругу, сама кабинка остаётся вертикальной. */
+  private cabinAt(f: FurnitureInst, i: number): Pt {
+    const ang = this.wheelAngle(f.id) + (i * Math.PI) / 3;
+    return { x: f.x + FERRIS.axle.x + FERRIS.radius * Math.sin(ang), y: f.y + FERRIS.axle.y - FERRIS.radius * Math.cos(ang) };
+  }
+  private ferrisTick(dt: number) {
+    const w = this.world;
+    const riders = new Set<string>();
+    if (w) for (const f of Object.values(w.furniture)) {
+      if (f.definitionId !== FERRIS.furn || f.roomId !== this.roomId) continue;
+      const base = this.nodes.get('f:' + f.id);
+      if (!base) continue;
+      this.wheelAngle(f.id);
+      const st = this.rides.get(f.id)!;
+      // тап — плавный разгон, второй — плавное торможение до полной остановки
+      const top = (Math.PI * 2) / FERRIS.period, step = (top / FERRIS.ramp) * dt, want = f.on > 0 ? (this.reducedMotion ? top * 0.5 : top) : 0;
+      st.on = f.on > 0;
+      st.v += Math.max(-step, Math.min(step, want - st.v));
+      st.a = (st.a + st.v * dt) % (Math.PI * 2);
+      const rotor = this.nodes.get(`rw:${f.id}:rotor`);
+      if (rotor) rotor.c.rotation = st.a;
+      FERRIS.cabins.forEach((_, i) => {
+        const at = this.cabinAt(f, i);
+        const cab = this.nodes.get(`rw:${f.id}:c${i}`);
+        if (cab) cab.c.position.set(at.x, at.y);
+        for (const c of Object.values(w.characters)) {
+          if (c.seat?.furnitureId !== f.id || c.seat.slot !== i || c.roomId !== this.roomId) continue;
+          const cn = this.nodes.get('c:' + c.id);
+          if (!cn || this.dragging === c.id || this.animating.has(c.id)) continue;
+          // лицо седока — по середине окна: у каждой фигурки своё расстояние от сиденья до лица
+          const sp = c.costume ? CHAR_SPRITES[`${c.id}:${c.costume}:sit`] : undefined;
+          const eyes = sp ? (sp.origin.y - (sp.eyeL.y + sp.mouth.y) / 2) / sp.unit : FERRIS.eyes;
+          const k = FERRIS.rider;
+          cn.c.position.set(at.x, at.y + FERRIS.face + eyes * k);
+          cn.by = cn.c.y;
+          cn.c.scale.set((c.flipped ? -1 : 1) * k, k);
+          cn.c.rotation = 0;
+          cn.c.zIndex = base.c.zIndex + 0.5 + i * 0.01; // под рисунком своей кабинки, поверх опоры
+          let g = this.cabinMasks.get(c.id);
+          if (!g) { g = new Graphics(); this.layer.addChild(g); this.cabinMasks.set(c.id, g); cn.c.mask = g; }
+          const r = FERRIS.inside;
+          g.clear().rect(at.x + r.x0, at.y + r.y0, r.x1 - r.x0, r.y1 - r.y0).fill(0xffffff);
+          riders.add(c.id);
+          for (const it of Object.values(w.items)) {
+            if (it.owner.kind !== 'hand' || it.owner.characterId !== c.id) continue;
+            const inn = this.nodes.get('i:' + it.instanceId);
+            if (!inn || this.dragging === it.instanceId || this.animating.has(it.instanceId)) continue;
+            const pl = this.heldPlace(w, it);
+            inn.c.position.set(pl.x, pl.y); inn.c.scale.set(k, k); inn.c.zIndex = cn.c.zIndex + 0.001;
+          }
+        }
+      });
+    }
+    // вышел из кабинки (или его взяли пальцем) — фигурка снова видна целиком
+    for (const [id, g] of this.cabinMasks) if (!riders.has(id)) { const n = this.nodes.get('c:' + id); if (n) n.c.mask = null; g.destroy(); this.cabinMasks.delete(id); }
+  }
+
   /** Седло как живое место для правил игры: туда садятся, оттуда берут героя, там же его руки и голова. */
   private rideSeat(furnitureId: string, slot: number): LiveSeat | null {
     const f = this.world?.furniture[furnitureId];
+    if (f && f.definitionId === FERRIS.furn && f.roomId === this.roomId && slot < FERRIS.cabins.length) {
+      const at = this.cabinAt(f, slot);
+      return { x: at.x, y: at.y + FERRIS.face + FERRIS.eyes * FERRIS.rider, s: FERRIS.rider, flip: false };
+    }
     if (!f || f.definitionId !== CAROUSEL.furn || f.roomId !== this.roomId || !CAROUSEL.horses[slot]) return null;
     const at = this.horseAt(f, slot);
     return { x: at.x, y: at.y, s: CAROUSEL.rider * at.size, flip: at.face < 0 };
@@ -691,7 +776,7 @@ export class Scene {
       if (d < Math.max(30, 24 / this.scale + def.w * 0.25) && (!near || d < near.d)) near = { n, d };
     }
     if (near) return { kind: 'item', ref: near.n.ref };
-    if (exact) return { kind: exact.kind === 'front' ? 'furn' : exact.kind, ref: exact.ref, moving: exact.id.startsWith('rh:') };
+    if (exact) return { kind: exact.kind === 'front' ? 'furn' : exact.kind, ref: exact.ref, moving: exact.id.startsWith('rh:') || exact.id.startsWith('rw:') };
     return null;
   }
   private hitNode(n: Node, pt: Pt): boolean {
@@ -1067,6 +1152,7 @@ export class Scene {
     this.danceTick(dt, now);
     this.clubTick(dt, now);
     this.rideTick(dt);
+    this.ferrisTick(dt);
     this.eggTick(now);
     for (let i = this.tweens.length - 1; i >= 0; i--) {
       const t = this.tweens[i];

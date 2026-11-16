@@ -38,7 +38,10 @@ const ICON = {
   gift: '<path d="M6 16h28v6H6zM9 22h22v12H9zM20 16v18M20 16c-6 0-9-8-4-8s4 8 4 8c0 0 0-8 4-8s2 8-4 8"/>',
   ok: '<path d="M8 21l8 8 16-18"/>', dots: '<circle cx="10" cy="20" r="3"/><circle cx="20" cy="20" r="3"/><circle cx="30" cy="20" r="3"/>', warn: '<path d="M20 6l16 28H4zM20 16v9M20 29v1"/>',
 };
-const icon = (name: keyof typeof ICON) => `<svg viewBox="0 0 40 40" width="30" height="30" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[name]}</svg>`;
+/** Пластилиновые иконки меню: готовые картинки из assets/ui. Декоративные — подпись и фокус остаются у самой кнопки. */
+const CLAY = new Set(['heroes', 'bag', 'gift', 'decorate', 'ideas', 'day', 'night', 'door', 'ok', 'dots', 'warn', 'globe', 'zoomIn', 'zoomOut', 'undo', 'sound', 'mute', 'living', 'kitchen', 'bedroom', 'bathroom', 'cook']);
+const line = (name: keyof typeof ICON) => `<svg viewBox="0 0 40 40" width="30" height="30" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[name]}</svg>`;
+const icon = (name: keyof typeof ICON) => (CLAY.has(name) ? `<img class="clay" src="${import.meta.env.BASE_URL}assets/ui/${name}.png" width="32" height="32" alt="" aria-hidden="true" draggable="false">` : line(name));
 
 function emotionSvg(e: Emotion): string {
   const m = mouthArt(e);

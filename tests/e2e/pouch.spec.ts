@@ -46,9 +46,9 @@ test('карман кенгуру: посадить → подпрыгнуть �
   const withJoey = (await shown(page, adult))!;
   expect(withJoey.key).toContain('kangaroo_pouch');                   // один общий спрайт
   expect(withJoey.drawn && withJoey.visible).toBe(true);
+  await page.waitForTimeout(1800); // короткий радостный подскок закончился
   const feet = await page.evaluate((r) => window.__game.scene.nodePos(r), adult);
   expect([Math.round(feet.x), Math.round(feet.y)]).toEqual([900, 800]); // опора лап на месте
-  await page.waitForTimeout(1800);
   await page.screenshot({ path: '.studioigor/captures/pouch.png' });
 
   // подпрыгнуть: тап по взрослому, малыш едет вместе с ним, зона захвата — тоже
