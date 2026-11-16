@@ -661,7 +661,7 @@ export class Play {
         setTimeout(() => { if (this.w.furniture[id]?.on) this.game.commit(setFurnitureOn(this.w, id, 0)); }, 1800);
         break;
       }
-      case 'toggleOn': this.game.commit(setFurnitureOn(w, id, f.on ? 0 : 1)); this.audio.play('light'); this.select(null); break; // прожектор клуба: звёздочки
+      case 'toggleOn': this.game.commit(setFurnitureOn(w, id, f.on ? 0 : 1)); this.audio.play(f.definitionId === 'carousel' ? (f.on ? 'click' : 'whoosh') : 'light'); this.select(null); break; // прожектор клуба: звёздочки
       case 'wardrobe': this.ui.openWardrobe(this.selection?.kind === 'char' ? this.selection.ref : null); this.audio.play('door'); break;
       default: this.select(null); void pt;
     }

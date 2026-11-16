@@ -2,7 +2,7 @@
 // Приоритет: рука/рот героя → питомец → контейнер-предмет → поверхность/контейнер мебели → пол.
 import { FURNITURE, GRAIN_EATERS, HAY_EATERS } from '../content/furniture';
 import { ITEMS } from '../content/items';
-import { charBox, charPos, clampFloor, dist, itemPlace, petPos, slotPos } from './geometry';
+import { charBox, charPos, clampFloor, dist, itemPlace, petPos, seatPos, slotPos } from './geometry';
 import { FILLABLE, HEADWEAR, PET_BRUSHES, isWaterSource, POURS, handItems, isInside, seatTaken } from './rules';
 import type { HandSlot, Pt, RoomId, World } from './types';
 
@@ -156,9 +156,9 @@ export function resolveCharDrop(w: World, characterId: string, pt: Pt, roomId: R
     if (f.roomId !== roomId) continue;
     FURNITURE[f.definitionId].seats?.forEach((s, slot) => {
       if (seatTaken(w, f.id, slot, characterId)) return;
-      const sp = slotPos(f, s);
+      const sp = seatPos(f, slot);
       // pt — середина тела героя; у каждого вида места своя «середина» и радиус притяжения
-      const target = s.pose === 'sleeping' ? { x: sp.x - 150, y: sp.y - 20 } : s.pose === 'bathing' ? { x: sp.x, y: sp.y - 150 } : s.pose === 'standing' ? { x: sp.x, y: sp.y - 120 } : { x: sp.x, y: sp.y - 70 };
+      const target = s.pose === 'sleeping' ? { x: sp.x - 150, y: sp.y - 20 } : s.pose === 'bathing' ? { x: sp.x, y: sp.y - 150 } : s.pose === 'standing' ? { x: sp.x, y: sp.y - 120 } : { x: sp.x, y: sp.y - 70 * sp.s };
       const d = dist(pt, target);
       const r = s.pose === 'sleeping' ? 190 : 120;
       if (d < r && (!best || d < best.d)) best = { furnitureId: f.id, slot, d };

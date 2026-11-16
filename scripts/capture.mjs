@@ -189,13 +189,19 @@ try {
   }
   if (scenario === 'carousel') {
     const page = await open('', { width: 1024, height: 768 });
-    await page.evaluate(() => { const g = window.__game; g.game.commit(g.rules.travel(g.game.world, 'park', ['hero_mila', 'hero_timur'])); g.game.commit(g.rules.placeCharacter(g.game.world, 'hero_mila', { furnitureId: 'pk_carousel', slot: 0 })); g.game.commit(g.rules.placeCharacter(g.game.world, 'hero_timur', { furnitureId: 'pk_carousel', slot: 1 })); g.scene.setZoom(0.1); });
+    const clip = async () => { const c = await roomPt(page, 861, 300); return { x: c[0] - 300, y: c[1] - 300, width: 600, height: 600 }; };
+    const seat = (slot, hero = 'hero_mila') => page.evaluate(([slot, hero]) => { const g = window.__game; g.game.commit(g.rules.placeCharacter(g.game.world, hero, { furnitureId: 'pk_carousel', slot })); }, [slot, hero]);
+    await page.evaluate(() => { const g = window.__game; g.game.commit(g.rules.travel(g.game.world, 'park', ['hero_mila', 'hero_timur'])); g.scene.setZoom(0.1); });
     await wait(900);
-    const c = await roomPt(page, 861, 330);
-    await page.screenshot({ path: `${OUT}/carousel-seated.png`, clip: { x: c[0] - 300, y: c[1] - 270, width: 600, height: 520 } });
-    await page.evaluate(() => { const g = window.__game; g.game.commit(g.rules.wearSet(g.game.world, 'hero_mila', 'princess')); g.game.commit(g.rules.wearSet(g.game.world, 'hero_timur', g.game.world.characters.hero_timur.costume === 'pirate' ? 'summer' : 'pirate')); });
-    await wait(700);
-    await page.screenshot({ path: `${OUT}/carousel-outfits.png`, clip: { x: c[0] - 300, y: c[1] - 270, width: 600, height: 520 } });
+    await page.screenshot({ path: `${OUT}/carousel-empty.png`, clip: await clip() });
+    await seat(0); await wait(700);
+    await page.screenshot({ path: `${OUT}/carousel-mila-near.png`, clip: await clip() });
+    await seat(1); await wait(700);
+    await page.screenshot({ path: `${OUT}/carousel-mila-far.png`, clip: await clip() });
+    await seat(0); await seat(1, 'hero_timur'); await wait(700);
+    await page.screenshot({ path: `${OUT}/carousel-two.png`, clip: await clip() });
+    await page.evaluate(() => { const g = window.__game; g.game.commit(g.rules.placeCharacter(g.game.world, 'hero_timur', { x: 300, y: 800 })); g.game.commit(g.rules.setFurnitureOn(g.game.world, 'pk_carousel', 1)); });
+    for (let i = 0; i < 12; i++) { await wait(750); await page.screenshot({ path: `${OUT}/carousel-spin-${String(i).padStart(2, '0')}.png`, clip: await clip() }); }
     console.log('shot carousel');
   }
   if (scenario === 'props') {
@@ -227,6 +233,31 @@ try {
     await wait(2500);
     await drag(page, await at(page, 'hero_mila', -120), await roomPt(page, 800, 628));
     await wait(1300); await shot(page, 'party-3-dj');
+  }
+  if (scenario === 'carouselvid') {
+    const ctx = await browser.newContext({ viewport: { width: 1024, height: 768 }, deviceScaleFactor: 1, hasTouch: true, recordVideo: { dir: `${OUT}/video-carousel`, size: { width: 1024, height: 768 } } });
+    const page = await ctx.newPage();
+    await page.goto('http://127.0.0.1:4173/');
+    await page.waitForFunction(() => !!window.__game);
+    await page.evaluate(() => window.__game.game.update((w) => { w.settings.tutorialDone = true; }));
+    await page.click('#play');
+    await page.evaluate(() => { const g = window.__game; g.map.enter('houses'); g.game.commit(g.rules.travel(g.game.world, 'park', ['hero_mila'])); g.scene.setZoom(0.1); });
+    await wait(1200);
+    const seat = () => page.evaluate(() => { const g = window.__game; const p = g.geometry.seatPos(g.game.world.furniture.pk_carousel, 0); const s = g.scene.toScreen({ x: p.x, y: p.y - 70 * p.s }); return [s.x, s.y]; });
+    await drag(page, await at(page, 'hero_mila', -120), await seat()); // Мила садится на лошадку
+    await wait(1200);
+    const tap = await roomPt(page, 861, 150);
+    await page.touchscreen.tap(tap[0], tap[1]); // поехали
+    await wait(13000);
+    await drag(page, await at(page, 'hero_mila', -30), await roomPt(page, 330, 760)); // сняли на ходу
+    await wait(2500);
+    await drag(page, await at(page, 'hero_mila', -120), await seat()); // и посадили обратно
+    await wait(4000);
+    await page.touchscreen.tap(tap[0], tap[1]); // плавная остановка
+    await wait(5000);
+    const v = page.video();
+    await ctx.close();
+    console.log('video', await v.path());
   }
   if (scenario === 'dance') {
     const ctx = await browser.newContext({ viewport: { width: 1024, height: 576 }, deviceScaleFactor: 1, hasTouch: true, recordVideo: { dir: `${OUT}/video`, size: { width: 1024, height: 576 } } });

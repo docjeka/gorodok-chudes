@@ -5,6 +5,37 @@ const grid = (cols: number, rows: number, x0: number, dx: number, y0: number, dy
   Array.from({ length: cols * rows }, (_, i) => ({ x: x0 + (i % cols) * dx, y: y0 + Math.floor(i / cols) * dy }));
 
 // Координаты слотов — относительно опорной точки мебели (низ по центру), y вверх отрицательный.
+/**
+ * Карусель в парке. Все точки — в координатах исходного рисунка основы 1312×1199 (до обрезки полей),
+ * unit переводит их в единицы комнаты. Настраивается здесь, код только читает.
+ */
+export const CAROUSEL = {
+  furn: 'carousel',
+  unit: 0.515,
+  foot: { x: 656, y: 1162 },             // опорная точка основы: низ по центру
+  orbit: { x: 656, y: 748, a: 196, b: 18 }, // центр и полуоси орбиты седла
+  bob: 9,                                 // подъём и опускание лошадки
+  bobs: 2,                                // сколько раз лошадка поднимется за круг
+  period: 9000,                           // мс на круг
+  ramp: 1800,                             // мс на разгон и плавную остановку
+  start: 0.95,                            // угол в покое: одна лошадка ближе и справа, другая дальше и слева
+  far: 0.9,                               // дальняя лошадка чуть меньше
+  turn: 0.22,                             // доля круга у края, где лошадка разворачивается по ходу движения
+  column: { x0: 596, y0: 548, x1: 716, y1: 912 },
+  roof: { x0: 200, y0: 20, x1: 1112, y1: 560 },
+  pole: { top: 540, floor: 938, color: 0xe9b43c, w: 7 },
+  rider: 0.54,                            // седок на карусели меньше обычной фигурки
+  horses: [
+    { sprite: 'carousel_horse_mint', scale: 0.4, pole: 70 },
+    { sprite: 'carousel_horse_coral', scale: 0.45, pole: 70 },
+  ],
+};
+/** Точка седла в единицах комнаты относительно опорной точки карусели, без подскока. */
+export function carouselSeat(angle: number) {
+  const o = CAROUSEL.orbit;
+  return { x: Math.round(o.a * Math.sin(angle) * CAROUSEL.unit), y: Math.round((o.y + o.b * Math.cos(angle) - CAROUSEL.foot.y) * CAROUSEL.unit) };
+}
+
 export const FURNITURE_LIST: FurnitureDef[] = [
   // гостиная
   { id: 'sofa', category: 'seats', w: 430, h: 250, layer: 'floor', seats: [{ x: -118, y: -98, pose: 'sitting' }, { x: 0, y: -98, pose: 'sitting' }, { x: 118, y: -98, pose: 'sitting' }] },
@@ -81,8 +112,10 @@ export const FURNITURE_LIST: FurnitureDef[] = [
   { id: 'fair_ticket_machine', category: 'decor', w: 150, h: 201, layer: 'floor' },
   // отдельные предметы локаций
   // у каждой лошадки своё седло; ближняя часть лошадки рисуется поверх героя, чтобы он сидел верхом, а не перед ней
-  { id: 'carousel', category: 'decor', w: 450, h: 591, layer: 'floor', fixed: true, seats: [{ x: -90, y: -150, pose: 'sitting' }, { x: 82, y: -150, pose: 'sitting' }],
-    fronts: [{ x0: -146, y0: -152, x1: -28, y1: -104 }, { x0: 24, y0: -152, x1: 144, y1: -104 }] },
+  // карусель из слоёв: основа стоит, лошадки ходят по кругу (CAROUSEL); колонна и крыша — передние слои поверх дальней лошадки
+  { id: 'carousel', category: 'decor', w: Math.round(872 * CAROUSEL.unit), h: Math.round(1132 * CAROUSEL.unit), layer: 'floor', fixed: true, tap: 'toggleOn',
+    seats: [0, 1].map((i) => ({ ...carouselSeat(CAROUSEL.start + i * Math.PI), pose: 'sitting' as const })),
+    fronts: [CAROUSEL.column, CAROUSEL.roof].map((r) => ({ x0: (r.x0 - CAROUSEL.foot.x) * CAROUSEL.unit, y0: (r.y0 - CAROUSEL.foot.y) * CAROUSEL.unit, x1: (r.x1 - CAROUSEL.foot.x) * CAROUSEL.unit, y1: (r.y1 - CAROUSEL.foot.y) * CAROUSEL.unit })) },
   // герой встаёт за пульт: он виден над пультом, а передняя часть пульта закрывает ноги
   { id: 'djconsole', category: 'decor', w: 430, h: 160, layer: 'floor', fixed: true, seats: [{ x: 0, y: -62, pose: 'standing' }], front: { x0: -215, y0: -160, x1: 215, y1: 0 } },
 ];

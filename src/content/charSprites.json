@@ -2260,5 +2260,44 @@
    "y": 395
   },
   "faceScale": 1.18
+ },
+ "hero_mila:summer:ride": {
+  "file": "hero_mila_summer_ride.webp",
+  "w": 380,
+  "h": 561,
+  "unit": 2,
+  "origin": {
+   "x": 156,
+   "y": 307
+  },
+  "eyeL": {
+   "x": 151,
+   "y": 138
+  },
+  "eyeR": {
+   "x": 228,
+   "y": 138
+  },
+  "browL": {
+   "x": 151,
+   "y": 112
+  },
+  "browR": {
+   "x": 228,
+   "y": 112
+  },
+  "mouth": {
+   "x": 189,
+   "y": 185
+  },
+  "handL": {
+   "x": 297,
+   "y": 315
+  },
+  "handR": {
+   "x": 297,
+   "y": 315
+  },
+  "faceScale": 1.18
  }
 }

@@ -9,10 +9,10 @@ import charSprites from '../content/charSprites.json';
 import furnSprites from '../content/furnSprites.json';
 import itemSprites from '../content/itemSprites.json';
 import petSprites from '../content/petSprites.json';
-import { DISCO_BALL, FURNITURE, HOUSE_ROOMS, TV_SCREEN } from '../content/furniture';
+import { CAROUSEL, DISCO_BALL, FURNITURE, HOUSE_ROOMS, TV_SCREEN } from '../content/furniture';
 import { ITEMS } from '../content/items';
 import { HAIR_COLORS } from '../content/wardrobe';
-import { charPos, itemPlace, petPos } from '../game/geometry';
+import { charPos, itemPlace, liveSeat, petPos, setLiveSeats, type LiveSeat } from '../game/geometry';
 import type { Character, FurnitureInst, ItemInst, Pet, Pt, RoomId, World } from '../game/types';
 import { ROOM_H, ROOM_W } from '../game/types';
 import { artTex, getTex, hitTex, imageTex, textureCount, type Tex } from './textures';
@@ -41,6 +41,8 @@ interface Node {
   overlay?: Sprite; overlayKey?: string; pulse: number; liquid?: Graphics; liquidKey?: string; bowlG?: Graphics; bowlKey?: string;
   /** место из модели мира: танец качает фигурку вокруг него и ничего не сохраняет */
   by: number;
+  /** шест лошадки карусели */
+  pole?: Graphics;
 }
 interface Tween { t: number; dur: number; step: (k: number) => void; done?: () => void }
 interface Particle { s: Sprite | Graphics; vx: number; vy: number; g: number; life: number; max: number; spin: number }
@@ -87,6 +89,8 @@ export class Scene {
   private selId: string | null = null;
   private talking = new Set<string>();
   private animating = new Set<string>();
+  /** карусели: угол поворота и скорость; живут в сцене и в сохранение не попадают */
+  private rides = new Map<string, { a: number; v: number }>();
   private talkFrame = 0;
 
   async init(host: HTMLElement) {
@@ -105,6 +109,7 @@ export class Scene {
     this.app.stage.addChild(this.root);
     this.app.renderer.on('resize', () => this.layout());
     this.layout();
+    setLiveSeats((furnitureId, slot) => this.rideSeat(furnitureId, slot));
     this.app.ticker.add((tk) => this.tick(tk.deltaMS));
   }
 
@@ -210,6 +215,7 @@ export class Scene {
     }
     for (const [id, n] of this.nodes) if (!seen.has(id)) { n.c.destroy({ children: true }); this.nodes.delete(id); }
     this.syncGlow(world, roomId);
+    this.rideTick(0); // лошадки и седоки сразу на своих местах
     if (this.debug) this.drawDebug(world, roomId);
   }
 
@@ -256,6 +262,13 @@ export class Scene {
         out.push({ id: `ff:${f.id}:${i}`, kind: 'front', ref: f.id, x: f.x, y: f.y, z: z + 0.5, flip: f.flipped, rot: 0, key, load: () => imageTex(key, url, { upp: meta.upp, ox: meta.ox, oy: meta.oy, crop }) });
       });
     }
+    for (const f of Object.values(w.furniture)) {
+      if (f.roomId !== roomId || f.definitionId !== CAROUSEL.furn) continue;
+      CAROUSEL.horses.forEach((h, i) => {
+        const meta = FURN_SPRITES[h.sprite], key = 'F:' + h.sprite, at = this.horseAt(f, i);
+        out.push({ id: `rh:${f.id}:${i}`, kind: 'front', ref: f.id, x: at.x, y: at.y, z: 200 + f.y + at.z, flip: false, rot: 0, key, load: () => imageTex(key, `${BASE}assets/furn/${h.sprite}.png`, { upp: meta.upp, ox: meta.ox, oy: meta.oy }) });
+      });
+    }
     const zOfFurn = (id: string) => 200 + (w.furniture[id]?.y ?? 0);
     const charZ = new Map<string, number>();
     for (const c of Object.values(w.characters)) {
@@ -278,34 +291,43 @@ export class Scene {
       out.push({ id: 'p:' + p.id, kind: 'pet', ref: p.id, x: pos.x, y: inBox ? pos.y - 20 : pos.y, z: p.seat ? zOfFurn(p.seat.furnitureId) + 0.3 : 200 + pos.y + (inBox ? -0.5 : 0), flip: p.flipped, rot: 0, key, load: () => imageTex(key, `${BASE}assets/pets/${name}.png`, meta) });
     }
     for (const it of Object.values(w.items)) {
-      const pl = itemPlace(w, it);
-      if (pl.roomId !== roomId || !pl.visible) continue;
+      const pl = this.heldPlace(w, it);
+      if (!pl || pl.roomId !== roomId || !pl.visible) continue;
       const o = it.owner;
-      if (o.kind === 'hand') {
-        // кисть берётся из точек спрайта героя, чтобы вещь лежала точно в руке у любой фигурки
-        const c = w.characters[o.characterId];
-        const sp = c?.costume && c.pose !== 'sleeping' ? CHAR_SPRITES[`${c.id}:${c.costume}:${c.pose === 'sitting' ? 'sit' : 'stand'}`] : undefined;
-        if (c && sp) {
-          const p = charPos(w, c);
-          const k = c.flipped ? -1 : 1;
-          if (o.slot === 'head') {
-            // убор сидит на голове: маска — на глазах, корона и колпак — на макушке
-            const mask = it.definitionId === 'mask';
-            pl.x = p.x + (k * ((sp.eyeL.x + sp.eyeR.x) / 2 - sp.origin.x)) / sp.unit;
-            pl.y = p.y + ((mask ? (sp.eyeL.y + sp.eyeR.y) / 2 : sp.browL.y) - sp.origin.y) / sp.unit + (mask ? ITEMS[it.definitionId].h * 0.5 : -34);
-          } else {
-          const hand = o.slot === 'both' ? { x: (sp.handL.x + sp.handR.x) / 2, y: (sp.handL.y + sp.handR.y) / 2 } : o.slot === 'left' ? sp.handL : sp.handR;
-          pl.x = p.x + (k * (hand.x - sp.origin.x)) / sp.unit;
-          pl.y = p.y + (hand.y - sp.origin.y) / sp.unit + ITEMS[it.definitionId].h * 0.4;
-          }
-        }
-      }
       const z = o.kind === 'hand' ? (charZ.get(o.characterId) ?? 200) + 0.05 : o.kind === 'surface' ? zOfFurn(o.furnitureId) + 0.6 + o.slot * 0.001 : o.kind === 'furniture' ? zOfFurn(o.furnitureId) + 0.3 + o.slot * 0.001 : 200 + pl.y;
       const LIQ: Record<string, number> = { water: 0x8fd0f5, milk: 0xffffff, tea: 0xc98c4f };
       const liquid = it.state.contents ? (it.definitionId === 'glass' ? { color: LIQ[it.state.contents], x: 0, y: -45, rx: 10 } : { color: LIQ[it.state.contents], x: -5, y: -40, rx: 13 }) : undefined;
       out.push({ id: 'i:' + it.instanceId, kind: 'item', ref: it.instanceId, x: pl.x, y: pl.y, z, flip: false, rot: 0, liquid, bowl: it.definitionId === 'pet_double_bowl' ? { water: !!it.state.water, kibble: !!it.state.kibble } : undefined, ...this.itemTex(it) });
     }
     return out;
+  }
+
+  /** Где нарисовать вещь; вещь в руке или на голове ложится по точкам рисунка героя. */
+  private heldPlace(w: World, it: ItemInst) {
+    const pl = itemPlace(w, it);
+    const o = it.owner;
+    if (o.kind === 'hand') {
+      // кисть берётся из точек спрайта героя, чтобы вещь лежала точно в руке у любой фигурки
+      const c = w.characters[o.characterId];
+      const sp = c?.costume && c.pose !== 'sleeping' ? CHAR_SPRITES[`${c.id}:${c.costume}:${this.poseOf(w, c)}`] : undefined;
+      if (c && sp) {
+        const p = charPos(w, c);
+        const live = liveSeat(c);
+        const k = (live ? live.flip : c.flipped) ? -1 : 1;
+        const u = sp.unit / (live?.s ?? 1); // на карусели фигурка меньше — и вещь в руке ближе к ней
+        if (o.slot === 'head') {
+          // убор сидит на голове: маска — на глазах, корона и колпак — на макушке
+          const mask = it.definitionId === 'mask';
+          pl.x = p.x + (k * ((sp.eyeL.x + sp.eyeR.x) / 2 - sp.origin.x)) / u;
+          pl.y = p.y + ((mask ? (sp.eyeL.y + sp.eyeR.y) / 2 : sp.browL.y) - sp.origin.y) / u + (mask ? ITEMS[it.definitionId].h * 0.5 : -34) * (live?.s ?? 1);
+        } else {
+        const hand = o.slot === 'both' ? { x: (sp.handL.x + sp.handR.x) / 2, y: (sp.handL.y + sp.handR.y) / 2 } : o.slot === 'left' ? sp.handL : sp.handR;
+        pl.x = p.x + (k * (hand.x - sp.origin.x)) / u;
+        pl.y = p.y + (hand.y - sp.origin.y) / u + ITEMS[it.definitionId].h * 0.4 * (live?.s ?? 1);
+        }
+      }
+    }
+    return pl;
   }
 
   private furnFile(f: FurnitureInst, night: boolean, occupied: boolean): string {
@@ -336,8 +358,7 @@ export class Scene {
   }
 
   private charWant(c: Character, p: Pt, z: number): Want {
-    const pose = c.pose === 'sitting' ? 'sit' : 'stand';
-    const sp = c.costume ? CHAR_SPRITES[`${c.id}:${c.costume}:${pose}`] : undefined;
+    const sp = c.costume && this.world ? CHAR_SPRITES[`${c.id}:${c.costume}:${this.poseOf(this.world, c)}`] : undefined;
     const rot = c.pose === 'sleeping' ? -Math.PI / 2 : 0;
     const base = { id: 'c:' + c.id, kind: 'char' as Kind, ref: c.id, x: p.x, y: p.y, z, flip: c.flipped && c.pose !== 'sleeping', rot };
     if (sp) {
@@ -348,6 +369,92 @@ export class Scene {
     const key = `CV:${JSON.stringify([c.look, c.outfit, c.pose === 'sitting', c.emotion, c.pose === 'sleeping'])}`;
     const r = { look: c.look, outfit: c.outfit, pose: c.pose, emotion: c.emotion };
     return { ...base, key, load: () => artTex(key, () => characterArt(r)) };
+  }
+
+  /** Какой рисунок героя нужен: стоя, сидя или верхом — если для этого наряда есть поза верхом на карусели. */
+  private poseOf(w: World, c: Character): 'stand' | 'sit' | 'ride' {
+    if (c.pose !== 'sitting') return 'stand';
+    const f = c.seat && w.furniture[c.seat.furnitureId];
+    return f && f.definitionId === CAROUSEL.furn && CHAR_SPRITES[`${c.id}:${c.costume}:ride`] ? 'ride' : 'sit';
+  }
+
+  // ---------- карусель ----------
+  /** Где сейчас лошадка: точка седла, глубина (1 — ближе всех, −1 — дальше всех), размер и разворот по ходу. */
+  private horseAt(f: FurnitureInst, i: number) {
+    let st = this.rides.get(f.id);
+    if (!st) { st = { a: CAROUSEL.start, v: 0 }; this.rides.set(f.id, st); }
+    const C = CAROUSEL, o = C.orbit, ang = st.a + i * Math.PI;
+    const depth = Math.cos(ang);
+    const bob = C.bob * Math.sin(st.a * C.bobs + i * Math.PI);
+    const size = 1 - (1 - C.far) * (1 - depth) / 2;
+    // у края круга лошадка разворачивается: ближняя идёт вправо, дальняя — влево, обе головой вперёд
+    const turn = Math.max(-1, Math.min(1, depth / C.turn));
+    const face = Math.sign(turn || 1) * Math.max(0.12, Math.abs(turn));
+    return {
+      x: f.x + o.a * Math.sin(ang) * C.unit, y: f.y + (o.y + o.b * depth + bob - C.foot.y) * C.unit,
+      depth, size, face, z: depth > 0 ? 0.7 : 0.3,
+      floor: f.y + (C.pole.floor + o.b * depth - C.foot.y) * C.unit, top: f.y + (C.pole.top - C.foot.y) * C.unit,
+    };
+  }
+  /** Седло как живое место для правил игры: туда садятся, оттуда берут героя, там же его руки и голова. */
+  private rideSeat(furnitureId: string, slot: number): LiveSeat | null {
+    const f = this.world?.furniture[furnitureId];
+    if (!f || f.definitionId !== CAROUSEL.furn || f.roomId !== this.roomId || !CAROUSEL.horses[slot]) return null;
+    const at = this.horseAt(f, slot);
+    return { x: at.x, y: at.y, s: CAROUSEL.rider * at.size, flip: at.face < 0 };
+  }
+  private rideTick(dt: number) {
+    const w = this.world;
+    if (!w) return;
+    const C = CAROUSEL;
+    for (const f of Object.values(w.furniture)) {
+      if (f.definitionId !== C.furn || f.roomId !== this.roomId) continue;
+      const base = this.nodes.get('f:' + f.id);
+      if (!base) continue;
+      const st = this.rides.get(f.id) ?? { a: C.start, v: 0 };
+      this.rides.set(f.id, st);
+      const top = (Math.PI * 2) / C.period;
+      // ребром к зрителю не останавливаемся: доезжаем до места, где лошадок хорошо видно
+      const edge = Math.abs(Math.cos(st.a)) < C.turn * 1.6;
+      const want = f.on ? top : edge && st.v > 0 ? top * 0.3 : 0;
+      const step = (top / C.ramp) * dt;
+      st.v += Math.max(-step, Math.min(step, want - st.v));
+      st.a = (st.a + st.v * dt) % (Math.PI * 2);
+      C.horses.forEach((h, i) => {
+        const at = this.horseAt(f, i);
+        const z = base.c.zIndex + at.z;
+        const n = this.nodes.get(`rh:${f.id}:${i}`);
+        if (n) {
+          n.c.position.set(at.x, at.y);
+          n.c.scale.set(at.face * at.size, at.size);
+          n.c.zIndex = z;
+          // шест: тонкая золотая линия от крыши до платформы, внутри группы лошадки и позади неё
+          if (!n.pole) { n.pole = new Graphics(); n.c.addChildAt(n.pole, 0); }
+          const px = h.pole * C.unit, y0 = (at.top - at.y) / at.size, y1 = (at.floor - at.y) / at.size, pw = C.pole.w * C.unit;
+          n.pole.clear().rect(px - pw / 2, y0, pw, y1 - y0).fill(C.pole.color).rect(px - pw / 2, y0, pw * 0.35, y1 - y0).fill({ color: 0xffffff, alpha: 0.35 });
+        }
+        for (const c of Object.values(w.characters)) {
+          if (c.seat?.furnitureId !== f.id || c.seat.slot !== i || c.roomId !== this.roomId) continue;
+          const cn = this.nodes.get('c:' + c.id);
+          if (!cn || this.dragging === c.id || this.animating.has(c.id)) continue;
+          const k = C.rider * at.size;
+          cn.c.position.set(at.x, at.y);
+          cn.by = at.y;
+          cn.c.scale.set(at.face * k, k);
+          cn.c.zIndex = z + 0.05;
+          for (const it of Object.values(w.items)) {
+            if (it.owner.kind !== 'hand' || it.owner.characterId !== c.id) continue;
+            const inn = this.nodes.get('i:' + it.instanceId);
+            if (!inn || this.dragging === it.instanceId || this.animating.has(it.instanceId)) continue;
+            const pl = this.heldPlace(w, it);
+            if (!pl) continue;
+            inn.c.position.set(pl.x, pl.y);
+            inn.c.scale.set(k, k);
+            inn.c.zIndex = z + 0.1;
+          }
+        }
+      });
+    }
   }
 
   /** Лицо — отдельный слой: пять деталей в точках, заданных для каждого спрайта. */
@@ -468,6 +575,12 @@ export class Scene {
       if (!n.tex || n.ref === opts.except || this.animating.has(n.ref)) continue;
       if (this.hitNode(n, pt)) { exact = n; break; }
     }
+    // седок за колонной или за ближней лошадкой: мебель не мешает взять того, кто на ней сидит
+    if (exact && this.rides.has(exact.ref) && (exact.kind === 'front' || exact.kind === 'furn')) {
+      const seatOn = exact.ref;
+      const rider = list.find((n) => n.kind === 'char' && n.tex && n.ref !== opts.except && !this.animating.has(n.ref) && this.world?.characters[n.ref]?.seat?.furnitureId === seatOn && this.hitNode(n, pt));
+      if (rider) exact = rider;
+    }
     if (exact && (exact.kind === 'item' || exact.kind === 'pet' || exact.kind === 'char')) return { kind: exact.kind, ref: exact.ref };
     // рядом с маленьким предметом — выбираем его, если точное попадание пришлось на мебель или пустое место
     let near: { n: Node; d: number } | null = null;
@@ -492,6 +605,9 @@ export class Scene {
     for (const n of this.nodes.values()) if (n.ref === ref && n.kind !== 'front') return { x: n.c.x, y: n.c.y };
     return null;
   }
+  /** Для проверок: какой рисунок сейчас у героя и как повёрнута карусель. */
+  spriteOf(ref: string): string { return this.nodeOf(ref)?.key ?? ''; }
+  rideOf(furnitureId: string) { const st = this.rides.get(furnitureId); return st ? { angle: st.a, speed: st.v } : null; }
   private nodeOf(ref: string): Node | undefined {
     for (const n of this.nodes.values()) if (n.ref === ref && n.kind !== 'front') return n;
     return undefined;
@@ -760,6 +876,7 @@ export class Scene {
     this.night.alpha += (this.nightAlpha - this.night.alpha) * Math.min(1, dt / 180);
     this.danceTick(dt, now);
     this.clubTick(dt, now);
+    this.rideTick(dt);
     for (let i = this.tweens.length - 1; i >= 0; i--) {
       const t = this.tweens[i];
       t.t += dt;

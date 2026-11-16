@@ -2,6 +2,7 @@ import './style.css';
 import { GameAudio } from './audio/audio';
 import { Game } from './game/game';
 import * as rules from './game/rules';
+import * as geometry from './game/geometry';
 import { FARMER_SPOT, createWorld, repairWorld, validateWorld } from './game/world';
 import type { RoomId, World } from './game/types';
 import { setLang, t } from './i18n';
@@ -201,7 +202,7 @@ async function run(kv: KV, initial: World) {
   document.addEventListener('visibilitychange', () => { if (document.hidden) void game.flush(); });
   window.addEventListener('pagehide', () => void game.flush());
   // отладочный доступ для автоматических тестов
-  (window as unknown as { __game: unknown }).__game = { game, scene, play, input, audio, rules, offline, talk, map };
+  (window as unknown as { __game: unknown }).__game = { game, scene, play, input, audio, rules, geometry, offline, talk, map };
 }
 
 void boot();

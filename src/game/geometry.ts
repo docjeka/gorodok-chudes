@@ -14,12 +14,27 @@ export function slotPos(f: FurnitureInst, pt: Pt): Pt {
   return { x: f.x + (f.flipped ? -pt.x : pt.x), y: f.y + pt.y };
 }
 
+/** Живое место (седло карусели): где оно сейчас, во сколько раз там уменьшен седок и смотрит ли он влево. */
+export interface LiveSeat { x: number; y: number; s: number; flip: boolean }
+let liveSeats: ((furnitureId: string, slot: number) => LiveSeat | null) | null = null;
+/** Сцена сообщает, где сейчас движущиеся места. Без неё места стоят там, где записаны в мебели. */
+export function setLiveSeats(fn: typeof liveSeats) { liveSeats = fn; }
+export function liveSeat(c: Character): LiveSeat | null {
+  return c.seat && liveSeats ? liveSeats(c.seat.furnitureId, c.seat.slot) : null;
+}
+/** Точка сиденья: у карусели — там, где сейчас лошадка. */
+export function seatPos(f: FurnitureInst, slot: number): Pt & { s: number } {
+  const live = liveSeats?.(f.id, slot);
+  if (live) return { x: live.x, y: live.y, s: live.s };
+  return { ...slotPos(f, FURNITURE[f.definitionId].seats![slot]), s: 1 };
+}
+
 /** Положение героя в комнате с учётом сиденья. */
 export function charPos(w: World, c: Character): Pt {
   if (c.seat) {
     const f = w.furniture[c.seat.furnitureId];
     const seat = f && FURNITURE[f.definitionId]?.seats?.[c.seat.slot];
-    if (f && seat) return slotPos(f, seat);
+    if (f && seat) { const p = seatPos(f, c.seat.slot); return { x: p.x, y: p.y }; }
   }
   return { x: c.x, y: c.y };
 }
@@ -46,6 +61,8 @@ export function handPos(w: World, c: Character, slot: HandSlot | 'both' | 'head'
   const p = charPos(w, c);
   const o = handOffset(c, slot);
   if (c.pose === 'sleeping') return { x: p.x - 90, y: p.y - 30 };
+  const live = liveSeat(c);
+  if (live) return { x: p.x + (live.flip ? -o.x : o.x) * live.s, y: p.y + o.y * live.s };
   return { x: p.x + (c.flipped ? -o.x : o.x), y: p.y + o.y };
 }
 
@@ -53,7 +70,8 @@ export function handPos(w: World, c: Character, slot: HandSlot | 'both' | 'head'
 export function charBox(w: World, c: Character) {
   const p = charPos(w, c);
   if (c.pose === 'sleeping') return { x0: p.x - 290, x1: p.x + 10, y0: p.y - 90, y1: p.y + 30, headX: p.x - 190, headLine: null as number | null };
-  if (c.pose === 'sitting') return { x0: p.x - 66, x1: p.x + 66, y0: p.y - 210, y1: p.y + 40, headX: p.x, headLine: p.y - 86 };
+  const k = liveSeat(c)?.s ?? 1;
+  if (c.pose === 'sitting') return { x0: p.x - 66 * k, x1: p.x + 66 * k, y0: p.y - 210 * k, y1: p.y + 40 * k, headX: p.x, headLine: p.y - 86 * k };
   if (c.pose === 'bathing') return { x0: p.x - 66, x1: p.x + 66, y0: p.y - 255, y1: p.y - 120, headX: p.x, headLine: p.y - 125 };
   return { x0: p.x - 66, x1: p.x + 66, y0: p.y - 255, y1: p.y + 6, headX: p.x, headLine: p.y - 132 };
 }

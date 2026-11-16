@@ -579,3 +579,33 @@ describe('запасное хранилище', () => {
     expect(loaded.status === 'ok' && loaded.world.currentRoomId).toBe('kitchen');
   });
 });
+
+describe('карусель: живые места', () => {
+  it('старые сохранения: оба места посадки на карусели остаются теми же', () => {
+    let w = createWorld();
+    for (const [id, slot] of [['hero_mila', 0], ['hero_timur', 1]] as const) { const r = placeCharacter(w, id, { furnitureId: 'pk_carousel', slot }, 'park'); expect(r.ok).toBe(true); if (r.ok) w = r.world; }
+    const back = parseWorld(JSON.stringify(w));
+    expect(back.ok).toBe(true);
+    if (!back.ok) return;
+    expect(validateWorld(back.world)).toEqual([]);
+    expect(back.world.characters.hero_mila.seat).toEqual({ furnitureId: 'pk_carousel', slot: 0 });
+    expect(back.world.characters.hero_timur.seat).toEqual({ furnitureId: 'pk_carousel', slot: 1 });
+  });
+  it('герой садится туда, где сейчас лошадка, а без сцены — на место из мебели', async () => {
+    const { setLiveSeats, charPos, seatPos } = await import('../../src/game/geometry');
+    const { resolveCharDrop } = await import('../../src/game/drop');
+    let w = createWorld();
+    const f = w.furniture.pk_carousel;
+    const rest = seatPos(f, 1);
+    expect(rest.s).toBe(1);
+    setLiveSeats((id, slot) => (id === 'pk_carousel' ? { x: 700 + slot * 300, y: 400, s: 0.5, flip: slot === 1 } : null));
+    try {
+      expect(resolveCharDrop(w, 'hero_mila', { x: 1000, y: 400 - 35 }, 'park')).toEqual({ type: 'seat', furnitureId: 'pk_carousel', slot: 1 });
+      const r = placeCharacter(w, 'hero_mila', { furnitureId: 'pk_carousel', slot: 1 }, 'park');
+      expect(r.ok).toBe(true);
+      if (r.ok) w = r.world;
+      expect(charPos(w, w.characters.hero_mila)).toEqual({ x: 1000, y: 400 });
+    } finally { setLiveSeats(null); }
+    expect(charPos(w, w.characters.hero_mila)).toEqual({ x: rest.x, y: rest.y });
+  });
+});
