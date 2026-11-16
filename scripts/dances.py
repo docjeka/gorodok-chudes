@@ -34,7 +34,8 @@ def face_at(a, redder):
             my = int((p[1] + q[1]) / 2); pts = [a[my, int(p[0] + sep * f), :3].astype(int) for f in (0.3, 0.5, 0.7)]
             if any(abs(c - pts[1]).sum() > 40 for c in pts): continue
             if pts[1][0] - pts[1][2] < 40 or pink[my, int((p[0] + q[0]) / 2)]: continue
-            score = p[2] + q[2]
+            # лицо — самая верхняя подходящая пара: ниже бывают ладони, рукава и узоры того же розового цвета
+            score = -(p[1] + q[1])
             if best is None or score > best[3]: best = (p, q, sep, score)
     return best
 
@@ -72,6 +73,10 @@ for key, st in sorted(MAN['sets'].items()):
         for n, col in (('eyeL', '#06f'), ('eyeR', '#06f'), ('browL', '#93f'), ('browR', '#93f'), ('mouth', '#0a4')): p = fr[n]; d.line([(p['x'] - 7, p['y']), (p['x'] + 7, p['y'])], fill=col, width=3); d.line([(p['x'], p['y'] - 7), (p['x'], p['y'] + 7)], fill=col, width=3)
         o = entry['origin']; d.line([(o['x'] - 14, o['y']), (o['x'] + 14, o['y'])], fill='#f00', width=3)
         dbg.append((key, i, t, bool(fd)))
+    ys = [fr['eyeL']['y'] for fr in entry['frames']]; xs = [fr['mouth']['x'] for fr in entry['frames']]
+    odd = [i + 1 for i, f in enumerate(found) if f and abs(f[2] - sep) > sep * 0.12]
+    jump = [i + 1 for i in range(6) if abs(ys[i] - float(np.median(ys))) > faceW * k * 0.75 or abs(xs[i] - float(np.median(xs))) > faceW * k * 0.75]
+    if odd or jump: print('??', key, 'ширина лица не как в других кадрах:', odd, 'лицо далеко от обычного места:', jump)
     out[key] = entry
     print(key, 'k=%.3f' % k, entry['w'], entry['h'], 'found', sum(1 for f in found if f))
 json.dump(out, open('src/content/danceSprites.json', 'w'), indent=1)

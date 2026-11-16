@@ -199,7 +199,12 @@ test('танцы в клубе: диджей и сидящие не танцую
   m = await sample(['hero_timur', 'hero_lev'], 1200);
   expect(m.hero_timur.rot).toBe(0); expect(m.hero_timur.dy).toBeLessThan(1); // прыжок уже в кадре
   // переодели на танцполе — танец в новом наряде; с вещью в руке — прежнее мягкое покачивание, вещь не теряется
-  await page.evaluate(() => { const g = window.__game; g.game.commit(g.rules.wearSet(g.game.world, 'hero_timur', 'pirate')); });
+  // лицо не отстаёт от фигурки: на каждом кадре экрана оно расставлено по точкам именно того рисунка, который сейчас показан
+  const drift = (ms: number, before?: string) => page.evaluate(async ([dur, set]) => { const g = window.__game; let bad = 0, n = 0; if (set) g.game.commit(g.rules.wearSet(g.game.world, 'hero_timur', set)); const t0 = performance.now(); while (performance.now() - t0 < (dur as number)) { for (const id of ['hero_timur', 'hero_lev']) { const f = g.scene.faceCheck(id); if (!f) continue; n++; if (!f.same || Math.abs(f.eyeY - f.wantY) > 0.5 || Math.abs(f.eyeX - f.wantX) > 0.5) bad++; } await new Promise((r) => requestAnimationFrame(r)); } return { bad, n }; }, [ms, before ?? ''] as const);
+  let d = await drift(4200);
+  expect(d.n).toBeGreaterThan(50); expect(d.bad).toBe(0);
+  d = await drift(4200, 'pirate'); // и в момент переодевания, пока кадры нового наряда ещё грузятся
+  expect(d.bad).toBe(0);
   await page.waitForFunction(() => window.__game.scene.spriteOf('hero_timur').includes('dance/hero_timur_pirate_'), null, { timeout: 6000 });
   await page.evaluate(() => { const g = window.__game; const r = g.rules.spawnItem(g.game.world, 'balloon', { kind: 'hand', characterId: 'hero_lev', slot: 'left' }); g.game.commit(r); });
   await page.waitForFunction(() => window.__game.scene.danceFrameOf('hero_lev') === null && window.__game.scene.spriteOf('hero_lev').includes('hero_lev_sport_stand'), null, { timeout: 4000 });

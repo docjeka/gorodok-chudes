@@ -210,19 +210,22 @@ export class Scene {
         n.c.scale.set(w.flip ? -1 : 1, 1);
         n.c.rotation = w.rot;
       }
+      // лицо рисуется по точкам того рисунка, который сейчас на экране: пока новый кадр грузится, лицо остаётся на старом месте
+      let faceNow = true;
       if (n.key !== w.key) {
         n.key = w.key;
         const cached = getTex(w.key);
         if (cached) this.applyTex(n, cached);
         else {
           const node = n;
-          void w.load().then((t) => { if (node.key === w.key) this.applyTex(node, t); }).catch(() => {
+          faceNow = !node.tex; // у нового объекта рисунка ещё нет — лицо появится вместе с ним
+          void w.load().then((t) => { if (node.key === w.key) { this.applyTex(node, t); this.syncFace(node, w.face); } }).catch(() => {
             // кадра реакции нет или он не загрузился — показываем обычный кадр того же питомца, а не пустоту
             if (w.spare && node.key === w.key) void w.spare.load().then((t) => { if (node.key === w.key) this.applyTex(node, t); }).catch(() => undefined);
           });
         }
-      } else if (n.tex) n.tex.used = performance.now();
-      this.syncFace(n, w.face);
+      } else if (n.tex) { n.tex.used = performance.now(); if (n.tex.key !== w.key) faceNow = false; } // рисунок этого кадра ещё в пути
+      if (faceNow) this.syncFace(n, w.face);
       this.syncOverlay(n, w.overlay);
       this.syncLiquid(n, w.liquid);
       this.syncBowl(n, w.bowl);
@@ -832,6 +835,8 @@ export class Scene {
   setDanceClock(beats: number) { this.danceClock = beats >= 0 ? { beats, at: performance.now() } : null; }
   /** какой танцевальный кадр сейчас у героя — для проверок */
   danceFrameOf(id: string): number | null { return this.dance.get(id)?.frame ?? null; }
+  /** Для проверок: совпадает ли рисунок на экране с тем, по которому расставлено лицо, и где стоят глаза относительно фигурки. */
+  faceCheck(id: string) { const n = this.nodeOf(id); if (!n || !n.tex || !n.face || !n.parts) return null; const sp = n.face.sp; return { same: n.tex.key === 'C:' + sp.file, eyeY: n.parts.eyeL.y, wantY: (sp.eyeL.y - sp.origin.y) / sp.unit, eyeX: n.parts.eyeL.x, wantX: (sp.eyeL.x - sp.origin.x) / sp.unit }; }
   private danceT0 = 0;
   private danceBeat = 500;
   /**
@@ -866,7 +871,8 @@ export class Scene {
         const beat = (((this.danceClock.beats + (now - this.danceClock.at) / this.danceBeat + (h % 2) * 4) % 8) + 8) % 8;
         let frame = 0; for (let i = 0; i < DANCE_BEATS.length; i++) if (beat >= DANCE_BEATS[i]) frame = i;
         if (d.frame === undefined) for (const f of set.frames) void imageTex('C:dance/' + f.file, `${BASE}assets/chars/dance/${f.file}`, { upp: 1 / set.unit, ox: set.origin.x, oy: set.origin.y }).catch(() => undefined); // шесть кадров этого наряда — когда он понадобился
-        if (d.frame !== frame) { d.frame = frame; redraw = true; }
+        // кадр показываем, только когда его рисунок уже загружен: фигурка и лицо меняются одновременно
+        if (d.frame !== frame && getTex('C:dance/' + set.frames[frame].file)) { d.frame = frame; redraw = true; }
         d.amp = 0; n.c.rotation = 0; n.c.y = n.by; // прыжок уже нарисован в кадре — второго подскока нет
         continue;
       }
