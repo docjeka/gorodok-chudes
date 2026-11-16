@@ -1,5 +1,5 @@
 // Создание нового мира, проверка целостности, миграции и разбор импорта.
-import { FURNITURE, charAllowedIn, initialFurniture, petAllowedIn, ROOM_IDS } from '../content/furniture';
+import { FURNITURE, HATCH, charAllowedIn, initialFurniture, petAllowedIn, ROOM_IDS } from '../content/furniture';
 import { ITEMS } from '../content/items';
 import { GARMENTS, OUTFITS, PRESET_HEROES, costumeFits, homeCostume, presetCharacter } from '../content/wardrobe';
 import { isInside, isValidOutfit, moveItem, spawnItem } from './rules';
@@ -82,7 +82,9 @@ const FARM_SEEDS: [string, Owner][] = [
   ['farm_hay', floor('farm_barn', 840, 860)], ['farm_milkcan', floor('farm_barn', 1480, 760)],
 ];
 const LOCATION_ROOMS: RoomId[] = ['farm_yard', 'farm_barn', 'farm_pen', 'animals', 'park', 'park_games', 'cafe', 'cafe_bakery', 'toys', 'toys_workshop', 'beach', 'beach_boats', 'club'];
-function seedLocations(world: World, seeds: [string, Owner][] = [...LOCATION_SEEDS, ...PROP_SEEDS, ...PARTY_SEEDS, ...FEED_SEEDS, ...FARM_SEEDS]): World {
+/** Особое яйцо: одно на сохранение, лежит во дворе фермы рядом с курятником. */
+const HATCH_SEEDS: [string, Owner][] = [[HATCH.egg, floor('farm_yard', 470, 830)]];
+function seedLocations(world: World, seeds: [string, Owner][] = [...LOCATION_SEEDS, ...PROP_SEEDS, ...PARTY_SEEDS, ...FEED_SEEDS, ...FARM_SEEDS, ...HATCH_SEEDS]): World {
   let w = world;
   for (const [def, owner] of seeds) {
     const r = spawnItem(w, def, owner, def === 'giftbox' ? { packed: false, paper: 2, bow: 1 } : {});
@@ -305,6 +307,13 @@ export const MIGRATIONS: Record<number, Migration> = {
     fixCostumes(raw);
     raw.schemaVersion = 9;
     return raw;
+  },
+  // 9 → 10: особое яйцо для вылупления — одно, если его ещё нет и цыплёнок из него ещё не выходил
+  9: (raw) => {
+    const has = Object.values<any>(raw.items ?? {}).some((i) => i.definitionId === HATCH.egg) || !!raw.pets?.[HATCH.chick];
+    const next = has ? raw : seedLocations(raw, HATCH_SEEDS);
+    next.schemaVersion = 10;
+    return next;
   },
 };
 

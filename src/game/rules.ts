@@ -1,6 +1,6 @@
 // Чистые правила мира. Каждая функция получает мир и возвращает новый мир либо причину отказа.
 // Ничего не знает про DOM, Canvas и хранилище — поэтому тестируется напрямую.
-import { FURNITURE, GRAIN_EATERS, HAY_EATERS, charAllowedIn, petAllowedIn } from '../content/furniture';
+import { FURNITURE, GRAIN_EATERS, HATCH, HAY_EATERS, charAllowedIn, petAllowedIn } from '../content/furniture';
 import { GIFTS, ITEMS, RECIPES } from '../content/items';
 import { GARMENTS, OUTFITS, costumeFits, presetCharacter } from '../content/wardrobe';
 import { charPos, clampFloor, itemPlace, petPos } from './geometry';
@@ -127,6 +127,7 @@ export function moveItem(world: World, itemId: string, target: Owner): Result {
       const fd = f && FURNITURE[f.definitionId];
       if (!f || !fd?.surfaces || !f.roomId) return fail('no_surface');
       let slot = freeSlot(usedSlots(w, target, itemId), fd.surfaces.length, target.slot);
+      if (fd.hatch && it.definitionId !== HATCH.egg) return fail('not_egg');
       if (fd.cushions) {
         // на подушку сиденья — только игрушку и только на свободное место: под героя она не прячется
         if (!ITEMS[it.definitionId].tags.includes('toy')) return fail('not_toy');
@@ -803,6 +804,35 @@ export function collectEgg(world: World, nestId: string): Result {
   if (!r.ok) return r;
   r.world.furniture[nestId].on = 1;
   return ok(r.world, { instanceId: r.info!.instanceId, inBasket: !!basket && r.world.items[r.info!.instanceId as string].owner.kind === 'item' });
+}
+/** Особое яйцо, которое сейчас лежит в тёплом гнезде этой комнаты (если малыш ещё не вылупился). */
+export function eggInNest(w: World, roomId: RoomId): ItemInst | undefined {
+  if (w.pets[HATCH.chick]) return undefined;
+  return Object.values(w.items).find((i) => {
+    if (i.definitionId !== HATCH.egg || i.owner.kind !== 'surface') return false;
+    const f = w.furniture[i.owner.furnitureId];
+    return !!f && f.roomId === roomId && !!FURNITURE[f.definitionId]?.hatch;
+  });
+}
+/**
+ * Шаг вылупления: яйцо в гнезде сначала дрожит, потом покрывается трещинками, потом из него выходит цыплёнок.
+ * Состояние хранится в самом яйце, поэтому выход из комнаты и перезагрузка ничего не сбрасывают. Забрали яйцо —
+ * оно остаётся у игрока как было. Цыплёнок получает постоянный ID и появляется один раз: яйцо при этом исчезает.
+ */
+export function hatchStep(world: World, eggId: string): Result {
+  const egg0 = world.items[eggId];
+  if (!egg0 || egg0.definitionId !== HATCH.egg || egg0.owner.kind !== 'surface') return fail('not_in_nest');
+  const nest = world.furniture[egg0.owner.furnitureId];
+  if (!nest || !nest.roomId || !FURNITURE[nest.definitionId]?.hatch) return fail('not_in_nest');
+  if (world.pets[HATCH.chick]) return fail('already_hatched');
+  const w = clone(world);
+  const egg = w.items[eggId];
+  const warm = egg.state.warm ?? 0;
+  if (warm < HATCH.steps) { egg.state.warm = warm + 1; return ok(w, { stage: warm + 1 }); }
+  delete w.items[eggId];
+  const at = clampFloor(nest.x + 120, 720);
+  w.pets[HATCH.chick] = { id: HATCH.chick, kind: 'chick', roomId: nest.roomId, x: at.x, y: at.y, sleeping: false, seat: null, collar: 0, flipped: false };
+  return ok(w, { stage: HATCH.steps + 1, petId: HATCH.chick });
 }
 /** Полить грядку: 0 — земля, 1 — росток, 2 — цветок. Таймеров нет: растёт только от полива. */
 export function waterBed(world: World, bedId: string): Result {

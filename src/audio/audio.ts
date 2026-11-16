@@ -28,6 +28,8 @@ class LoopTrack {
     this.gain.connect(out);
   }
   get loaded() { return !!this.buffer; }
+  /** Сколько секунд от начала круга звучит трек сейчас; −1, если он не играет. */
+  get position() { return this.playing ? ((((this.ctx.currentTime - (this.nextAt - this.period)) % this.period) + this.period) % this.period) : -1; }
   get sources() { return this.live.length; }
   load(): Promise<void> {
     this.loading ??= fetch(this.url).then((r) => { if (!r.ok) throw new Error('no music'); return r.arrayBuffer(); }).then((b) => this.ctx.decodeAudioData(b)).then((buf) => { this.buffer = buf; }).catch(() => { this.loading = null; });
@@ -95,6 +97,43 @@ export class GameAudio {
   mute = false;
 
   /** Вызывать из обработчика нажатия. */
+  /** Записи голосов животных: файл, громкость (записи выровнены, корова и коза тише остальных). Для кенгуру записей нет — они молчат. */
+  private static ANIMALS: Record<string, number> = { cat: 1, dog: 1, frenchie: 0.9, rabbit: 0.9, wolf: 0.8, capybara: 1.1, pony: 0.9, cow: 2.2, sheep: 1, pig: 1, hen: 0.9, chick: 0.9, goat: 1.3 };
+  private animalBuf = new Map<string, AudioBuffer>();
+  private animalLoad = new Map<string, Promise<void>>();
+  private animalGain: GainNode | null = null;
+  private animalUntil = 0;
+  /** какие записи реально прозвучали — для проверок */
+  animalLog: string[] = [];
+  /** все ли записи загружены — для проверок */
+  get animalsReady() { return this.animalBuf.size === Object.keys(GameAudio.ANIMALS).length; }
+  static hasAnimal(kind: string) { return kind in GameAudio.ANIMALS; }
+  /** Подгрузить запись заранее (локальный файл, работает и без сети после установки). */
+  preloadAnimal(kind: string) {
+    if (!this.ctx || !(kind in GameAudio.ANIMALS) || this.animalLoad.has(kind)) return;
+    const ctx = this.ctx;
+    this.animalLoad.set(kind, fetch(`${import.meta.env.BASE_URL}assets/sfx/animals/${kind}.mp3`).then((r) => { if (!r.ok) throw new Error('no sound'); return r.arrayBuffer(); }).then((b) => ctx.decodeAudioData(b)).then((buf) => { this.animalBuf.set(kind, buf); }).catch(() => { this.animalLoad.delete(kind); }));
+  }
+  /**
+   * Голос животного из записи. Возвращает длительность в секундах; 0 — не прозвучал (звук выключен, запись ещё
+   * не загрузилась или предыдущий голос ещё играет: второй поверх не накладывается).
+   */
+  animal(kind: string): number {
+    this.unlock();
+    if (!this.ctx || !this.animalGain || this.mute || this.sfx <= 0) return 0;
+    const buf = this.animalBuf.get(kind);
+    if (!buf) { this.preloadAnimal(kind); return 0; }
+    if (performance.now() < this.animalUntil) return 0; // по обычным часам: часы звука стоят, пока он приостановлен
+    const src = this.ctx.createBufferSource(), g = this.ctx.createGain();
+    src.buffer = buf;
+    g.gain.value = GameAudio.ANIMALS[kind] ?? 1;
+    src.connect(g); g.connect(this.animalGain);
+    src.start();
+    this.animalUntil = performance.now() + buf.duration * 1000;
+    this.animalLog.push(kind);
+    return buf.duration;
+  }
+
   unlock() {
     if (!this.ctx) {
       const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
@@ -106,6 +145,9 @@ export class GameAudio {
       this.sfxGain.connect(this.ctx.destination);
       this.voiceGain = this.ctx.createGain();
       this.voiceGain.connect(this.ctx.destination);
+      this.animalGain = this.ctx.createGain();
+      this.animalGain.connect(this.ctx.destination);
+      for (const kind of Object.keys(GameAudio.ANIMALS)) this.preloadAnimal(kind); // 13 коротких записей, около 330 КБ
       this.apply();
       const base = import.meta.env.BASE_URL;
       // фон: 20 тактов по 2,68 с; клубный трек: 32 такта по 2 с — круг ровно по тактам
@@ -124,6 +166,7 @@ export class GameAudio {
     if (this.mute && this.clubOn) this.setClub(false);
     this.voiceGain?.gain.setTargetAtTime(this.mute ? 0 : Math.max(this.sfx, 0.4) * 0.9, t, 0.02);
     this.sfxGain.gain.setTargetAtTime(this.mute ? 0 : this.sfx * 0.3, t, 0.02);
+    this.animalGain?.gain.setTargetAtTime(this.mute ? 0 : this.sfx * 0.55, t, 0.02); // тише реплик героев и не громче музыки
   }
 
   get context() { return this.ctx; }
@@ -147,6 +190,8 @@ export class GameAudio {
   /** Заранее загрузить клубный трек (при входе в клуб), чтобы он включался сразу. */
   preloadClub() { void this.clubTrack?.load(); }
   /** Состояние музыки — для автоматических проверок. */
+  /** Положение клубного трека в долях (120 ударов в минуту); −1, если он не играет. */
+  clubBeats() { const p = this.clubTrack?.position ?? -1; return p < 0 ? -1 : p / 0.5; }
   musicState() {
     return { town: !!this.town?.playing, club: !!this.clubTrack?.playing, clubOn: this.clubOn, townSources: this.town?.sources ?? 0, clubSources: this.clubTrack?.sources ?? 0, clubStarts: this.clubTrack?.starts ?? 0, townStarts: this.town?.starts ?? 0, loaded: [!!this.town?.loaded, !!this.clubTrack?.loaded] };
   }

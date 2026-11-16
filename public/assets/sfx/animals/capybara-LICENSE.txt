@@ -1,0 +1,10 @@
+Capybara sound candidate for Little Wonder Town / Голос капибары (пробный фрагмент)
+
+Sávio Freire Bruno (Fauna Brasil), “Capivara nadando e vocalizando.ogv” (2009)
+Source: https://commons.wikimedia.org/wiki/File:Capivara_nadando_e_vocalizando.ogv
+License of the source and this adapted clip: Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+https://creativecommons.org/licenses/by-sa/4.0/
+Changes by Nika: extracted the audio, trimmed to 1.91–3.11 seconds, converted to mono MP3, applied fades and gain adjustment.
+
+Автор распространяет исходник на условиях CC BY-SA 4.0. Коммерческое использование разрешено при соблюдении лицензии. Сохрани этот текст и ссылку в титрах игры; распространяй производный аудиофайл на той же лицензии, без дополнительных ограничений на него. Это дополнительный файл, не из CC0-пакета.
+Фрагмент выделен по волновой форме из полевой записи; слышимость и узнаваемость голоса проверь перед подключением, в записи есть естественный фон.

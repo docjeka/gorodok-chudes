@@ -42,3 +42,8 @@
 | public/assets/chars/farm_worker_lev_*.webp, public/assets/pets/{kangaroo,joey}_*.png, public/assets/rooms/farm_pen.webp | набор «Ферма: дополнение» от пользователя (gorodok-chudes-farm-extra.zip) | авторские, от пользователя |
 | public/assets/furn/carousel.png (основа), carousel_horse_{mint,coral}.png, public/assets/chars/hero_mila_summer_ride.webp | набор «Карусель: пилот» от пользователя (gorodok-chudes-carousel-pilot.zip) | авторские, от пользователя |
 | public/assets/pets/kangaroo_pouch_{idle,happy}.png | лист farm-kangaroo-pouch.png от пользователя | авторские, от пользователя |
+| public/assets/sfx/animals/*.mp3 (кроме capybara) | набор gorodok-chudes-animal-sounds-cc0.zip от пользователя; записи Freesound, см. docs/sounds/CREDITS.md и SOURCES.json | CC0 1.0 |
+| public/assets/sfx/animals/capybara.mp3 | Sávio Freire Bruno (Fauna Brasil), Wikimedia Commons; фрагмент подготовила Ника, см. docs/sounds/capybara-CREDIT-AND-LICENSE.txt | CC BY-SA 4.0 (указание автора в разделе «Для родителей») |
+| public/assets/chars/dance/*.webp | набор gorodok-chudes-dances-all-26-outfits-webp.zip от пользователя, нарезан scripts/dances.py | авторские, от пользователя |
+| public/assets/items/farm_egg_special.png | вырезано из farm_eggs.png (набор «Ферма» от пользователя) | авторские, от пользователя |
+| public/assets/voice/liza/hello.mp3 | фраза Лизы от пользователя (ещё не подключена) | от пользователя |

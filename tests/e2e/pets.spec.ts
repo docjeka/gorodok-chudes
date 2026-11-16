@@ -105,8 +105,12 @@ test('голоса питомцев: шесть разных, только по 
   await park(page);
   const log = () => page.evaluate(() => window.__game.play.petVoiceLog.slice());
   const pets = ['pet_cat', 'pet_dog', 'pet_frenchie', 'pet_wolf', 'pet_capybara', 'pet_rabbit'];
-  for (const p of pets) { await page.mouse.click(...(await at(page, p, -45))); await page.waitForTimeout(2350); }
+  await page.mouse.click(...(await roomPt(page, 800, 140))); // первое касание включает звук и подгружает записи
+  await page.waitForFunction(() => window.__game.audio.animalsReady, null, { timeout: 20_000 });
+  for (const p of pets) { await page.mouse.click(...(await at(page, p, -45))); await page.waitForTimeout(p === 'pet_wolf' ? 5000 : 3000); } // пауза не короче самой записи
   expect(await log()).toEqual(['meow', 'woof', 'frenchie', 'howl', 'whistle', 'sniff']);
+  // звучат настоящие записи, у каждого вида своя; синтетикой не подменяются
+  expect(await page.evaluate(() => window.__game.audio.animalLog.slice())).toEqual(['cat', 'dog', 'frenchie', 'wolf', 'capybara', 'rabbit']);
   expect(await page.evaluate(() => window.__game.audio.running)).toBe(true); // звук идёт через общий движок после «Играть»
   // второй тап сразу — пауза ещё не прошла
   await page.mouse.click(...(await at(page, 'pet_cat', -45)));

@@ -6,10 +6,11 @@ import { browArt, eyeArt, eyeStateFor, faceInk, mouthArt } from '../art/face';
 import { tvSceneArt } from '../art/furniture';
 import { itemArt, itemArtKey } from '../art/items';
 import charSprites from '../content/charSprites.json';
+import danceSprites from '../content/danceSprites.json';
 import furnSprites from '../content/furnSprites.json';
 import itemSprites from '../content/itemSprites.json';
 import petSprites from '../content/petSprites.json';
-import { CAROUSEL, DISCO_BALL, POUCH, FURNITURE, HOUSE_ROOMS, TV_SCREEN } from '../content/furniture';
+import { CAROUSEL, DISCO_BALL, HATCH, POUCH, FURNITURE, HOUSE_ROOMS, TV_SCREEN } from '../content/furniture';
 import { ITEMS } from '../content/items';
 import { HAIR_COLORS } from '../content/wardrobe';
 import { charPos, itemPlace, liveSeat, petPos, setLiveSeats, type LiveSeat } from '../game/geometry';
@@ -22,6 +23,10 @@ type Kind = 'item' | 'char' | 'pet' | 'furn' | 'front';
 type CharSprite = { file: string; unit: number; origin: Pt; eyeL: Pt; eyeR: Pt; browL: Pt; browR: Pt; mouth: Pt; handL: Pt; handR: Pt; faceScale: number };
 type SpriteMeta = { upp: number; ox: number; oy: number; w: number; h: number; top?: boolean };
 const CHAR_SPRITES = charSprites as unknown as Record<string, CharSprite>;
+/** Танцевальные кадры по паре «герой:наряд»: шесть фаз с общим масштабом и общей опорной точкой. */
+const DANCE = danceSprites as unknown as Record<string, { unit: number; origin: Pt; w: number; h: number; frames: (Pick<CharSprite, 'eyeL' | 'eyeR' | 'browL' | 'browR' | 'mouth'> & { file: string })[] }>;
+/** Фазы танца на 8 долей: с какой доли какой кадр (шаг-хлопок, шаг, руки вверх, прыжок, приземление, исходная). */
+const DANCE_BEATS = [0, 2, 4, 5, 5.5, 6];
 const FURN_SPRITES = furnSprites as unknown as Record<string, SpriteMeta>;
 const ITEM_SPRITES = itemSprites as unknown as Record<string, { w: number; h: number }>;
 const PET_SPRITES = petSprites as unknown as Record<string, SpriteMeta>;
@@ -34,6 +39,8 @@ interface Want {
   liquid?: { color: number; x: number; y: number; rx: number };
   /** двойная миска: вода слева и гранулы справа — отдельными слоями */
   bowl?: { water: boolean; kibble: boolean };
+  /** особое яйцо: золотая искорка всегда; в гнезде оно дрожит (warm ≥ 1) и покрывается трещинками (warm ≥ 2) */
+  egg?: { warm: number; nest: boolean };
 }
 interface Node {
   id: string; kind: Kind; ref: string; c: Container; body: Sprite; key: string; tex?: Tex;
@@ -43,6 +50,7 @@ interface Node {
   by: number;
   /** шест лошадки карусели */
   pole?: Graphics;
+  egg?: { warm: number; nest: boolean }; eggG?: Graphics; spark?: Graphics; eggKey?: string;
 }
 interface Tween { t: number; dur: number; step: (k: number) => void; done?: () => void }
 interface Particle { s: Sprite | Graphics; vx: number; vy: number; g: number; life: number; max: number; spin: number }
@@ -218,6 +226,7 @@ export class Scene {
       this.syncOverlay(n, w.overlay);
       this.syncLiquid(n, w.liquid);
       this.syncBowl(n, w.bowl);
+      this.syncEgg(n, w.egg);
     }
     for (const [id, n] of this.nodes) if (!seen.has(id)) { n.c.destroy({ children: true }); this.nodes.delete(id); }
     this.syncGlow(world, roomId);
@@ -321,7 +330,7 @@ export class Scene {
       const z = o.kind === 'hand' ? (charZ.get(o.characterId) ?? 200) + 0.05 : o.kind === 'surface' ? zOfFurn(o.furnitureId) + (FURNITURE[w.furniture[o.furnitureId]?.definitionId]?.cushions ? 0.1 : 0.6) + o.slot * 0.001 : o.kind === 'furniture' ? zOfFurn(o.furnitureId) + 0.3 + o.slot * 0.001 : 200 + pl.y;
       const LIQ: Record<string, number> = { water: 0x8fd0f5, milk: 0xffffff, tea: 0xc98c4f };
       const liquid = it.state.contents ? (it.definitionId === 'glass' ? { color: LIQ[it.state.contents], x: 0, y: -45, rx: 10 } : { color: LIQ[it.state.contents], x: -5, y: -40, rx: 13 }) : undefined;
-      out.push({ id: 'i:' + it.instanceId, kind: 'item', ref: it.instanceId, x: pl.x, y: pl.y, z, flip: false, rot: 0, liquid, bowl: it.definitionId === 'pet_double_bowl' ? { water: !!it.state.water, kibble: !!it.state.kibble } : undefined, ...this.itemTex(it) });
+      out.push({ id: 'i:' + it.instanceId, kind: 'item', ref: it.instanceId, x: pl.x, y: pl.y, z, flip: false, rot: 0, liquid, bowl: it.definitionId === 'pet_double_bowl' ? { water: !!it.state.water, kibble: !!it.state.kibble } : undefined, egg: it.definitionId === HATCH.egg ? { warm: it.state.warm ?? 0, nest: o.kind === 'surface' && !!FURNITURE[w.furniture[o.furnitureId]?.definitionId]?.hatch } : undefined, ...this.itemTex(it) });
     }
     return out;
   }
@@ -333,7 +342,7 @@ export class Scene {
     if (o.kind === 'hand') {
       // кисть берётся из точек спрайта героя, чтобы вещь лежала точно в руке у любой фигурки
       const c = w.characters[o.characterId];
-      const sp = c?.costume && c.pose !== 'sleeping' ? CHAR_SPRITES[`${c.id}:${c.costume}:${this.poseOf(w, c)}`] : undefined;
+      const sp = c && c.pose !== 'sleeping' ? this.charSprite(w, c) : undefined;
       if (c && sp) {
         const p = charPos(w, c);
         const live = liveSeat(c);
@@ -381,8 +390,16 @@ export class Scene {
     return { key, load: () => artTex(key, () => itemArt(id, state)) };
   }
 
+  /** Рисунок героя сейчас: танцевальный кадр, если он танцует в наряде с нарисованным танцем, иначе обычная поза. */
+  private charSprite(w: World, c: Character): CharSprite | undefined {
+    if (!c.costume) return undefined;
+    const frame = this.dance.get(c.id)?.frame;
+    const set = frame !== undefined && c.pose === 'standing' && this.dragging !== c.id ? DANCE[`${c.id}:${c.costume}`] : undefined;
+    if (set) { const f = set.frames[frame!]; return { ...f, file: 'dance/' + f.file, w: set.w, h: set.h, unit: set.unit, origin: set.origin, handL: set.origin, handR: set.origin, faceScale: 1.18 } as unknown as CharSprite; }
+    return CHAR_SPRITES[`${c.id}:${c.costume}:${this.poseOf(w, c)}`];
+  }
   private charWant(c: Character, p: Pt, z: number): Want {
-    const sp = c.costume && this.world ? CHAR_SPRITES[`${c.id}:${c.costume}:${this.poseOf(this.world, c)}`] : undefined;
+    const sp = this.world ? this.charSprite(this.world, c) : undefined;
     const rot = c.pose === 'sleeping' ? -Math.PI / 2 : 0;
     const base = { id: 'c:' + c.id, kind: 'char' as Kind, ref: c.id, x: p.x, y: p.y, z, flip: c.flipped && c.pose !== 'sleeping', rot };
     if (sp) {
@@ -552,6 +569,38 @@ export class Scene {
     g.ellipse(l.x - l.rx * 0.3, l.y - 0.6, l.rx * 0.3, l.rx * 0.1).fill({ color: 0xffffff, alpha: 0.7 });
     n.c.addChild(g);
     n.liquid = g;
+  }
+
+  /** Особое яйцо: искорка и трещинки рисуются кодом поверх обычного рисунка яйца. */
+  private syncEgg(n: Node, e: Want['egg']) {
+    n.egg = e;
+    const key = e ? `${Math.min(2, e.warm)}` : '';
+    if (n.eggKey === key) return;
+    n.eggKey = key;
+    n.eggG?.destroy(); n.spark?.destroy();
+    n.eggG = n.spark = undefined;
+    if (!e) return;
+    const star = new Graphics();
+    star.star(0, 0, 4, 8, 2.6).fill({ color: 0xffd23a }).stroke({ color: 0xfff6c8, width: 1 });
+    star.position.set(12, -34);
+    n.c.addChild(star);
+    n.spark = star;
+    if (e.warm >= 2) {
+      const g = new Graphics();
+      g.moveTo(-9, -24).lineTo(-4, -19).lineTo(-7, -14).lineTo(-1, -11).moveTo(4, -30).lineTo(1, -24).lineTo(6, -20).lineTo(3, -15).lineTo(8, -12).moveTo(-12, -13).lineTo(-7, -9);
+      g.stroke({ color: 0x8a6a4a, width: 1.4, alpha: 0.9 });
+      n.c.addChild(g);
+      n.eggG = g;
+    }
+  }
+  private eggTick(now: number) {
+    for (const n of this.nodes.values()) {
+      if (!n.egg) continue;
+      if (n.spark) { const k = 0.5 + 0.5 * Math.sin(now / 260); n.spark.alpha = 0.55 + 0.45 * k; n.spark.scale.set(0.8 + 0.35 * k); n.spark.rotation = now / 900; }
+      if (this.dragging === n.ref || this.animating.has(n.ref)) continue;
+      // в гнезде яйцо слегка покачивается: чем ближе к вылуплению, тем заметнее
+      n.c.rotation = n.egg.nest && n.egg.warm >= 1 && !this.reducedMotion ? Math.sin(now / (n.egg.warm >= 2 ? 70 : 110)) * (n.egg.warm >= 2 ? 0.16 : 0.09) : 0;
+    }
   }
 
   private syncBowl(n: Node, b: Want['bowl']) {
@@ -777,7 +826,12 @@ export class Scene {
   }
 
   // ---------- танец ----------
-  private dance = new Map<string, { on: boolean; amp: number }>();
+  private dance = new Map<string, { on: boolean; amp: number; frame?: number }>();
+  /** положение клубного трека в долях и момент, когда его сообщили: фаза танца берётся из звука */
+  private danceClock: { beats: number; at: number } | null = null;
+  setDanceClock(beats: number) { this.danceClock = beats >= 0 ? { beats, at: performance.now() } : null; }
+  /** какой танцевальный кадр сейчас у героя — для проверок */
+  danceFrameOf(id: string): number | null { return this.dance.get(id)?.frame ?? null; }
   private danceT0 = 0;
   private danceBeat = 500;
   /**
@@ -795,11 +849,28 @@ export class Scene {
   private danceTick(dt: number, now: number) {
     if (!this.dance.size) return;
     const phase = ((now - this.danceT0) / this.danceBeat) % 4;
+    const w = this.world;
+    let redraw = false;
     for (const [id, d] of this.dance) {
       const n = this.nodeOf(id);
       const held = this.dragging === id || this.animating.has(id);
       // унесли с танцпола — сразу обычная поза; музыка стихла — движение мягко заканчивается
-      if (!n || held || this.reducedMotion) { if (n && !held) { n.c.rotation = 0; n.c.y = n.by; } else if (n) n.c.rotation = 0; this.dance.delete(id); continue; }
+      if (!n || held || this.reducedMotion) { if (n && !held) { n.c.rotation = 0; n.c.y = n.by; } else if (n) n.c.rotation = 0; if (d.frame !== undefined) redraw = true; this.dance.delete(id); continue; }
+      const c = w?.characters[id];
+      // нарисованный танец: есть кадры для этой пары «герой:наряд», руки свободны, трек реально играет
+      const set = c?.costume ? DANCE[`${id}:${c.costume}`] : undefined;
+      const busy = !!w && Object.values(w.items).some((i) => i.owner.kind === 'hand' && i.owner.characterId === id && i.owner.slot !== 'head');
+      if (set && c && !busy && d.on && this.danceClock) {
+        let h = 0; for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) % 997;
+        // доля берётся из положения звука; у части героев сдвиг на такт, чтобы не двигались строго одновременно
+        const beat = (((this.danceClock.beats + (now - this.danceClock.at) / this.danceBeat + (h % 2) * 4) % 8) + 8) % 8;
+        let frame = 0; for (let i = 0; i < DANCE_BEATS.length; i++) if (beat >= DANCE_BEATS[i]) frame = i;
+        if (d.frame === undefined) for (const f of set.frames) void imageTex('C:dance/' + f.file, `${BASE}assets/chars/dance/${f.file}`, { upp: 1 / set.unit, ox: set.origin.x, oy: set.origin.y }).catch(() => undefined); // шесть кадров этого наряда — когда он понадобился
+        if (d.frame !== frame) { d.frame = frame; redraw = true; }
+        d.amp = 0; n.c.rotation = 0; n.c.y = n.by; // прыжок уже нарисован в кадре — второго подскока нет
+        continue;
+      }
+      if (d.frame !== undefined) { d.frame = undefined; redraw = true; }
       d.amp = Math.max(0, Math.min(1, d.amp + (d.on ? dt : -dt) / 240));
       if (!d.on && d.amp <= 0) { n.c.rotation = 0; n.c.y = n.by; this.dance.delete(id); continue; }
       // у каждого свой характер: кто-то больше качается, кто-то чаще подпрыгивает — но ритм общий
@@ -814,6 +885,7 @@ export class Scene {
       n.c.rotation = rot * d.amp;
       n.c.y = n.by - up * d.amp;
     }
+    if (redraw && w) this.sync(w);
   }
 
   // ---------- вещь «оживает» по нажатию ----------
@@ -989,6 +1061,7 @@ export class Scene {
     this.danceTick(dt, now);
     this.clubTick(dt, now);
     this.rideTick(dt);
+    this.eggTick(now);
     for (let i = this.tweens.length - 1; i >= 0; i--) {
       const t = this.tweens[i];
       t.t += dt;

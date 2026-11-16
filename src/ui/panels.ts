@@ -443,7 +443,7 @@ export class Panels {
       up.onclick = () => void this.game.flush().then(() => this.offline.applyUpdate()); // сначала сохранение, потом обновление
       sec.append(up);
     }
-    sec.append(el('p', 'note', t('parent.install')), el('p', 'note', t('parent.about')), reset);
+    sec.append(el('p', 'note', t('parent.install')), el('p', 'note', t('parent.about')), el('p', 'note', t('parent.sounds')), reset);
     this.body.append(sec);
   }
 }

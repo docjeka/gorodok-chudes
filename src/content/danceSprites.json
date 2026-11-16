@@ -1,0 +1,4032 @@
+{
+ "hero_asya:artist": {
+  "unit": 2,
+  "origin": {
+   "x": 211,
+   "y": 598
+  },
+  "frames": [
+   {
+    "file": "hero_asya_artist_1.webp",
+    "found": true,
+    "eyeL": {
+     "x": 192,
+     "y": 203
+    },
+    "eyeR": {
+     "x": 269,
+     "y": 203
+    },
+    "browL": {
+     "x": 192,
+     "y": 177
+    },
+    "browR": {
+     "x": 269,
+     "y": 177
+    },
+    "mouth": {
+     "x": 231,
+     "y": 250
+    }
+   },
+   {
+    "file": "hero_asya_artist_2.webp",
+    "found": true,
+    "eyeL": {
+     "x": 159,
+     "y": 204
+    },
+    "eyeR": {
+     "x": 236,
+     "y": 204
+    },
+    "browL": {
+     "x": 159,
+     "y": 178
+    },
+    "browR": {
+     "x": 236,
+     "y": 178
+    },
+    "mouth": {
+     "x": 198,
+     "y": 251
+    }
+   },
+   {
+    "file": "hero_asya_artist_3.webp",
+    "found": true,
+    "eyeL": {
+     "x": 152,
+     "y": 203
+    },
+    "eyeR": {
+     "x": 229,
+     "y": 203
+    },
+    "browL": {
+     "x": 152,
+     "y": 177
+    },
+    "browR": {
+     "x": 229,
+     "y": 177
+    },
+    "mouth": {
+     "x": 191,
+     "y": 249
+    }
+   },
+   {
+    "file": "hero_asya_artist_4.webp",
+    "found": true,
+    "eyeL": {
+     "x": 195,
+     "y": 190
+    },
+    "eyeR": {
+     "x": 272,
+     "y": 190
+    },
+    "browL": {
+     "x": 195,
+     "y": 164
+    },
+    "browR": {
+     "x": 272,
+     "y": 164
+    },
+    "mouth": {
+     "x": 234,
+     "y": 237
+    }
+   },
+   {
+    "file": "hero_asya_artist_5.webp",
+    "found": true,
+    "eyeL": {
+     "x": 165,
+     "y": 236
+    },
+    "eyeR": {
+     "x": 242,
+     "y": 236
+    },
+    "browL": {
+     "x": 165,
+     "y": 210
+    },
+    "browR": {
+     "x": 242,
+     "y": 210
+    },
+    "mouth": {
+     "x": 204,
+     "y": 283
+    }
+   },
+   {
+    "file": "hero_asya_artist_6.webp",
+    "found": true,
+    "eyeL": {
+     "x": 155,
+     "y": 204
+    },
+    "eyeR": {
+     "x": 232,
+     "y": 204
+    },
+    "browL": {
+     "x": 155,
+     "y": 178
+    },
+    "browR": {
+     "x": 232,
+     "y": 178
+    },
+    "mouth": {
+     "x": 193,
+     "y": 251
+    }
+   }
+  ],
+  "w": 438,
+  "h": 600
+ },
+ "hero_asya:ballerina": {
+  "unit": 2,
+  "origin": {
+   "x": 243,
+   "y": 625
+  },
+  "frames": [
+   {
+    "file": "hero_asya_ballerina_1.webp",
+    "found": true,
+    "eyeL": {
+     "x": 229,
+     "y": 226
+    },
+    "eyeR": {
+     "x": 306,
+     "y": 226
+    },
+    "browL": {
+     "x": 229,
+     "y": 200
+    },
+    "browR": {
+     "x": 306,
+     "y": 200
+    },
+    "mouth": {
+     "x": 268,
+     "y": 273
+    }
+   },
+   {
+    "file": "hero_asya_ballerina_2.webp",
+    "found": true,
+    "eyeL": {
+     "x": 187,
+     "y": 228
+    },
+    "eyeR": {
+     "x": 264,
+     "y": 228
+    },
+    "browL": {
+     "x": 187,
+     "y": 202
+    },
+    "browR": {
+     "x": 264,
+     "y": 202
+    },
+    "mouth": {
+     "x": 226,
+     "y": 274
+    }
+   },
+   {
+    "file": "hero_asya_ballerina_3.webp",
+    "found": true,
+    "eyeL": {
+     "x": 149,
+     "y": 227
+    },
+    "eyeR": {
+     "x": 226,
+     "y": 227
+    },
+    "browL": {
+     "x": 149,
+     "y": 201
+    },
+    "browR": {
+     "x": 226,
+     "y": 201
+    },
+    "mouth": {
+     "x": 188,
+     "y": 274
+    }
+   },
+   {
+    "file": "hero_asya_ballerina_4.webp",
+    "found": true,
+    "eyeL": {
+     "x": 230,
+     "y": 207
+    },
+    "eyeR": {
+     "x": 307,
+     "y": 207
+    },
+    "browL": {
+     "x": 230,
+     "y": 181
+    },
+    "browR": {
+     "x": 307,
+     "y": 181
+    },
+    "mouth": {
+     "x": 269,
+     "y": 253
+    }
+   },
+   {
+    "file": "hero_asya_ballerina_5.webp",
+    "found": true,
+    "eyeL": {
+     "x": 191,
+     "y": 238
+    },
+    "eyeR": {
+     "x": 268,
+     "y": 238
+    },
+    "browL": {
+     "x": 191,
+     "y": 212
+    },
+    "browR": {
+     "x": 268,
+     "y": 212
+    },
+    "mouth": {
+     "x": 230,
+     "y": 284
+    }
+   },
+   {
+    "file": "hero_asya_ballerina_6.webp",
+    "found": true,
+    "eyeL": {
+     "x": 158,
+     "y": 219
+    },
+    "eyeR": {
+     "x": 235,
+     "y": 219
+    },
+    "browL": {
+     "x": 158,
+     "y": 193
+    },
+    "browR": {
+     "x": 235,
+     "y": 193
+    },
+    "mouth": {
+     "x": 196,
+     "y": 266
+    }
+   }
+  ],
+  "w": 463,
+  "h": 628
+ },
+ "hero_asya:cat": {
+  "unit": 2,
+  "origin": {
+   "x": 191,
+   "y": 563
+  },
+  "frames": [
+   {
+    "file": "hero_asya_cat_1.webp",
+    "found": true,
+    "eyeL": {
+     "x": 158,
+     "y": 197
+    },
+    "eyeR": {
+     "x": 235,
+     "y": 197
+    },
+    "browL": {
+     "x": 158,
+     "y": 171
+    },
+    "browR": {
+     "x": 235,
+     "y": 171
+    },
+    "mouth": {
+     "x": 196,
+     "y": 244
+    }
+   },
+   {
+    "file": "hero_asya_cat_2.webp",
+    "found": true,
+    "eyeL": {
+     "x": 154,
+     "y": 198
+    },
+    "eyeR": {
+     "x": 231,
+     "y": 198
+    },
+    "browL": {
+     "x": 154,
+     "y": 172
+    },
+    "browR": {
+     "x": 231,
+     "y": 172
+    },
+    "mouth": {
+     "x": 192,
+     "y": 244
+    }
+   },
+   {
+    "file": "hero_asya_cat_3.webp",
+    "found": true,
+    "eyeL": {
+     "x": 157,
+     "y": 195
+    },
+    "eyeR": {
+     "x": 234,
+     "y": 195
+    },
+    "browL": {
+     "x": 157,
+     "y": 169
+    },
+    "browR": {
+     "x": 234,
+     "y": 169
+    },
+    "mouth": {
+     "x": 195,
+     "y": 241
+    }
+   },
+   {
+    "file": "hero_asya_cat_4.webp",
+    "found": true,
+    "eyeL": {
+     "x": 158,
+     "y": 175
+    },
+    "eyeR": {
+     "x": 235,
+     "y": 175
+    },
+    "browL": {
+     "x": 158,
+     "y": 149
+    },
+    "browR": {
+     "x": 235,
+     "y": 149
+    },
+    "mouth": {
+     "x": 196,
+     "y": 222
+    }
+   },
+   {
+    "file": "hero_asya_cat_5.webp",
+    "found": true,
+    "eyeL": {
+     "x": 158,
+     "y": 216
+    },
+    "eyeR": {
+     "x": 235,
+     "y": 216
+    },
+    "browL": {
+     "x": 158,
+     "y": 190
+    },
+    "browR": {
+     "x": 235,
+     "y": 190
+    },
+    "mouth": {
+     "x": 196,
+     "y": 263
+    }
+   },
+   {
+    "file": "hero_asya_cat_6.webp",
+    "found": true,
+    "eyeL": {
+     "x": 157,
+     "y": 194
+    },
+    "eyeR": {
+     "x": 234,
+     "y": 194
+    },
+    "browL": {
+     "x": 157,
+     "y": 168
+    },
+    "browR": {
+     "x": 234,
+     "y": 168
+    },
+    "mouth": {
+     "x": 195,
+     "y": 241
+    }
+   }
+  ],
+  "w": 376,
+  "h": 565
+ },
+ "hero_asya:winter": {
+  "unit": 2,
+  "origin": {
+   "x": 195,
+   "y": 583
+  },
+  "frames": [
+   {
+    "file": "hero_asya_winter_1.webp",
+    "found": true,
+    "eyeL": {
+     "x": 171,
+     "y": 205
+    },
+    "eyeR": {
+     "x": 248,
+     "y": 205
+    },
+    "browL": {
+     "x": 171,
+     "y": 179
+    },
+    "browR": {
+     "x": 248,
+     "y": 179
+    },
+    "mouth": {
+     "x": 210,
+     "y": 251
+    }
+   },
+   {
+    "file": "hero_asya_winter_2.webp",
+    "found": true,
+    "eyeL": {
+     "x": 155,
+     "y": 210
+    },
+    "eyeR": {
+     "x": 232,
+     "y": 210
+    },
+    "browL": {
+     "x": 155,
+     "y": 184
+    },
+    "browR": {
+     "x": 232,
+     "y": 184
+    },
+    "mouth": {
+     "x": 194,
+     "y": 256
+    }
+   },
+   {
+    "file": "hero_asya_winter_3.webp",
+    "found": true,
+    "eyeL": {
+     "x": 142,
+     "y": 203
+    },
+    "eyeR": {
+     "x": 219,
+     "y": 203
+    },
+    "browL": {
+     "x": 142,
+     "y": 177
+    },
+    "browR": {
+     "x": 219,
+     "y": 177
+    },
+    "mouth": {
+     "x": 180,
+     "y": 250
+    }
+   },
+   {
+    "file": "hero_asya_winter_4.webp",
+    "found": true,
+    "eyeL": {
+     "x": 170,
+     "y": 181
+    },
+    "eyeR": {
+     "x": 246,
+     "y": 181
+    },
+    "browL": {
+     "x": 170,
+     "y": 155
+    },
+    "browR": {
+     "x": 246,
+     "y": 155
+    },
+    "mouth": {
+     "x": 208,
+     "y": 228
+    }
+   },
+   {
+    "file": "hero_asya_winter_5.webp",
+    "found": true,
+    "eyeL": {
+     "x": 157,
+     "y": 233
+    },
+    "eyeR": {
+     "x": 234,
+     "y": 233
+    },
+    "browL": {
+     "x": 157,
+     "y": 207
+    },
+    "browR": {
+     "x": 234,
+     "y": 207
+    },
+    "mouth": {
+     "x": 196,
+     "y": 279
+    }
+   },
+   {
+    "file": "hero_asya_winter_6.webp",
+    "found": true,
+    "eyeL": {
+     "x": 145,
+     "y": 198
+    },
+    "eyeR": {
+     "x": 222,
+     "y": 198
+    },
+    "browL": {
+     "x": 145,
+     "y": 172
+    },
+    "browR": {
+     "x": 222,
+     "y": 172
+    },
+    "mouth": {
+     "x": 184,
+     "y": 245
+    }
+   }
+  ],
+  "w": 393,
+  "h": 585
+ },
+ "hero_lev:astronaut": {
+  "unit": 2,
+  "origin": {
+   "x": 230,
+   "y": 600
+  },
+  "frames": [
+   {
+    "file": "hero_lev_astronaut_1.webp",
+    "found": true,
+    "eyeL": {
+     "x": 216,
+     "y": 200
+    },
+    "eyeR": {
+     "x": 293,
+     "y": 200
+    },
+    "browL": {
+     "x": 216,
+     "y": 174
+    },
+    "browR": {
+     "x": 293,
+     "y": 174
+    },
+    "mouth": {
+     "x": 255,
+     "y": 247
+    }
+   },
+   {
+    "file": "hero_lev_astronaut_2.webp",
+    "found": true,
+    "eyeL": {
+     "x": 187,
+     "y": 199
+    },
+    "eyeR": {
+     "x": 264,
+     "y": 199
+    },
+    "browL": {
+     "x": 187,
+     "y": 173
+    },
+    "browR": {
+     "x": 264,
+     "y": 173
+    },
+    "mouth": {
+     "x": 225,
+     "y": 246
+    }
+   },
+   {
+    "file": "hero_lev_astronaut_3.webp",
+    "found": true,
+    "eyeL": {
+     "x": 156,
+     "y": 199
+    },
+    "eyeR": {
+     "x": 233,
+     "y": 199
+    },
+    "browL": {
+     "x": 156,
+     "y": 173
+    },
+    "browR": {
+     "x": 233,
+     "y": 173
+    },
+    "mouth": {
+     "x": 194,
+     "y": 246
+    }
+   },
+   {
+    "file": "hero_lev_astronaut_4.webp",
+    "found": true,
+    "eyeL": {
+     "x": 221,
+     "y": 192
+    },
+    "eyeR": {
+     "x": 298,
+     "y": 192
+    },
+    "browL": {
+     "x": 221,
+     "y": 166
+    },
+    "browR": {
+     "x": 298,
+     "y": 166
+    },
+    "mouth": {
+     "x": 259,
+     "y": 239
+    }
+   },
+   {
+    "file": "hero_lev_astronaut_5.webp",
+    "found": true,
+    "eyeL": {
+     "x": 189,
+     "y": 220
+    },
+    "eyeR": {
+     "x": 266,
+     "y": 220
+    },
+    "browL": {
+     "x": 189,
+     "y": 194
+    },
+    "browR": {
+     "x": 266,
+     "y": 194
+    },
+    "mouth": {
+     "x": 227,
+     "y": 267
+    }
+   },
+   {
+    "file": "hero_lev_astronaut_6.webp",
+    "found": true,
+    "eyeL": {
+     "x": 157,
+     "y": 197
+    },
+    "eyeR": {
+     "x": 234,
+     "y": 197
+    },
+    "browL": {
+     "x": 157,
+     "y": 171
+    },
+    "browR": {
+     "x": 234,
+     "y": 171
+    },
+    "mouth": {
+     "x": 195,
+     "y": 243
+    }
+   }
+  ],
+  "w": 461,
+  "h": 603
+ },
+ "hero_lev:pajama": {
+  "unit": 2,
+  "origin": {
+   "x": 209,
+   "y": 608
+  },
+  "frames": [
+   {
+    "file": "hero_lev_pajama_1.webp",
+    "found": true,
+    "eyeL": {
+     "x": 180,
+     "y": 217
+    },
+    "eyeR": {
+     "x": 257,
+     "y": 217
+    },
+    "browL": {
+     "x": 180,
+     "y": 191
+    },
+    "browR": {
+     "x": 257,
+     "y": 191
+    },
+    "mouth": {
+     "x": 219,
+     "y": 264
+    }
+   },
+   {
+    "file": "hero_lev_pajama_2.webp",
+    "found": true,
+    "eyeL": {
+     "x": 153,
+     "y": 219
+    },
+    "eyeR": {
+     "x": 230,
+     "y": 219
+    },
+    "browL": {
+     "x": 153,
+     "y": 193
+    },
+    "browR": {
+     "x": 230,
+     "y": 193
+    },
+    "mouth": {
+     "x": 192,
+     "y": 265
+    }
+   },
+   {
+    "file": "hero_lev_pajama_3.webp",
+    "found": true,
+    "eyeL": {
+     "x": 145,
+     "y": 219
+    },
+    "eyeR": {
+     "x": 222,
+     "y": 219
+    },
+    "browL": {
+     "x": 145,
+     "y": 193
+    },
+    "browR": {
+     "x": 222,
+     "y": 193
+    },
+    "mouth": {
+     "x": 184,
+     "y": 266
+    }
+   },
+   {
+    "file": "hero_lev_pajama_4.webp",
+    "found": true,
+    "eyeL": {
+     "x": 181,
+     "y": 197
+    },
+    "eyeR": {
+     "x": 258,
+     "y": 197
+    },
+    "browL": {
+     "x": 181,
+     "y": 171
+    },
+    "browR": {
+     "x": 258,
+     "y": 171
+    },
+    "mouth": {
+     "x": 220,
+     "y": 244
+    }
+   },
+   {
+    "file": "hero_lev_pajama_5.webp",
+    "found": true,
+    "eyeL": {
+     "x": 160,
+     "y": 231
+    },
+    "eyeR": {
+     "x": 237,
+     "y": 231
+    },
+    "browL": {
+     "x": 160,
+     "y": 205
+    },
+    "browR": {
+     "x": 237,
+     "y": 205
+    },
+    "mouth": {
+     "x": 198,
+     "y": 278
+    }
+   },
+   {
+    "file": "hero_lev_pajama_6.webp",
+    "found": true,
+    "eyeL": {
+     "x": 149,
+     "y": 215
+    },
+    "eyeR": {
+     "x": 226,
+     "y": 215
+    },
+    "browL": {
+     "x": 149,
+     "y": 189
+    },
+    "browR": {
+     "x": 226,
+     "y": 189
+    },
+    "mouth": {
+     "x": 188,
+     "y": 262
+    }
+   }
+  ],
+  "w": 408,
+  "h": 611
+ },
+ "hero_lev:rain": {
+  "unit": 2,
+  "origin": {
+   "x": 202,
+   "y": 601
+  },
+  "frames": [
+   {
+    "file": "hero_lev_rain_1.webp",
+    "found": true,
+    "eyeL": {
+     "x": 170,
+     "y": 227
+    },
+    "eyeR": {
+     "x": 247,
+     "y": 227
+    },
+    "browL": {
+     "x": 170,
+     "y": 201
+    },
+    "browR": {
+     "x": 247,
+     "y": 201
+    },
+    "mouth": {
+     "x": 208,
+     "y": 274
+    }
+   },
+   {
+    "file": "hero_lev_rain_2.webp",
+    "found": true,
+    "eyeL": {
+     "x": 149,
+     "y": 225
+    },
+    "eyeR": {
+     "x": 226,
+     "y": 225
+    },
+    "browL": {
+     "x": 149,
+     "y": 199
+    },
+    "browR": {
+     "x": 226,
+     "y": 199
+    },
+    "mouth": {
+     "x": 187,
+     "y": 272
+    }
+   },
+   {
+    "file": "hero_lev_rain_3.webp",
+    "found": true,
+    "eyeL": {
+     "x": 143,
+     "y": 228
+    },
+    "eyeR": {
+     "x": 220,
+     "y": 228
+    },
+    "browL": {
+     "x": 143,
+     "y": 202
+    },
+    "browR": {
+     "x": 220,
+     "y": 202
+    },
+    "mouth": {
+     "x": 181,
+     "y": 275
+    }
+   },
+   {
+    "file": "hero_lev_rain_4.webp",
+    "found": true,
+    "eyeL": {
+     "x": 173,
+     "y": 195
+    },
+    "eyeR": {
+     "x": 250,
+     "y": 195
+    },
+    "browL": {
+     "x": 173,
+     "y": 169
+    },
+    "browR": {
+     "x": 250,
+     "y": 169
+    },
+    "mouth": {
+     "x": 212,
+     "y": 242
+    }
+   },
+   {
+    "file": "hero_lev_rain_5.webp",
+    "found": true,
+    "eyeL": {
+     "x": 156,
+     "y": 238
+    },
+    "eyeR": {
+     "x": 233,
+     "y": 238
+    },
+    "browL": {
+     "x": 156,
+     "y": 212
+    },
+    "browR": {
+     "x": 233,
+     "y": 212
+    },
+    "mouth": {
+     "x": 195,
+     "y": 285
+    }
+   },
+   {
+    "file": "hero_lev_rain_6.webp",
+    "found": true,
+    "eyeL": {
+     "x": 146,
+     "y": 214
+    },
+    "eyeR": {
+     "x": 223,
+     "y": 214
+    },
+    "browL": {
+     "x": 146,
+     "y": 188
+    },
+    "browR": {
+     "x": 223,
+     "y": 188
+    },
+    "mouth": {
+     "x": 184,
+     "y": 260
+    }
+   }
+  ],
+  "w": 412,
+  "h": 604
+ },
+ "hero_lev:sport": {
+  "unit": 2,
+  "origin": {
+   "x": 223,
+   "y": 638
+  },
+  "frames": [
+   {
+    "file": "hero_lev_sport_1.webp",
+    "found": true,
+    "eyeL": {
+     "x": 188,
+     "y": 211
+    },
+    "eyeR": {
+     "x": 264,
+     "y": 211
+    },
+    "browL": {
+     "x": 188,
+     "y": 185
+    },
+    "browR": {
+     "x": 264,
+     "y": 185
+    },
+    "mouth": {
+     "x": 226,
+     "y": 258
+    }
+   },
+   {
+    "file": "hero_lev_sport_2.webp",
+    "found": true,
+    "eyeL": {
+     "x": 177,
+     "y": 210
+    },
+    "eyeR": {
+     "x": 254,
+     "y": 210
+    },
+    "browL": {
+     "x": 177,
+     "y": 184
+    },
+    "browR": {
+     "x": 254,
+     "y": 184
+    },
+    "mouth": {
+     "x": 215,
+     "y": 257
+    }
+   },
+   {
+    "file": "hero_lev_sport_3.webp",
+    "found": true,
+    "eyeL": {
+     "x": 175,
+     "y": 200
+    },
+    "eyeR": {
+     "x": 252,
+     "y": 200
+    },
+    "browL": {
+     "x": 175,
+     "y": 174
+    },
+    "browR": {
+     "x": 252,
+     "y": 174
+    },
+    "mouth": {
+     "x": 214,
+     "y": 247
+    }
+   },
+   {
+    "file": "hero_lev_sport_4.webp",
+    "found": true,
+    "eyeL": {
+     "x": 185,
+     "y": 184
+    },
+    "eyeR": {
+     "x": 262,
+     "y": 184
+    },
+    "browL": {
+     "x": 185,
+     "y": 158
+    },
+    "browR": {
+     "x": 262,
+     "y": 158
+    },
+    "mouth": {
+     "x": 224,
+     "y": 231
+    }
+   },
+   {
+    "file": "hero_lev_sport_5.webp",
+    "found": true,
+    "eyeL": {
+     "x": 186,
+     "y": 228
+    },
+    "eyeR": {
+     "x": 263,
+     "y": 228
+    },
+    "browL": {
+     "x": 186,
+     "y": 202
+    },
+    "browR": {
+     "x": 263,
+     "y": 202
+    },
+    "mouth": {
+     "x": 225,
+     "y": 275
+    }
+   },
+   {
+    "file": "hero_lev_sport_6.webp",
+    "found": true,
+    "eyeL": {
+     "x": 180,
+     "y": 199
+    },
+    "eyeR": {
+     "x": 257,
+     "y": 199
+    },
+    "browL": {
+     "x": 180,
+     "y": 173
+    },
+    "browR": {
+     "x": 257,
+     "y": 173
+    },
+    "mouth": {
+     "x": 218,
+     "y": 246
+    }
+   }
+  ],
+  "w": 446,
+  "h": 640
+ },
+ "hero_mila:dj": {
+  "unit": 2,
+  "origin": {
+   "x": 199,
+   "y": 581
+  },
+  "frames": [
+   {
+    "file": "hero_mila_dj_1.webp",
+    "found": true,
+    "eyeL": {
+     "x": 169,
+     "y": 151
+    },
+    "eyeR": {
+     "x": 246,
+     "y": 151
+    },
+    "browL": {
+     "x": 169,
+     "y": 125
+    },
+    "browR": {
+     "x": 246,
+     "y": 125
+    },
+    "mouth": {
+     "x": 208,
+     "y": 197
+    }
+   },
+   {
+    "file": "hero_mila_dj_2.webp",
+    "found": true,
+    "eyeL": {
+     "x": 169,
+     "y": 151
+    },
+    "eyeR": {
+     "x": 246,
+     "y": 151
+    },
+    "browL": {
+     "x": 169,
+     "y": 125
+    },
+    "browR": {
+     "x": 246,
+     "y": 125
+    },
+    "mouth": {
+     "x": 207,
+     "y": 198
+    }
+   },
+   {
+    "file": "hero_mila_dj_3.webp",
+    "found": true,
+    "eyeL": {
+     "x": 169,
+     "y": 151
+    },
+    "eyeR": {
+     "x": 246,
+     "y": 151
+    },
+    "browL": {
+     "x": 169,
+     "y": 125
+    },
+    "browR": {
+     "x": 246,
+     "y": 125
+    },
+    "mouth": {
+     "x": 207,
+     "y": 198
+    }
+   },
+   {
+    "file": "hero_mila_dj_4.webp",
+    "found": true,
+    "eyeL": {
+     "x": 169,
+     "y": 142
+    },
+    "eyeR": {
+     "x": 246,
+     "y": 142
+    },
+    "browL": {
+     "x": 169,
+     "y": 116
+    },
+    "browR": {
+     "x": 246,
+     "y": 116
+    },
+    "mouth": {
+     "x": 207,
+     "y": 188
+    }
+   },
+   {
+    "file": "hero_mila_dj_5.webp",
+    "found": true,
+    "eyeL": {
+     "x": 169,
+     "y": 173
+    },
+    "eyeR": {
+     "x": 246,
+     "y": 173
+    },
+    "browL": {
+     "x": 169,
+     "y": 147
+    },
+    "browR": {
+     "x": 246,
+     "y": 147
+    },
+    "mouth": {
+     "x": 208,
+     "y": 220
+    }
+   },
+   {
+    "file": "hero_mila_dj_6.webp",
+    "found": true,
+    "eyeL": {
+     "x": 169,
+     "y": 151
+    },
+    "eyeR": {
+     "x": 246,
+     "y": 151
+    },
+    "browL": {
+     "x": 169,
+     "y": 125
+    },
+    "browR": {
+     "x": 246,
+     "y": 125
+    },
+    "mouth": {
+     "x": 208,
+     "y": 197
+    }
+   }
+  ],
+  "w": 408,
+  "h": 583
+ },
+ "hero_mila:fairy": {
+  "unit": 2,
+  "origin": {
+   "x": 216,
+   "y": 650
+  },
+  "frames": [
+   {
+    "file": "hero_mila_fairy_1.webp",
+    "found": true,
+    "eyeL": {
+     "x": 184,
+     "y": 198
+    },
+    "eyeR": {
+     "x": 261,
+     "y": 198
+    },
+    "browL": {
+     "x": 184,
+     "y": 172
+    },
+    "browR": {
+     "x": 261,
+     "y": 172
+    },
+    "mouth": {
+     "x": 223,
+     "y": 245
+    }
+   },
+   {
+    "file": "hero_mila_fairy_2.webp",
+    "found": true,
+    "eyeL": {
+     "x": 172,
+     "y": 196
+    },
+    "eyeR": {
+     "x": 249,
+     "y": 196
+    },
+    "browL": {
+     "x": 172,
+     "y": 170
+    },
+    "browR": {
+     "x": 249,
+     "y": 170
+    },
+    "mouth": {
+     "x": 211,
+     "y": 242
+    }
+   },
+   {
+    "file": "hero_mila_fairy_3.webp",
+    "found": true,
+    "eyeL": {
+     "x": 167,
+     "y": 197
+    },
+    "eyeR": {
+     "x": 244,
+     "y": 197
+    },
+    "browL": {
+     "x": 167,
+     "y": 171
+    },
+    "browR": {
+     "x": 244,
+     "y": 171
+    },
+    "mouth": {
+     "x": 206,
+     "y": 244
+    }
+   },
+   {
+    "file": "hero_mila_fairy_4.webp",
+    "found": true,
+    "eyeL": {
+     "x": 185,
+     "y": 159
+    },
+    "eyeR": {
+     "x": 262,
+     "y": 159
+    },
+    "browL": {
+     "x": 185,
+     "y": 133
+    },
+    "browR": {
+     "x": 262,
+     "y": 133
+    },
+    "mouth": {
+     "x": 223,
+     "y": 205
+    }
+   },
+   {
+    "file": "hero_mila_fairy_5.webp",
+    "found": true,
+    "eyeL": {
+     "x": 177,
+     "y": 214
+    },
+    "eyeR": {
+     "x": 254,
+     "y": 214
+    },
+    "browL": {
+     "x": 177,
+     "y": 188
+    },
+    "browR": {
+     "x": 254,
+     "y": 188
+    },
+    "mouth": {
+     "x": 215,
+     "y": 261
+    }
+   },
+   {
+    "file": "hero_mila_fairy_6.webp",
+    "found": true,
+    "eyeL": {
+     "x": 169,
+     "y": 193
+    },
+    "eyeR": {
+     "x": 246,
+     "y": 193
+    },
+    "browL": {
+     "x": 169,
+     "y": 167
+    },
+    "browR": {
+     "x": 246,
+     "y": 167
+    },
+    "mouth": {
+     "x": 207,
+     "y": 239
+    }
+   }
+  ],
+  "w": 437,
+  "h": 653
+ },
+ "hero_mila:pajama": {
+  "unit": 2,
+  "origin": {
+   "x": 215,
+   "y": 606
+  },
+  "frames": [
+   {
+    "file": "hero_mila_pajama_1.webp",
+    "found": true,
+    "eyeL": {
+     "x": 186,
+     "y": 162
+    },
+    "eyeR": {
+     "x": 263,
+     "y": 162
+    },
+    "browL": {
+     "x": 186,
+     "y": 136
+    },
+    "browR": {
+     "x": 263,
+     "y": 136
+    },
+    "mouth": {
+     "x": 225,
+     "y": 209
+    }
+   },
+   {
+    "file": "hero_mila_pajama_2.webp",
+    "found": true,
+    "eyeL": {
+     "x": 186,
+     "y": 162
+    },
+    "eyeR": {
+     "x": 263,
+     "y": 162
+    },
+    "browL": {
+     "x": 186,
+     "y": 136
+    },
+    "browR": {
+     "x": 263,
+     "y": 136
+    },
+    "mouth": {
+     "x": 225,
+     "y": 209
+    }
+   },
+   {
+    "file": "hero_mila_pajama_3.webp",
+    "found": true,
+    "eyeL": {
+     "x": 186,
+     "y": 160
+    },
+    "eyeR": {
+     "x": 263,
+     "y": 160
+    },
+    "browL": {
+     "x": 186,
+     "y": 134
+    },
+    "browR": {
+     "x": 263,
+     "y": 134
+    },
+    "mouth": {
+     "x": 224,
+     "y": 207
+    }
+   },
+   {
+    "file": "hero_mila_pajama_4.webp",
+    "found": true,
+    "eyeL": {
+     "x": 185,
+     "y": 148
+    },
+    "eyeR": {
+     "x": 262,
+     "y": 148
+    },
+    "browL": {
+     "x": 185,
+     "y": 122
+    },
+    "browR": {
+     "x": 262,
+     "y": 122
+    },
+    "mouth": {
+     "x": 223,
+     "y": 195
+    }
+   },
+   {
+    "file": "hero_mila_pajama_5.webp",
+    "found": true,
+    "eyeL": {
+     "x": 185,
+     "y": 176
+    },
+    "eyeR": {
+     "x": 262,
+     "y": 176
+    },
+    "browL": {
+     "x": 185,
+     "y": 150
+    },
+    "browR": {
+     "x": 262,
+     "y": 150
+    },
+    "mouth": {
+     "x": 224,
+     "y": 223
+    }
+   },
+   {
+    "file": "hero_mila_pajama_6.webp",
+    "found": true,
+    "eyeL": {
+     "x": 185,
+     "y": 161
+    },
+    "eyeR": {
+     "x": 262,
+     "y": 161
+    },
+    "browL": {
+     "x": 185,
+     "y": 135
+    },
+    "browR": {
+     "x": 262,
+     "y": 135
+    },
+    "mouth": {
+     "x": 224,
+     "y": 208
+    }
+   }
+  ],
+  "w": 442,
+  "h": 608
+ },
+ "hero_mila:princess": {
+  "unit": 2,
+  "origin": {
+   "x": 237,
+   "y": 671
+  },
+  "frames": [
+   {
+    "file": "hero_mila_princess_1.webp",
+    "found": true,
+    "eyeL": {
+     "x": 230,
+     "y": 210
+    },
+    "eyeR": {
+     "x": 306,
+     "y": 210
+    },
+    "browL": {
+     "x": 230,
+     "y": 184
+    },
+    "browR": {
+     "x": 306,
+     "y": 184
+    },
+    "mouth": {
+     "x": 268,
+     "y": 257
+    }
+   },
+   {
+    "file": "hero_mila_princess_2.webp",
+    "found": true,
+    "eyeL": {
+     "x": 186,
+     "y": 212
+    },
+    "eyeR": {
+     "x": 263,
+     "y": 212
+    },
+    "browL": {
+     "x": 186,
+     "y": 186
+    },
+    "browR": {
+     "x": 263,
+     "y": 186
+    },
+    "mouth": {
+     "x": 224,
+     "y": 259
+    }
+   },
+   {
+    "file": "hero_mila_princess_3.webp",
+    "found": true,
+    "eyeL": {
+     "x": 161,
+     "y": 212
+    },
+    "eyeR": {
+     "x": 238,
+     "y": 212
+    },
+    "browL": {
+     "x": 161,
+     "y": 186
+    },
+    "browR": {
+     "x": 238,
+     "y": 186
+    },
+    "mouth": {
+     "x": 199,
+     "y": 259
+    }
+   },
+   {
+    "file": "hero_mila_princess_4.webp",
+    "found": true,
+    "eyeL": {
+     "x": 228,
+     "y": 191
+    },
+    "eyeR": {
+     "x": 305,
+     "y": 191
+    },
+    "browL": {
+     "x": 228,
+     "y": 165
+    },
+    "browR": {
+     "x": 305,
+     "y": 165
+    },
+    "mouth": {
+     "x": 266,
+     "y": 238
+    }
+   },
+   {
+    "file": "hero_mila_princess_5.webp",
+    "found": true,
+    "eyeL": {
+     "x": 186,
+     "y": 224
+    },
+    "eyeR": {
+     "x": 263,
+     "y": 224
+    },
+    "browL": {
+     "x": 186,
+     "y": 198
+    },
+    "browR": {
+     "x": 263,
+     "y": 198
+    },
+    "mouth": {
+     "x": 225,
+     "y": 271
+    }
+   },
+   {
+    "file": "hero_mila_princess_6.webp",
+    "found": true,
+    "eyeL": {
+     "x": 167,
+     "y": 211
+    },
+    "eyeR": {
+     "x": 244,
+     "y": 211
+    },
+    "browL": {
+     "x": 167,
+     "y": 185
+    },
+    "browR": {
+     "x": 244,
+     "y": 185
+    },
+    "mouth": {
+     "x": 206,
+     "y": 257
+    }
+   }
+  ],
+  "w": 485,
+  "h": 678
+ },
+ "hero_mila:summer": {
+  "unit": 2,
+  "origin": {
+   "x": 214,
+   "y": 589
+  },
+  "frames": [
+   {
+    "file": "hero_mila_summer_1.webp",
+    "found": true,
+    "eyeL": {
+     "x": 182,
+     "y": 154
+    },
+    "eyeR": {
+     "x": 259,
+     "y": 154
+    },
+    "browL": {
+     "x": 182,
+     "y": 128
+    },
+    "browR": {
+     "x": 259,
+     "y": 128
+    },
+    "mouth": {
+     "x": 220,
+     "y": 201
+    }
+   },
+   {
+    "file": "hero_mila_summer_2.webp",
+    "found": true,
+    "eyeL": {
+     "x": 180,
+     "y": 152
+    },
+    "eyeR": {
+     "x": 257,
+     "y": 152
+    },
+    "browL": {
+     "x": 180,
+     "y": 126
+    },
+    "browR": {
+     "x": 257,
+     "y": 126
+    },
+    "mouth": {
+     "x": 218,
+     "y": 199
+    }
+   },
+   {
+    "file": "hero_mila_summer_3.webp",
+    "found": true,
+    "eyeL": {
+     "x": 178,
+     "y": 152
+    },
+    "eyeR": {
+     "x": 255,
+     "y": 152
+    },
+    "browL": {
+     "x": 178,
+     "y": 126
+    },
+    "browR": {
+     "x": 255,
+     "y": 126
+    },
+    "mouth": {
+     "x": 216,
+     "y": 199
+    }
+   },
+   {
+    "file": "hero_mila_summer_4.webp",
+    "found": true,
+    "eyeL": {
+     "x": 180,
+     "y": 138
+    },
+    "eyeR": {
+     "x": 257,
+     "y": 138
+    },
+    "browL": {
+     "x": 180,
+     "y": 112
+    },
+    "browR": {
+     "x": 257,
+     "y": 112
+    },
+    "mouth": {
+     "x": 219,
+     "y": 184
+    }
+   },
+   {
+    "file": "hero_mila_summer_5.webp",
+    "found": true,
+    "eyeL": {
+     "x": 178,
+     "y": 169
+    },
+    "eyeR": {
+     "x": 255,
+     "y": 169
+    },
+    "browL": {
+     "x": 178,
+     "y": 143
+    },
+    "browR": {
+     "x": 255,
+     "y": 143
+    },
+    "mouth": {
+     "x": 217,
+     "y": 216
+    }
+   },
+   {
+    "file": "hero_mila_summer_6.webp",
+    "found": true,
+    "eyeL": {
+     "x": 177,
+     "y": 157
+    },
+    "eyeR": {
+     "x": 254,
+     "y": 157
+    },
+    "browL": {
+     "x": 177,
+     "y": 131
+    },
+    "browR": {
+     "x": 254,
+     "y": 131
+    },
+    "mouth": {
+     "x": 216,
+     "y": 204
+    }
+   }
+  ],
+  "w": 434,
+  "h": 592
+ },
+ "hero_nora:chef": {
+  "unit": 2,
+  "origin": {
+   "x": 236,
+   "y": 738
+  },
+  "frames": [
+   {
+    "file": "hero_nora_chef_1.webp",
+    "found": true,
+    "eyeL": {
+     "x": 226,
+     "y": 268
+    },
+    "eyeR": {
+     "x": 303,
+     "y": 268
+    },
+    "browL": {
+     "x": 226,
+     "y": 242
+    },
+    "browR": {
+     "x": 303,
+     "y": 242
+    },
+    "mouth": {
+     "x": 264,
+     "y": 314
+    }
+   },
+   {
+    "file": "hero_nora_chef_2.webp",
+    "found": true,
+    "eyeL": {
+     "x": 189,
+     "y": 273
+    },
+    "eyeR": {
+     "x": 266,
+     "y": 273
+    },
+    "browL": {
+     "x": 189,
+     "y": 247
+    },
+    "browR": {
+     "x": 266,
+     "y": 247
+    },
+    "mouth": {
+     "x": 227,
+     "y": 319
+    }
+   },
+   {
+    "file": "hero_nora_chef_3.webp",
+    "found": true,
+    "eyeL": {
+     "x": 167,
+     "y": 272
+    },
+    "eyeR": {
+     "x": 243,
+     "y": 272
+    },
+    "browL": {
+     "x": 167,
+     "y": 246
+    },
+    "browR": {
+     "x": 243,
+     "y": 246
+    },
+    "mouth": {
+     "x": 205,
+     "y": 319
+    }
+   },
+   {
+    "file": "hero_nora_chef_4.webp",
+    "found": true,
+    "eyeL": {
+     "x": 225,
+     "y": 235
+    },
+    "eyeR": {
+     "x": 302,
+     "y": 235
+    },
+    "browL": {
+     "x": 225,
+     "y": 209
+    },
+    "browR": {
+     "x": 302,
+     "y": 209
+    },
+    "mouth": {
+     "x": 264,
+     "y": 282
+    }
+   },
+   {
+    "file": "hero_nora_chef_5.webp",
+    "found": true,
+    "eyeL": {
+     "x": 190,
+     "y": 301
+    },
+    "eyeR": {
+     "x": 267,
+     "y": 301
+    },
+    "browL": {
+     "x": 190,
+     "y": 275
+    },
+    "browR": {
+     "x": 267,
+     "y": 275
+    },
+    "mouth": {
+     "x": 229,
+     "y": 348
+    }
+   },
+   {
+    "file": "hero_nora_chef_6.webp",
+    "found": true,
+    "eyeL": {
+     "x": 163,
+     "y": 252
+    },
+    "eyeR": {
+     "x": 240,
+     "y": 252
+    },
+    "browL": {
+     "x": 163,
+     "y": 226
+    },
+    "browR": {
+     "x": 240,
+     "y": 226
+    },
+    "mouth": {
+     "x": 202,
+     "y": 299
+    }
+   }
+  ],
+  "w": 496,
+  "h": 741
+ },
+ "hero_nora:gardener": {
+  "unit": 2,
+  "origin": {
+   "x": 227,
+   "y": 653
+  },
+  "frames": [
+   {
+    "file": "hero_nora_gardener_1.webp",
+    "found": true,
+    "eyeL": {
+     "x": 218,
+     "y": 188
+    },
+    "eyeR": {
+     "x": 295,
+     "y": 188
+    },
+    "browL": {
+     "x": 218,
+     "y": 162
+    },
+    "browR": {
+     "x": 295,
+     "y": 162
+    },
+    "mouth": {
+     "x": 256,
+     "y": 235
+    }
+   },
+   {
+    "file": "hero_nora_gardener_2.webp",
+    "found": true,
+    "eyeL": {
+     "x": 193,
+     "y": 190
+    },
+    "eyeR": {
+     "x": 270,
+     "y": 190
+    },
+    "browL": {
+     "x": 193,
+     "y": 164
+    },
+    "browR": {
+     "x": 270,
+     "y": 164
+    },
+    "mouth": {
+     "x": 232,
+     "y": 237
+    }
+   },
+   {
+    "file": "hero_nora_gardener_3.webp",
+    "found": true,
+    "eyeL": {
+     "x": 166,
+     "y": 179
+    },
+    "eyeR": {
+     "x": 243,
+     "y": 179
+    },
+    "browL": {
+     "x": 166,
+     "y": 153
+    },
+    "browR": {
+     "x": 243,
+     "y": 153
+    },
+    "mouth": {
+     "x": 204,
+     "y": 226
+    }
+   },
+   {
+    "file": "hero_nora_gardener_4.webp",
+    "found": true,
+    "eyeL": {
+     "x": 217,
+     "y": 167
+    },
+    "eyeR": {
+     "x": 294,
+     "y": 167
+    },
+    "browL": {
+     "x": 217,
+     "y": 141
+    },
+    "browR": {
+     "x": 294,
+     "y": 141
+    },
+    "mouth": {
+     "x": 256,
+     "y": 214
+    }
+   },
+   {
+    "file": "hero_nora_gardener_5.webp",
+    "found": true,
+    "eyeL": {
+     "x": 190,
+     "y": 213
+    },
+    "eyeR": {
+     "x": 267,
+     "y": 213
+    },
+    "browL": {
+     "x": 190,
+     "y": 187
+    },
+    "browR": {
+     "x": 267,
+     "y": 187
+    },
+    "mouth": {
+     "x": 229,
+     "y": 260
+    }
+   },
+   {
+    "file": "hero_nora_gardener_6.webp",
+    "found": true,
+    "eyeL": {
+     "x": 166,
+     "y": 184
+    },
+    "eyeR": {
+     "x": 243,
+     "y": 184
+    },
+    "browL": {
+     "x": 166,
+     "y": 158
+    },
+    "browR": {
+     "x": 243,
+     "y": 158
+    },
+    "mouth": {
+     "x": 205,
+     "y": 231
+    }
+   }
+  ],
+  "w": 484,
+  "h": 655
+ },
+ "hero_nora:princess": {
+  "unit": 2,
+  "origin": {
+   "x": 226,
+   "y": 722
+  },
+  "frames": [
+   {
+    "file": "hero_nora_princess_1.webp",
+    "found": true,
+    "eyeL": {
+     "x": 199,
+     "y": 244
+    },
+    "eyeR": {
+     "x": 276,
+     "y": 244
+    },
+    "browL": {
+     "x": 199,
+     "y": 218
+    },
+    "browR": {
+     "x": 276,
+     "y": 218
+    },
+    "mouth": {
+     "x": 238,
+     "y": 291
+    }
+   },
+   {
+    "file": "hero_nora_princess_2.webp",
+    "found": true,
+    "eyeL": {
+     "x": 172,
+     "y": 248
+    },
+    "eyeR": {
+     "x": 248,
+     "y": 248
+    },
+    "browL": {
+     "x": 172,
+     "y": 222
+    },
+    "browR": {
+     "x": 248,
+     "y": 222
+    },
+    "mouth": {
+     "x": 210,
+     "y": 295
+    }
+   },
+   {
+    "file": "hero_nora_princess_3.webp",
+    "found": true,
+    "eyeL": {
+     "x": 159,
+     "y": 246
+    },
+    "eyeR": {
+     "x": 236,
+     "y": 246
+    },
+    "browL": {
+     "x": 159,
+     "y": 220
+    },
+    "browR": {
+     "x": 236,
+     "y": 220
+    },
+    "mouth": {
+     "x": 198,
+     "y": 293
+    }
+   },
+   {
+    "file": "hero_nora_princess_4.webp",
+    "found": true,
+    "eyeL": {
+     "x": 201,
+     "y": 213
+    },
+    "eyeR": {
+     "x": 278,
+     "y": 213
+    },
+    "browL": {
+     "x": 201,
+     "y": 187
+    },
+    "browR": {
+     "x": 278,
+     "y": 187
+    },
+    "mouth": {
+     "x": 239,
+     "y": 259
+    }
+   },
+   {
+    "file": "hero_nora_princess_5.webp",
+    "found": true,
+    "eyeL": {
+     "x": 178,
+     "y": 264
+    },
+    "eyeR": {
+     "x": 255,
+     "y": 264
+    },
+    "browL": {
+     "x": 178,
+     "y": 238
+    },
+    "browR": {
+     "x": 255,
+     "y": 238
+    },
+    "mouth": {
+     "x": 217,
+     "y": 311
+    }
+   },
+   {
+    "file": "hero_nora_princess_6.webp",
+    "found": true,
+    "eyeL": {
+     "x": 169,
+     "y": 235
+    },
+    "eyeR": {
+     "x": 246,
+     "y": 235
+    },
+    "browL": {
+     "x": 169,
+     "y": 209
+    },
+    "browR": {
+     "x": 246,
+     "y": 209
+    },
+    "mouth": {
+     "x": 208,
+     "y": 282
+    }
+   }
+  ],
+  "w": 443,
+  "h": 725
+ },
+ "hero_nora:summer": {
+  "unit": 2,
+  "origin": {
+   "x": 214,
+   "y": 609
+  },
+  "frames": [
+   {
+    "file": "hero_nora_summer_1.webp",
+    "found": true,
+    "eyeL": {
+     "x": 187,
+     "y": 151
+    },
+    "eyeR": {
+     "x": 264,
+     "y": 151
+    },
+    "browL": {
+     "x": 187,
+     "y": 125
+    },
+    "browR": {
+     "x": 264,
+     "y": 125
+    },
+    "mouth": {
+     "x": 225,
+     "y": 197
+    }
+   },
+   {
+    "file": "hero_nora_summer_2.webp",
+    "found": true,
+    "eyeL": {
+     "x": 168,
+     "y": 149
+    },
+    "eyeR": {
+     "x": 245,
+     "y": 149
+    },
+    "browL": {
+     "x": 168,
+     "y": 123
+    },
+    "browR": {
+     "x": 245,
+     "y": 123
+    },
+    "mouth": {
+     "x": 206,
+     "y": 196
+    }
+   },
+   {
+    "file": "hero_nora_summer_3.webp",
+    "found": true,
+    "eyeL": {
+     "x": 159,
+     "y": 149
+    },
+    "eyeR": {
+     "x": 236,
+     "y": 149
+    },
+    "browL": {
+     "x": 159,
+     "y": 123
+    },
+    "browR": {
+     "x": 236,
+     "y": 123
+    },
+    "mouth": {
+     "x": 198,
+     "y": 196
+    }
+   },
+   {
+    "file": "hero_nora_summer_4.webp",
+    "found": true,
+    "eyeL": {
+     "x": 187,
+     "y": 130
+    },
+    "eyeR": {
+     "x": 264,
+     "y": 130
+    },
+    "browL": {
+     "x": 187,
+     "y": 104
+    },
+    "browR": {
+     "x": 264,
+     "y": 104
+    },
+    "mouth": {
+     "x": 225,
+     "y": 177
+    }
+   },
+   {
+    "file": "hero_nora_summer_5.webp",
+    "found": true,
+    "eyeL": {
+     "x": 175,
+     "y": 167
+    },
+    "eyeR": {
+     "x": 252,
+     "y": 167
+    },
+    "browL": {
+     "x": 175,
+     "y": 141
+    },
+    "browR": {
+     "x": 252,
+     "y": 141
+    },
+    "mouth": {
+     "x": 213,
+     "y": 214
+    }
+   },
+   {
+    "file": "hero_nora_summer_6.webp",
+    "found": true,
+    "eyeL": {
+     "x": 161,
+     "y": 139
+    },
+    "eyeR": {
+     "x": 238,
+     "y": 139
+    },
+    "browL": {
+     "x": 161,
+     "y": 113
+    },
+    "browR": {
+     "x": 238,
+     "y": 113
+    },
+    "mouth": {
+     "x": 199,
+     "y": 186
+    }
+   }
+  ],
+  "w": 448,
+  "h": 612
+ },
+ "hero_timur:casual": {
+  "unit": 2,
+  "origin": {
+   "x": 190,
+   "y": 535
+  },
+  "frames": [
+   {
+    "file": "hero_timur_casual_1.webp",
+    "found": true,
+    "eyeL": {
+     "x": 165,
+     "y": 247
+    },
+    "eyeR": {
+     "x": 242,
+     "y": 247
+    },
+    "browL": {
+     "x": 165,
+     "y": 221
+    },
+    "browR": {
+     "x": 242,
+     "y": 221
+    },
+    "mouth": {
+     "x": 204,
+     "y": 294
+    }
+   },
+   {
+    "file": "hero_timur_casual_2.webp",
+    "found": true,
+    "eyeL": {
+     "x": 150,
+     "y": 156
+    },
+    "eyeR": {
+     "x": 227,
+     "y": 156
+    },
+    "browL": {
+     "x": 150,
+     "y": 130
+    },
+    "browR": {
+     "x": 227,
+     "y": 130
+    },
+    "mouth": {
+     "x": 189,
+     "y": 203
+    }
+   },
+   {
+    "file": "hero_timur_casual_3.webp",
+    "found": true,
+    "eyeL": {
+     "x": 139,
+     "y": 160
+    },
+    "eyeR": {
+     "x": 216,
+     "y": 160
+    },
+    "browL": {
+     "x": 139,
+     "y": 134
+    },
+    "browR": {
+     "x": 216,
+     "y": 134
+    },
+    "mouth": {
+     "x": 177,
+     "y": 207
+    }
+   },
+   {
+    "file": "hero_timur_casual_4.webp",
+    "found": true,
+    "eyeL": {
+     "x": 162,
+     "y": 141
+    },
+    "eyeR": {
+     "x": 239,
+     "y": 141
+    },
+    "browL": {
+     "x": 162,
+     "y": 115
+    },
+    "browR": {
+     "x": 239,
+     "y": 115
+    },
+    "mouth": {
+     "x": 201,
+     "y": 187
+    }
+   },
+   {
+    "file": "hero_timur_casual_5.webp",
+    "found": true,
+    "eyeL": {
+     "x": 152,
+     "y": 169
+    },
+    "eyeR": {
+     "x": 229,
+     "y": 169
+    },
+    "browL": {
+     "x": 152,
+     "y": 143
+    },
+    "browR": {
+     "x": 229,
+     "y": 143
+    },
+    "mouth": {
+     "x": 191,
+     "y": 216
+    }
+   },
+   {
+    "file": "hero_timur_casual_6.webp",
+    "found": true,
+    "eyeL": {
+     "x": 140,
+     "y": 159
+    },
+    "eyeR": {
+     "x": 217,
+     "y": 159
+    },
+    "browL": {
+     "x": 140,
+     "y": 133
+    },
+    "browR": {
+     "x": 217,
+     "y": 133
+    },
+    "mouth": {
+     "x": 178,
+     "y": 206
+    }
+   }
+  ],
+  "w": 370,
+  "h": 537
+ },
+ "hero_timur:chef": {
+  "unit": 2,
+  "origin": {
+   "x": 219,
+   "y": 681
+  },
+  "frames": [
+   {
+    "file": "hero_timur_chef_1.webp",
+    "found": true,
+    "eyeL": {
+     "x": 202,
+     "y": 279
+    },
+    "eyeR": {
+     "x": 279,
+     "y": 279
+    },
+    "browL": {
+     "x": 202,
+     "y": 253
+    },
+    "browR": {
+     "x": 279,
+     "y": 253
+    },
+    "mouth": {
+     "x": 241,
+     "y": 326
+    }
+   },
+   {
+    "file": "hero_timur_chef_2.webp",
+    "found": true,
+    "eyeL": {
+     "x": 167,
+     "y": 278
+    },
+    "eyeR": {
+     "x": 244,
+     "y": 278
+    },
+    "browL": {
+     "x": 167,
+     "y": 252
+    },
+    "browR": {
+     "x": 244,
+     "y": 252
+    },
+    "mouth": {
+     "x": 205,
+     "y": 324
+    }
+   },
+   {
+    "file": "hero_timur_chef_3.webp",
+    "found": true,
+    "eyeL": {
+     "x": 148,
+     "y": 278
+    },
+    "eyeR": {
+     "x": 224,
+     "y": 278
+    },
+    "browL": {
+     "x": 148,
+     "y": 252
+    },
+    "browR": {
+     "x": 224,
+     "y": 252
+    },
+    "mouth": {
+     "x": 186,
+     "y": 325
+    }
+   },
+   {
+    "file": "hero_timur_chef_4.webp",
+    "found": true,
+    "eyeL": {
+     "x": 202,
+     "y": 247
+    },
+    "eyeR": {
+     "x": 279,
+     "y": 247
+    },
+    "browL": {
+     "x": 202,
+     "y": 221
+    },
+    "browR": {
+     "x": 279,
+     "y": 221
+    },
+    "mouth": {
+     "x": 241,
+     "y": 294
+    }
+   },
+   {
+    "file": "hero_timur_chef_5.webp",
+    "found": true,
+    "eyeL": {
+     "x": 177,
+     "y": 303
+    },
+    "eyeR": {
+     "x": 254,
+     "y": 303
+    },
+    "browL": {
+     "x": 177,
+     "y": 277
+    },
+    "browR": {
+     "x": 254,
+     "y": 277
+    },
+    "mouth": {
+     "x": 216,
+     "y": 350
+    }
+   },
+   {
+    "file": "hero_timur_chef_6.webp",
+    "found": true,
+    "eyeL": {
+     "x": 152,
+     "y": 265
+    },
+    "eyeR": {
+     "x": 229,
+     "y": 265
+    },
+    "browL": {
+     "x": 152,
+     "y": 239
+    },
+    "browR": {
+     "x": 229,
+     "y": 239
+    },
+    "mouth": {
+     "x": 191,
+     "y": 312
+    }
+   }
+  ],
+  "w": 430,
+  "h": 685
+ },
+ "hero_timur:confectioner": {
+  "unit": 2,
+  "origin": {
+   "x": 191,
+   "y": 570
+  },
+  "frames": [
+   {
+    "file": "hero_timur_confectioner_1.webp",
+    "found": true,
+    "eyeL": {
+     "x": 176,
+     "y": 176
+    },
+    "eyeR": {
+     "x": 253,
+     "y": 176
+    },
+    "browL": {
+     "x": 176,
+     "y": 150
+    },
+    "browR": {
+     "x": 253,
+     "y": 150
+    },
+    "mouth": {
+     "x": 214,
+     "y": 222
+    }
+   },
+   {
+    "file": "hero_timur_confectioner_2.webp",
+    "found": true,
+    "eyeL": {
+     "x": 157,
+     "y": 173
+    },
+    "eyeR": {
+     "x": 234,
+     "y": 173
+    },
+    "browL": {
+     "x": 157,
+     "y": 147
+    },
+    "browR": {
+     "x": 234,
+     "y": 147
+    },
+    "mouth": {
+     "x": 196,
+     "y": 219
+    }
+   },
+   {
+    "file": "hero_timur_confectioner_3.webp",
+    "found": true,
+    "eyeL": {
+     "x": 154,
+     "y": 167
+    },
+    "eyeR": {
+     "x": 231,
+     "y": 167
+    },
+    "browL": {
+     "x": 154,
+     "y": 141
+    },
+    "browR": {
+     "x": 231,
+     "y": 141
+    },
+    "mouth": {
+     "x": 192,
+     "y": 214
+    }
+   },
+   {
+    "file": "hero_timur_confectioner_4.webp",
+    "found": true,
+    "eyeL": {
+     "x": 172,
+     "y": 159
+    },
+    "eyeR": {
+     "x": 249,
+     "y": 159
+    },
+    "browL": {
+     "x": 172,
+     "y": 133
+    },
+    "browR": {
+     "x": 249,
+     "y": 133
+    },
+    "mouth": {
+     "x": 210,
+     "y": 206
+    }
+   },
+   {
+    "file": "hero_timur_confectioner_5.webp",
+    "found": true,
+    "eyeL": {
+     "x": 157,
+     "y": 188
+    },
+    "eyeR": {
+     "x": 234,
+     "y": 188
+    },
+    "browL": {
+     "x": 157,
+     "y": 162
+    },
+    "browR": {
+     "x": 234,
+     "y": 162
+    },
+    "mouth": {
+     "x": 196,
+     "y": 235
+    }
+   },
+   {
+    "file": "hero_timur_confectioner_6.webp",
+    "found": true,
+    "eyeL": {
+     "x": 156,
+     "y": 166
+    },
+    "eyeR": {
+     "x": 233,
+     "y": 166
+    },
+    "browL": {
+     "x": 156,
+     "y": 140
+    },
+    "browR": {
+     "x": 233,
+     "y": 140
+    },
+    "mouth": {
+     "x": 194,
+     "y": 213
+    }
+   }
+  ],
+  "w": 392,
+  "h": 573
+ },
+ "hero_timur:dragon": {
+  "unit": 2,
+  "origin": {
+   "x": 220,
+   "y": 614
+  },
+  "frames": [
+   {
+    "file": "hero_timur_dragon_1.webp",
+    "found": true,
+    "eyeL": {
+     "x": 188,
+     "y": 216
+    },
+    "eyeR": {
+     "x": 265,
+     "y": 216
+    },
+    "browL": {
+     "x": 188,
+     "y": 190
+    },
+    "browR": {
+     "x": 265,
+     "y": 190
+    },
+    "mouth": {
+     "x": 227,
+     "y": 263
+    }
+   },
+   {
+    "file": "hero_timur_dragon_2.webp",
+    "found": true,
+    "eyeL": {
+     "x": 164,
+     "y": 213
+    },
+    "eyeR": {
+     "x": 241,
+     "y": 213
+    },
+    "browL": {
+     "x": 164,
+     "y": 187
+    },
+    "browR": {
+     "x": 241,
+     "y": 187
+    },
+    "mouth": {
+     "x": 203,
+     "y": 260
+    }
+   },
+   {
+    "file": "hero_timur_dragon_3.webp",
+    "found": true,
+    "eyeL": {
+     "x": 156,
+     "y": 211
+    },
+    "eyeR": {
+     "x": 233,
+     "y": 211
+    },
+    "browL": {
+     "x": 156,
+     "y": 185
+    },
+    "browR": {
+     "x": 233,
+     "y": 185
+    },
+    "mouth": {
+     "x": 194,
+     "y": 258
+    }
+   },
+   {
+    "file": "hero_timur_dragon_4.webp",
+    "found": true,
+    "eyeL": {
+     "x": 199,
+     "y": 189
+    },
+    "eyeR": {
+     "x": 276,
+     "y": 189
+    },
+    "browL": {
+     "x": 199,
+     "y": 163
+    },
+    "browR": {
+     "x": 276,
+     "y": 163
+    },
+    "mouth": {
+     "x": 238,
+     "y": 236
+    }
+   },
+   {
+    "file": "hero_timur_dragon_5.webp",
+    "found": true,
+    "eyeL": {
+     "x": 181,
+     "y": 231
+    },
+    "eyeR": {
+     "x": 257,
+     "y": 231
+    },
+    "browL": {
+     "x": 181,
+     "y": 205
+    },
+    "browR": {
+     "x": 257,
+     "y": 205
+    },
+    "mouth": {
+     "x": 219,
+     "y": 278
+    }
+   },
+   {
+    "file": "hero_timur_dragon_6.webp",
+    "found": true,
+    "eyeL": {
+     "x": 155,
+     "y": 214
+    },
+    "eyeR": {
+     "x": 232,
+     "y": 214
+    },
+    "browL": {
+     "x": 155,
+     "y": 188
+    },
+    "browR": {
+     "x": 232,
+     "y": 188
+    },
+    "mouth": {
+     "x": 193,
+     "y": 261
+    }
+   }
+  ],
+  "w": 444,
+  "h": 616
+ },
+ "hero_timur:pirate": {
+  "unit": 2,
+  "origin": {
+   "x": 228,
+   "y": 605
+  },
+  "frames": [
+   {
+    "file": "hero_timur_pirate_1.webp",
+    "found": true,
+    "eyeL": {
+     "x": 219,
+     "y": 166
+    },
+    "eyeR": {
+     "x": 296,
+     "y": 166
+    },
+    "browL": {
+     "x": 219,
+     "y": 140
+    },
+    "browR": {
+     "x": 296,
+     "y": 140
+    },
+    "mouth": {
+     "x": 258,
+     "y": 213
+    }
+   },
+   {
+    "file": "hero_timur_pirate_2.webp",
+    "found": true,
+    "eyeL": {
+     "x": 186,
+     "y": 169
+    },
+    "eyeR": {
+     "x": 263,
+     "y": 169
+    },
+    "browL": {
+     "x": 186,
+     "y": 143
+    },
+    "browR": {
+     "x": 263,
+     "y": 143
+    },
+    "mouth": {
+     "x": 224,
+     "y": 216
+    }
+   },
+   {
+    "file": "hero_timur_pirate_3.webp",
+    "found": true,
+    "eyeL": {
+     "x": 162,
+     "y": 164
+    },
+    "eyeR": {
+     "x": 238,
+     "y": 164
+    },
+    "browL": {
+     "x": 162,
+     "y": 138
+    },
+    "browR": {
+     "x": 238,
+     "y": 138
+    },
+    "mouth": {
+     "x": 200,
+     "y": 211
+    }
+   },
+   {
+    "file": "hero_timur_pirate_4.webp",
+    "found": true,
+    "eyeL": {
+     "x": 218,
+     "y": 148
+    },
+    "eyeR": {
+     "x": 295,
+     "y": 148
+    },
+    "browL": {
+     "x": 218,
+     "y": 122
+    },
+    "browR": {
+     "x": 295,
+     "y": 122
+    },
+    "mouth": {
+     "x": 256,
+     "y": 195
+    }
+   },
+   {
+    "file": "hero_timur_pirate_5.webp",
+    "found": true,
+    "eyeL": {
+     "x": 187,
+     "y": 196
+    },
+    "eyeR": {
+     "x": 264,
+     "y": 196
+    },
+    "browL": {
+     "x": 187,
+     "y": 170
+    },
+    "browR": {
+     "x": 264,
+     "y": 170
+    },
+    "mouth": {
+     "x": 225,
+     "y": 242
+    }
+   },
+   {
+    "file": "hero_timur_pirate_6.webp",
+    "found": true,
+    "eyeL": {
+     "x": 156,
+     "y": 165
+    },
+    "eyeR": {
+     "x": 233,
+     "y": 165
+    },
+    "browL": {
+     "x": 156,
+     "y": 139
+    },
+    "browR": {
+     "x": 233,
+     "y": 139
+    },
+    "mouth": {
+     "x": 194,
+     "y": 212
+    }
+   }
+  ],
+  "w": 459,
+  "h": 608
+ },
+ "hero_yuki:ballerina": {
+  "unit": 2,
+  "origin": {
+   "x": 220,
+   "y": 613
+  },
+  "frames": [
+   {
+    "file": "hero_yuki_ballerina_1.webp",
+    "found": true,
+    "eyeL": {
+     "x": 222,
+     "y": 174
+    },
+    "eyeR": {
+     "x": 299,
+     "y": 174
+    },
+    "browL": {
+     "x": 222,
+     "y": 148
+    },
+    "browR": {
+     "x": 299,
+     "y": 148
+    },
+    "mouth": {
+     "x": 261,
+     "y": 221
+    }
+   },
+   {
+    "file": "hero_yuki_ballerina_2.webp",
+    "found": true,
+    "eyeL": {
+     "x": 179,
+     "y": 184
+    },
+    "eyeR": {
+     "x": 256,
+     "y": 184
+    },
+    "browL": {
+     "x": 179,
+     "y": 158
+    },
+    "browR": {
+     "x": 256,
+     "y": 158
+    },
+    "mouth": {
+     "x": 218,
+     "y": 230
+    }
+   },
+   {
+    "file": "hero_yuki_ballerina_3.webp",
+    "found": true,
+    "eyeL": {
+     "x": 157,
+     "y": 179
+    },
+    "eyeR": {
+     "x": 234,
+     "y": 179
+    },
+    "browL": {
+     "x": 157,
+     "y": 153
+    },
+    "browR": {
+     "x": 234,
+     "y": 153
+    },
+    "mouth": {
+     "x": 195,
+     "y": 226
+    }
+   },
+   {
+    "file": "hero_yuki_ballerina_4.webp",
+    "found": true,
+    "eyeL": {
+     "x": 218,
+     "y": 161
+    },
+    "eyeR": {
+     "x": 295,
+     "y": 161
+    },
+    "browL": {
+     "x": 218,
+     "y": 135
+    },
+    "browR": {
+     "x": 295,
+     "y": 135
+    },
+    "mouth": {
+     "x": 256,
+     "y": 208
+    }
+   },
+   {
+    "file": "hero_yuki_ballerina_5.webp",
+    "found": true,
+    "eyeL": {
+     "x": 184,
+     "y": 205
+    },
+    "eyeR": {
+     "x": 261,
+     "y": 205
+    },
+    "browL": {
+     "x": 184,
+     "y": 179
+    },
+    "browR": {
+     "x": 261,
+     "y": 179
+    },
+    "mouth": {
+     "x": 222,
+     "y": 252
+    }
+   },
+   {
+    "file": "hero_yuki_ballerina_6.webp",
+    "found": true,
+    "eyeL": {
+     "x": 157,
+     "y": 171
+    },
+    "eyeR": {
+     "x": 234,
+     "y": 171
+    },
+    "browL": {
+     "x": 157,
+     "y": 145
+    },
+    "browR": {
+     "x": 234,
+     "y": 145
+    },
+    "mouth": {
+     "x": 196,
+     "y": 217
+    }
+   }
+  ],
+  "w": 468,
+  "h": 615
+ },
+ "hero_yuki:casual": {
+  "unit": 2,
+  "origin": {
+   "x": 221,
+   "y": 598
+  },
+  "frames": [
+   {
+    "file": "hero_yuki_casual_1.webp",
+    "found": true,
+    "eyeL": {
+     "x": 213,
+     "y": 165
+    },
+    "eyeR": {
+     "x": 290,
+     "y": 165
+    },
+    "browL": {
+     "x": 213,
+     "y": 139
+    },
+    "browR": {
+     "x": 290,
+     "y": 139
+    },
+    "mouth": {
+     "x": 251,
+     "y": 212
+    }
+   },
+   {
+    "file": "hero_yuki_casual_2.webp",
+    "found": true,
+    "eyeL": {
+     "x": 182,
+     "y": 169
+    },
+    "eyeR": {
+     "x": 259,
+     "y": 169
+    },
+    "browL": {
+     "x": 182,
+     "y": 143
+    },
+    "browR": {
+     "x": 259,
+     "y": 143
+    },
+    "mouth": {
+     "x": 221,
+     "y": 216
+    }
+   },
+   {
+    "file": "hero_yuki_casual_3.webp",
+    "found": true,
+    "eyeL": {
+     "x": 152,
+     "y": 169
+    },
+    "eyeR": {
+     "x": 229,
+     "y": 169
+    },
+    "browL": {
+     "x": 152,
+     "y": 143
+    },
+    "browR": {
+     "x": 229,
+     "y": 143
+    },
+    "mouth": {
+     "x": 190,
+     "y": 216
+    }
+   },
+   {
+    "file": "hero_yuki_casual_4.webp",
+    "found": true,
+    "eyeL": {
+     "x": 205,
+     "y": 143
+    },
+    "eyeR": {
+     "x": 282,
+     "y": 143
+    },
+    "browL": {
+     "x": 205,
+     "y": 117
+    },
+    "browR": {
+     "x": 282,
+     "y": 117
+    },
+    "mouth": {
+     "x": 243,
+     "y": 190
+    }
+   },
+   {
+    "file": "hero_yuki_casual_5.webp",
+    "found": true,
+    "eyeL": {
+     "x": 182,
+     "y": 191
+    },
+    "eyeR": {
+     "x": 259,
+     "y": 191
+    },
+    "browL": {
+     "x": 182,
+     "y": 165
+    },
+    "browR": {
+     "x": 259,
+     "y": 165
+    },
+    "mouth": {
+     "x": 221,
+     "y": 238
+    }
+   },
+   {
+    "file": "hero_yuki_casual_6.webp",
+    "found": true,
+    "eyeL": {
+     "x": 157,
+     "y": 169
+    },
+    "eyeR": {
+     "x": 234,
+     "y": 169
+    },
+    "browL": {
+     "x": 157,
+     "y": 143
+    },
+    "browR": {
+     "x": 234,
+     "y": 143
+    },
+    "mouth": {
+     "x": 196,
+     "y": 216
+    }
+   }
+  ],
+  "w": 455,
+  "h": 601
+ },
+ "hero_yuki:dragon": {
+  "unit": 2,
+  "origin": {
+   "x": 220,
+   "y": 621
+  },
+  "frames": [
+   {
+    "file": "hero_yuki_dragon_1.webp",
+    "found": true,
+    "eyeL": {
+     "x": 188,
+     "y": 229
+    },
+    "eyeR": {
+     "x": 265,
+     "y": 229
+    },
+    "browL": {
+     "x": 188,
+     "y": 203
+    },
+    "browR": {
+     "x": 265,
+     "y": 203
+    },
+    "mouth": {
+     "x": 227,
+     "y": 276
+    }
+   },
+   {
+    "file": "hero_yuki_dragon_2.webp",
+    "found": true,
+    "eyeL": {
+     "x": 180,
+     "y": 228
+    },
+    "eyeR": {
+     "x": 257,
+     "y": 228
+    },
+    "browL": {
+     "x": 180,
+     "y": 202
+    },
+    "browR": {
+     "x": 257,
+     "y": 202
+    },
+    "mouth": {
+     "x": 219,
+     "y": 275
+    }
+   },
+   {
+    "file": "hero_yuki_dragon_3.webp",
+    "found": true,
+    "eyeL": {
+     "x": 183,
+     "y": 219
+    },
+    "eyeR": {
+     "x": 260,
+     "y": 219
+    },
+    "browL": {
+     "x": 183,
+     "y": 193
+    },
+    "browR": {
+     "x": 260,
+     "y": 193
+    },
+    "mouth": {
+     "x": 221,
+     "y": 266
+    }
+   },
+   {
+    "file": "hero_yuki_dragon_4.webp",
+    "found": true,
+    "eyeL": {
+     "x": 186,
+     "y": 198
+    },
+    "eyeR": {
+     "x": 263,
+     "y": 198
+    },
+    "browL": {
+     "x": 186,
+     "y": 172
+    },
+    "browR": {
+     "x": 263,
+     "y": 172
+    },
+    "mouth": {
+     "x": 225,
+     "y": 245
+    }
+   },
+   {
+    "file": "hero_yuki_dragon_5.webp",
+    "found": true,
+    "eyeL": {
+     "x": 189,
+     "y": 242
+    },
+    "eyeR": {
+     "x": 266,
+     "y": 242
+    },
+    "browL": {
+     "x": 189,
+     "y": 216
+    },
+    "browR": {
+     "x": 266,
+     "y": 216
+    },
+    "mouth": {
+     "x": 227,
+     "y": 289
+    }
+   },
+   {
+    "file": "hero_yuki_dragon_6.webp",
+    "found": true,
+    "eyeL": {
+     "x": 185,
+     "y": 222
+    },
+    "eyeR": {
+     "x": 262,
+     "y": 222
+    },
+    "browL": {
+     "x": 185,
+     "y": 196
+    },
+    "browR": {
+     "x": 262,
+     "y": 196
+    },
+    "mouth": {
+     "x": 223,
+     "y": 269
+    }
+   }
+  ],
+  "w": 439,
+  "h": 624
+ },
+ "hero_yuki:winter": {
+  "unit": 2,
+  "origin": {
+   "x": 226,
+   "y": 666
+  },
+  "frames": [
+   {
+    "file": "hero_yuki_winter_1.webp",
+    "found": true,
+    "eyeL": {
+     "x": 200,
+     "y": 220
+    },
+    "eyeR": {
+     "x": 277,
+     "y": 220
+    },
+    "browL": {
+     "x": 200,
+     "y": 194
+    },
+    "browR": {
+     "x": 277,
+     "y": 194
+    },
+    "mouth": {
+     "x": 238,
+     "y": 267
+    }
+   },
+   {
+    "file": "hero_yuki_winter_2.webp",
+    "found": true,
+    "eyeL": {
+     "x": 187,
+     "y": 220
+    },
+    "eyeR": {
+     "x": 264,
+     "y": 220
+    },
+    "browL": {
+     "x": 187,
+     "y": 194
+    },
+    "browR": {
+     "x": 264,
+     "y": 194
+    },
+    "mouth": {
+     "x": 225,
+     "y": 267
+    }
+   },
+   {
+    "file": "hero_yuki_winter_3.webp",
+    "found": true,
+    "eyeL": {
+     "x": 170,
+     "y": 218
+    },
+    "eyeR": {
+     "x": 247,
+     "y": 218
+    },
+    "browL": {
+     "x": 170,
+     "y": 192
+    },
+    "browR": {
+     "x": 247,
+     "y": 192
+    },
+    "mouth": {
+     "x": 208,
+     "y": 265
+    }
+   },
+   {
+    "file": "hero_yuki_winter_4.webp",
+    "found": true,
+    "eyeL": {
+     "x": 208,
+     "y": 203
+    },
+    "eyeR": {
+     "x": 285,
+     "y": 203
+    },
+    "browL": {
+     "x": 208,
+     "y": 177
+    },
+    "browR": {
+     "x": 285,
+     "y": 177
+    },
+    "mouth": {
+     "x": 246,
+     "y": 250
+    }
+   },
+   {
+    "file": "hero_yuki_winter_5.webp",
+    "found": true,
+    "eyeL": {
+     "x": 188,
+     "y": 250
+    },
+    "eyeR": {
+     "x": 265,
+     "y": 250
+    },
+    "browL": {
+     "x": 188,
+     "y": 224
+    },
+    "browR": {
+     "x": 265,
+     "y": 224
+    },
+    "mouth": {
+     "x": 226,
+     "y": 296
+    }
+   },
+   {
+    "file": "hero_yuki_winter_6.webp",
+    "found": true,
+    "eyeL": {
+     "x": 174,
+     "y": 226
+    },
+    "eyeR": {
+     "x": 251,
+     "y": 226
+    },
+    "browL": {
+     "x": 174,
+     "y": 200
+    },
+    "browR": {
+     "x": 251,
+     "y": 200
+    },
+    "mouth": {
+     "x": 212,
+     "y": 272
+    }
+   }
+  ],
+  "w": 457,
+  "h": 669
+ }
+}

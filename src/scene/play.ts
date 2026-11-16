@@ -1,13 +1,13 @@
 // Игровые взаимодействия: что происходит при нажатии и при отпускании. Связывает правила, сцену и звук.
-import type { GameAudio } from '../audio/audio';
-import { BOUND_CHARS, CAROUSEL, DISCO_BALL, POUCH, FARM_KINDS, FURNITURE, PEN_KINDS, GRAIN_EATERS, HAY_EATERS, TV_SCENES } from '../content/furniture';
+import { GameAudio } from '../audio/audio';
+import { BOUND_CHARS, CAROUSEL, DISCO_BALL, HATCH, POUCH, FARM_KINDS, FURNITURE, PEN_KINDS, GRAIN_EATERS, HAY_EATERS, TV_SCENES } from '../content/furniture';
 import { ITEMS } from '../content/items';
 import { resolveCharDrop, resolveItemDrop, resolvePetDrop, freeFloorSpot, type ItemDrop } from '../game/drop';
 import type { Game } from '../game/game';
 import { charBox, charPos, clampFloor, dist, itemPlace, petPos, slotPos } from '../game/geometry';
 import {
   HEADWEAR, POURS, clone, collectEgg, eatFromFeeder, emptyBowl, fillBowl, fillFeeder, henFed, waterBed, cook, cookables, drink, feed, fill, moveItem, openGift, patchPet, placeCharacter, placePet, recipeAt, seatTaken, setFurnitureOn,
-  setRoomStyle, toggleOpen, travel, wake, wearSet, moveFurniture, cushionFree, pouchJoey,
+  setRoomStyle, toggleOpen, travel, wake, wearSet, moveFurniture, cushionFree, pouchJoey, eggInNest, hatchStep,
 } from '../game/rules';
 import type { Pt, RoomId, World } from '../game/types';
 import type { Scene } from './scene';
@@ -31,7 +31,25 @@ export class Play {
   selection: Selection = null;
   decorate = false;
   talk: Talk | null = null;
-  constructor(private game: Game, private scene: Scene, private audio: GameAudio, private ui: PlayUi) {}
+  constructor(private game: Game, private scene: Scene, private audio: GameAudio, private ui: PlayUi) {
+    window.setInterval(() => this.hatchTick(), HATCH.stepMs);
+  }
+  /** Особое яйцо в тёплом гнезде: каждые полторы секунды игры — следующий шаг (дрожит → трещинки → цыплёнок). */
+  private hatchTick() {
+    const egg = eggInNest(this.w, this.room);
+    if (!egg || this.scene.dragging === egg.instanceId || document.hidden) return;
+    const at = itemPlace(this.w, egg);
+    const r = hatchStep(this.w, egg.instanceId);
+    if (!r.ok || !this.game.commit(r, true)) return;
+    const pet = r.info?.petId as string | undefined;
+    if (!pet) { this.audio.play(r.info?.stage === 1 ? 'click' : 'crunch'); return; }
+    this.scene.burst('star', { x: at.x, y: at.y - 20 }, 9);
+    this.scene.setPetMood(pet, 'happy', 2200);
+    window.setTimeout(() => { if (this.w.pets[pet]?.roomId === this.room) this.scene.hop(pet, 22); }, 120);
+    this.audio.play('pop');
+    this.ui.toast('farm.hatched');
+    this.petVoice('chick');
+  }
 
   private get w(): World { return this.game.world; }
   private get room(): RoomId { return this.w.currentRoomId; }
@@ -351,9 +369,13 @@ export class Play {
     if (now < this.petQuietUntil || this.talk?.speaking) return false;
     const voice = ({ cat: 'meow', dog: 'woof', frenchie: 'frenchie', wolf: 'howl', capybara: 'whistle', rabbit: 'sniff', cow: 'moo', sheep: 'baa', pig: 'oink', goat: 'meh', hen: 'cluck', chick: 'peep', pony: 'neigh' } as const)[kind as 'cat'];
     if (!voice) return false;
-    this.petQuietUntil = now + 2200;
+    // у кого есть запись — звучит запись (один раз, без наложения); пауза до следующего голоса не короче самой записи
+    const real = GameAudio.hasAnimal(kind);
+    const dur = real ? this.audio.animal(kind) : 0;
+    if (real && !dur) { this.petQuietUntil = now + 500; return false; } // запись ещё грузится или звук выключен: синтетикой не подменяем
+    this.petQuietUntil = now + Math.max(2200, dur * 1000 + 700);
     this.petVoiceLog.push(voice);
-    this.audio.play(voice);
+    if (!real) this.audio.play(voice);
     return true;
   }
 
@@ -658,7 +680,7 @@ export class Play {
     if (sel?.kind === 'item') {
       const used = (kind: 'surface' | 'furniture') => new Set(Object.values(w.items).filter((i) => i.owner.kind === kind && (i.owner as { furnitureId: string }).furnitureId === f.id && i.instanceId !== sel.ref).map((i) => (i.owner as { slot: number }).slot));
       const toy = !!ITEMS[w.items[sel.ref]?.definitionId]?.tags.includes('toy');
-      const sFree = fd.surfaces && (!fd.cushions || toy) ? fd.surfaces.findIndex((_, i) => !used('surface').has(i) && (!fd.cushions || cushionFree(w, f.id, i, sel.ref))) : -1;
+      const sFree = fd.surfaces && (!fd.cushions || toy) && (!fd.hatch || w.items[sel.ref]?.definitionId === HATCH.egg) ? fd.surfaces.findIndex((_, i) => !used('surface').has(i) && (!fd.cushions || cushionFree(w, f.id, i, sel.ref))) : -1;
       if (sFree >= 0) { this.dropItem(sel.ref, pt, { type: 'surface', furnitureId: f.id, slot: sFree }); this.select(null); return; }
       if (fd.container) { this.dropItem(sel.ref, pt, { type: 'furniture', furnitureId: f.id, slot: 0 }); this.select(null); return; }
     }

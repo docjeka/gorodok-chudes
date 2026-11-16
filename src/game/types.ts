@@ -1,6 +1,6 @@
 // Типы данных мира. Модель — единственный источник правды; сцена строится из неё.
 
-export const SCHEMA_VERSION = 9;
+export const SCHEMA_VERSION = 10;
 export const ROOM_W = 1600;
 export const ROOM_H = 900;
 export const FLOOR_TOP = 600;
@@ -33,6 +33,8 @@ export interface ItemInst {
   /** стартовое место — для кнопки «Прибрать комнату» */
   home?: Owner;
   state: {
+    /** особое яйцо в тёплом гнезде: 0 — лежит, 1 — дрожит, 2 — в трещинках; дальше выходит цыплёнок */
+    warm?: number;
     servings?: number;
     dirty?: boolean;
     /** что налито в чашку или стакан */
@@ -198,6 +200,8 @@ export interface FurnitureDef {
   surfaces?: Pt[];
   /** surfaces — подушки сидений (по одной на место): туда кладут только игрушки, и только на свободное место */
   cushions?: boolean;
+  /** тёплое гнездо: surfaces принимает только особое яйцо */
+  hatch?: boolean;
   /** ближние подлокотники: рисуются поверх игрушки на подушке, но под сидящим героем */
   arms?: { x0: number; y0: number; x1: number; y1: number }[];
   container?: { capacity: number; slots: Pt[] };

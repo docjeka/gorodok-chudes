@@ -192,6 +192,7 @@ async function run(kv: KV, initial: World) {
   };
   const syncDance = () => {
     scene.setBeat(audio.musicState().club && !map.isOpen && game.world.currentRoomId === 'club', 500); // 120 ударов в минуту — темп клубного трека
+    scene.setDanceClock(audio.clubBeats()); // фаза танца — из положения звука
     scene.setDancers(dancers(), 500);
   };
   window.setInterval(syncDance, 200);

@@ -272,7 +272,9 @@ try {
     const t0 = Date.now();
     await drag(page, await at(page, 'hero_mila', -120), await roomPt(page, 800, 628)); // Мила — за пульт
     await page.waitForFunction(() => window.__game.scene.dancing.length === 2);
-    await wait(7000);
+    await wait(6000);
+    await page.evaluate(() => { const g = window.__game; g.game.commit(g.rules.wearSet(g.game.world, 'hero_timur', 'dragon')); g.game.commit(g.rules.wearSet(g.game.world, 'hero_lev', 'astronaut')); }); // переодели на танцполе
+    await wait(6000);
     await drag(page, await at(page, 'hero_lev', -120), await roomPt(page, 300, 720)); // Льва сажаем на пуфик
     await wait(4500);
     await drag(page, await at(page, 'hero_mila', -150), await roomPt(page, 1150, 840)); // музыка остановилась

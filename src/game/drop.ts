@@ -1,6 +1,6 @@
 // Выбор цели при отпускании предмета, героя или питомца. Чистая логика: принимает мир и точку в координатах комнаты.
 // Приоритет: рука/рот героя → питомец → контейнер-предмет → поверхность/контейнер мебели → пол.
-import { POUCH, FURNITURE, GRAIN_EATERS, HAY_EATERS } from '../content/furniture';
+import { HATCH, POUCH, FURNITURE, GRAIN_EATERS, HAY_EATERS } from '../content/furniture';
 import { ITEMS } from '../content/items';
 import { charBox, charPos, clampFloor, dist, itemPlace, petPos, seatPos, slotPos } from './geometry';
 import { FILLABLE, HEADWEAR, PET_BRUSHES, cushionFree, isWaterSource, POURS, handItems, isInside, seatTaken } from './rules';
@@ -126,6 +126,7 @@ export function resolveItemDrop(w: World, itemId: string, pt: Pt, roomId: RoomId
       const sp = slotPos(f, s);
       const d = dist(pt, { x: sp.x, y: sp.y - def.h / 2 });
       // подушка сиденья: небольшая зона, только для игрушек и только если на этом месте никто не сидит и ничего не лежит
+      if (fd.hatch && it.definitionId !== HATCH.egg) return; // в гнездо кладётся только особое яйцо
       if (fd.cushions && (!has('toy') || d >= CUSHION_R || !cushionFree(w, f.id, slot, itemId))) return;
       if (d < SURFACE_R && (!bestF || d < bestF.d)) bestF = { drop: { type: 'surface', furnitureId: f.id, slot }, d };
     });

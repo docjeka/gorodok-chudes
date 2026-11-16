@@ -38,7 +38,9 @@ test('ферма: двор и амбар с животными, кормлени
   await far(page); await page.waitForTimeout(400);
   // голоса: у каждого свой, перенос молчит
   const voices = () => page.evaluate(() => window.__game.play.petVoiceLog.slice());
-  for (const id of ['pet_hen', 'pet_chick', 'pet_pony']) { await page.mouse.click(...(await at(page, id, -30))); await page.waitForTimeout(2350); }
+  await page.mouse.click(...(await roomPt(page, 800, 140)));
+  await page.waitForFunction(() => window.__game.audio.animalsReady, null, { timeout: 20_000 });
+  for (const id of ['pet_hen', 'pet_chick', 'pet_pony']) { await page.mouse.click(...(await at(page, id, -30))); await page.waitForTimeout(3600); }
   expect(await voices()).toEqual(['cluck', 'peep', 'neigh']);
   await drag(page, await at(page, 'pet_pony', -60), await roomPt(page, 1250, 760));
   expect(await voices()).toHaveLength(3);

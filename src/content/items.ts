@@ -101,6 +101,7 @@ export const ITEM_LIST: ItemDef[] = [
   d('farm_grain', ['toy'], 70, 65, { catalog: 'pets' }),
   d('farm_basket', ['container'], 82, 93, { capacity: 6, catalog: 'table' }),
   d('farm_eggs', ['ingredient'], 58, 54),
+  d('farm_egg_special', [], 34, 40), // особое яйцо с золотой искоркой: из него в тёплом гнезде выходит цыплёнок
   d('farm_milkcan', ['decor'], 60, 88, { catalog: 'table' }),
   d('farm_can', ['toy'], 86, 54, { catalog: 'toys' }),
   // контейнеры

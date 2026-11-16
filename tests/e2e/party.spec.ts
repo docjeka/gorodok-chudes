@@ -114,7 +114,8 @@ test('«Устрой вечеринку»: пекарня → мастерска
   await page.waitForFunction(() => { const m = window.__game.audio.musicState(); return m.club && !m.town; });
   const ys = await page.evaluate(async (f) => { const n = [...window.__game.scene.nodes.values()].find((x: any) => x.ref === f); const out: number[] = []; for (let i = 0; i < 30; i++) { await new Promise((r) => setTimeout(r, 60)); out.push(n.c.y); } return out; }, friend);
   expect(await page.evaluate(() => window.__game.scene.stats().tweens)).toBeLessThan(8); // анимации не «залипают» после открытия подарка
-  expect(Math.max(...ys) - Math.min(...ys)).toBeGreaterThan(3); // танцует
+  void ys;
+  await page.waitForFunction((f) => window.__game.scene.danceFrameOf(f) !== null || Math.abs(window.__game.scene.nodeOf(f).c.rotation) > 0.01, friend, { timeout: 6000 }); // танцует: нарисованными кадрами или покачиванием, если руки заняты
   expect((await music(page)).clubStarts).toBe(1);
 
   // 7. выйти и вернуться: музыка стихла и сама не включается, всё на местах
@@ -189,11 +190,22 @@ test('танцы в клубе: диджей и сидящие не танцую
   await page.waitForFunction(() => window.__game.audio.musicState().club);
   await page.waitForFunction(() => window.__game.scene.dancing.length === 2);
   expect(await page.evaluate(() => window.__game.scene.dancing.sort())).toEqual(['hero_lev', 'hero_timur']);
-  m = await sample(['hero_mila', 'hero_timur', 'hero_lev', 'hero_nora']);
-  expect(m.hero_timur.rot).toBeGreaterThan(0.03); expect(m.hero_lev.rot).toBeGreaterThan(0.03); // качаются
-  expect(m.hero_timur.dy).toBeGreaterThan(4); expect(m.hero_lev.dy).toBeGreaterThan(4); // подскок
-  expect(m.hero_timur.rot).toBeLessThan(0.15); // без рывков
-  expect(m.hero_mila.rot).toBe(0); expect(m.hero_nora.rot).toBe(0); // диджей и сидящая не танцуют
+  // нарисованный танец: кадры идут по долям клубного трека, без второго подскока и без наклонов
+  const seen = await page.evaluate(async () => { const g = window.__game; const out: Record<string, number[]> = { hero_timur: [], hero_lev: [], hero_mila: [], hero_nora: [] }; const keys = new Set<string>(); const t0 = performance.now(); while (performance.now() - t0 < 4600) { for (const id of Object.keys(out)) { const f = g.scene.danceFrameOf(id); if (f !== null && out[id].at(-1) !== f) out[id].push(f); } keys.add(g.scene.spriteOf('hero_timur')); await new Promise((r) => requestAnimationFrame(r)); } return { out, keys: [...keys] }; });
+  expect(new Set(seen.out.hero_timur).size).toBe(6); expect(new Set(seen.out.hero_lev).size).toBe(6); // все шесть фаз за восемь долей
+  const order = seen.out.hero_timur; for (let k = 1; k < order.length; k++) expect(order[k]).toBe((order[k - 1] + 1) % 6); // фазы идут по порядку
+  expect(seen.keys.some((k) => k.includes('dance/hero_timur_casual_'))).toBe(true); // кадры именно этого героя в его наряде
+  expect(seen.out.hero_mila).toEqual([]); expect(seen.out.hero_nora).toEqual([]); // диджей и сидящая не танцуют
+  m = await sample(['hero_timur', 'hero_lev'], 1200);
+  expect(m.hero_timur.rot).toBe(0); expect(m.hero_timur.dy).toBeLessThan(1); // прыжок уже в кадре
+  // переодели на танцполе — танец в новом наряде; с вещью в руке — прежнее мягкое покачивание, вещь не теряется
+  await page.evaluate(() => { const g = window.__game; g.game.commit(g.rules.wearSet(g.game.world, 'hero_timur', 'pirate')); });
+  await page.waitForFunction(() => window.__game.scene.spriteOf('hero_timur').includes('dance/hero_timur_pirate_'), null, { timeout: 6000 });
+  await page.evaluate(() => { const g = window.__game; const r = g.rules.spawnItem(g.game.world, 'balloon', { kind: 'hand', characterId: 'hero_lev', slot: 'left' }); g.game.commit(r); });
+  await page.waitForFunction(() => window.__game.scene.danceFrameOf('hero_lev') === null && window.__game.scene.spriteOf('hero_lev').includes('hero_lev_sport_stand'), null, { timeout: 4000 });
+  m = await sample(['hero_lev'], 2200);
+  expect(m.hero_lev.rot).toBeGreaterThan(0.03);
+  await page.evaluate(() => { const g = window.__game; const it = (Object.values(g.game.world.items) as any[]).find((i) => i.owner.kind === 'hand' && i.owner.characterId === 'hero_lev'); g.game.commit(g.rules.moveItem(g.game.world, it.instanceId, { kind: 'room', roomId: 'club', x: 300, y: 860 })); });
   // ещё одного героя принесли на танцпол — присоединяется
   await page.evaluate(() => { const g = window.__game; g.game.commit(g.rules.summonCharacter(g.game.world, 'hero_asya', 'club')); });
   await page.waitForFunction(() => window.__game.scene.dancing.includes('hero_asya'));
@@ -211,6 +223,7 @@ test('танцы в клубе: диджей и сидящие не танцую
   await drag(page, await at(page, 'hero_mila', -150), await roomPt(page, 1150, 840));
   await page.waitForFunction(() => !window.__game.audio.musicState().club);
   await page.waitForFunction(() => window.__game.scene.dancing.length === 0);
+  await page.waitForFunction(() => ['hero_lev', 'hero_nora', 'hero_asya'].every((id) => !window.__game.scene.spriteOf(id).includes('dance/')), null, { timeout: 4000 }); // обычные позы
   await page.waitForTimeout(700);
   m = await sample(['hero_lev', 'hero_nora', 'hero_asya'], 500);
   expect(m.hero_lev.rot + m.hero_nora.rot + m.hero_asya.rot).toBe(0);

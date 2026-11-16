@@ -98,7 +98,7 @@ export const FURNITURE_LIST: FurnitureDef[] = [
   // ферма: всё нарисовано на фоне, здесь только точки действий
   { id: 'fm_trough', category: 'decor', w: 400, h: 60, layer: 'wall', fixed: true, invisible: true, farm: 'trough' },
   { id: 'fm_grain', category: 'decor', w: 160, h: 40, layer: 'wall', fixed: true, invisible: true, farm: 'grain' },
-  { id: 'fm_nest', category: 'decor', w: 120, h: 80, layer: 'wall', fixed: true, invisible: true, farm: 'nest' },
+  { id: 'fm_nest', category: 'decor', w: 120, h: 80, layer: 'wall', fixed: true, invisible: true, farm: 'nest', hatch: true, surfaces: [{ x: 30, y: 8 }] },
   { id: 'fm_bed', category: 'plants', w: 200, h: 80, layer: 'wall', fixed: true, invisible: true, farm: 'bed' },
   // реквизит локаций: обычная мебель — её можно двигать, поворачивать и убирать
   { id: 'beach_lounger', category: 'seats', w: 300, h: 165, layer: 'floor', seats: [{ x: -10, y: -92, pose: 'sitting' }] },
@@ -194,6 +194,9 @@ export const groupOf = (roomId: RoomId): string => Object.keys(ROOM_GROUPS).find
 export const WALLPAPERS = 6;
 export const FLOORS = 5;
 export const TV_SCENES = 4;
+
+/** Вылупление: одно особое яйцо на сохранение и постоянный ID цыплёнка, который из него выходит. */
+export const HATCH = { egg: 'farm_egg_special', chick: 'pet_chick_hatched', stepMs: 1500, steps: 2 };
 
 /** Карман кенгуру, в единицах комнаты от опорной точки взрослого (низ лап). */
 export const POUCH = {

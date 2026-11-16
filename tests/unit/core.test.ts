@@ -370,7 +370,7 @@ describe('фермер и кенгуру', () => {
     const old: any = JSON.parse(JSON.stringify(createWorld()));
     delete old.characters.farm_worker_lev; delete old.pets.farm_kangaroo_adult; delete old.pets.farm_kangaroo_joey; delete old.rooms.farm_pen; old.schemaVersion = 7;
     const m = parseWorld(JSON.stringify(old));
-    expect(m.ok && [Object.keys(m.world.characters).length, Object.keys(m.world.pets).length, m.world.schemaVersion]).toEqual([7, 15, 9]);
+    expect(m.ok && [Object.keys(m.world.characters).length, Object.keys(m.world.pets).length, m.world.schemaVersion]).toEqual([7, 15, 10]);
     const again = m.ok ? parseWorld(JSON.stringify(m.world)) : m;
     expect(again.ok && [Object.keys(again.world.characters).length, Object.keys(again.world.pets).length]).toEqual([7, 15]);
   });
@@ -457,7 +457,7 @@ describe('сохранения', () => {
     for (const f of Object.values<any>(w.furniture)) { delete f.homeX; delete f.homeY; }
     const r = parseWorld(JSON.stringify(w));
     expect(r.ok).toBe(true);
-    if (r.ok) { expect(r.world.schemaVersion).toBe(9); expect(Object.keys(r.world.pets)).toHaveLength(15); }
+    if (r.ok) { expect(r.world.schemaVersion).toBe(10); expect(Object.keys(r.world.pets)).toHaveLength(15); }
   });
   it('миграция v2 → v8 добавляет локации города, Парк животных и трёх новых питомцев и ничего не трогает в домиках', () => {
     let w: any = createWorld();
@@ -477,7 +477,7 @@ describe('сохранения', () => {
     const r = parseWorld(JSON.stringify(w));
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(r.world.schemaVersion).toBe(9);
+    expect(r.world.schemaVersion).toBe(10);
     expect(validateWorld(r.world)).toEqual([]);
     expect(r.world.furniture.cl_table.roomId).toBe('club');
     expect(Object.values(r.world.items).filter((i) => i.definitionId === 'giftbox' && i.owner.kind === 'room' && i.owner.roomId === 'toys_workshop')).toHaveLength(1);
@@ -509,9 +509,9 @@ describe('сохранения', () => {
     const r = parseWorld(JSON.stringify(w));
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(r.world.schemaVersion).toBe(9);
+    expect(r.world.schemaVersion).toBe(10);
     expect(validateWorld(r.world)).toEqual([]);
-    expect(Object.keys(r.world.items).length).toBe(Object.keys(before.items).length + 8); // коробка, капкейк, мешок корма и пять вещей фермы
+    expect(Object.keys(r.world.items).length).toBe(Object.keys(before.items).length + 9); // коробка, капкейк, мешок корма, пять вещей фермы и особое яйцо
     for (const [id, it] of Object.entries<any>(before.items)) expect(r.world.items[id]).toEqual(it);
     const again = parseWorld(JSON.stringify(r.world));
     expect(again.ok && Object.keys(again.world.items).length).toBe(Object.keys(r.world.items).length);
@@ -725,5 +725,47 @@ describe('карман кенгуру', () => {
     w.pets[joey.id].carriedBy = 'pet_cat';
     expect(validateWorld(w)).toContain(`bad_pouch:${joey.id}`);
     expect(repairWorld(w).pets[joey.id].carriedBy).toBeUndefined();
+  });
+});
+
+describe('вылупление цыплёнка', () => {
+  it('особое яйцо одно; в гнезде проходит шаги и превращается в нового цыплёнка с постоянным ID; повторов нет', async () => {
+    const { hatchStep, eggInNest } = await import('../../src/game/rules');
+    const { resolveItemDrop } = await import('../../src/game/drop');
+    let w = createWorld();
+    const eggs = () => Object.values(w.items).filter((i) => i.definitionId === 'farm_egg_special');
+    expect(eggs()).toHaveLength(1);
+    const egg = eggs()[0].instanceId, pets = Object.keys(w.pets).length;
+    expect(hatchStep(w, egg).ok).toBe(false);                       // не в гнезде — ничего не происходит
+    const nest = w.furniture.fy_nest;
+    expect(resolveItemDrop(w, egg, { x: nest.x + 30, y: nest.y - 12 }, 'farm_yard')).toEqual({ type: 'surface', furnitureId: 'fy_nest', slot: 0 });
+    const plain = Object.values(w.items).find((i) => i.definitionId === 'farm_grain')!;
+    expect(moveItem(w, plain.instanceId, { kind: 'surface', furnitureId: 'fy_nest', slot: 0 }).ok).toBe(false); // в гнездо — только особое яйцо
+    w = must(moveItem(w, egg, { kind: 'surface', furnitureId: 'fy_nest', slot: 0 }));
+    expect(eggInNest(w, 'farm_yard')?.instanceId).toBe(egg);
+    w = must(hatchStep(w, egg)); expect(w.items[egg].state.warm).toBe(1);
+    // состояние переживает сохранение; забрали яйцо — оно цело и вылупление не идёт
+    const saved = parseWorld(JSON.stringify(w));
+    expect(saved.ok && saved.world.items[egg].state.warm).toBe(1);
+    const away = must(moveItem(w, egg, { kind: 'room', roomId: 'farm_yard', x: 700, y: 820 }));
+    expect(away.items[egg]).toBeTruthy(); expect(eggInNest(away, 'farm_yard')).toBeUndefined(); expect(hatchStep(away, egg).ok).toBe(false);
+    w = must(hatchStep(w, egg)); expect(w.items[egg].state.warm).toBe(2);
+    w = must(hatchStep(w, egg));
+    expect(w.items[egg]).toBeUndefined();
+    expect(w.pets.pet_chick_hatched).toMatchObject({ kind: 'chick', roomId: 'farm_yard' });
+    expect(w.pets.pet_chick.kind).toBe('chick');                     // прежний цыплёнок на месте
+    expect(Object.keys(w.pets).length).toBe(pets + 1);
+    expect(validateWorld(w)).toEqual([]);
+    // с фермы не уезжает
+    const t = travel(w, 'living', [], ['pet_chick_hatched']);
+    expect(t.ok && t.world.pets.pet_chick_hatched.roomId).toBe('farm_yard');
+    // старое сохранение: яйцо добавляется один раз; после вылупления — не добавляется снова
+    const old = createWorld(); old.schemaVersion = 9; for (const i of Object.values(old.items)) if (i.definitionId === 'farm_egg_special') delete old.items[i.instanceId];
+    const up = parseWorld(JSON.stringify(old));
+    expect(up.ok && Object.values(up.world.items).filter((i) => i.definitionId === 'farm_egg_special')).toHaveLength(1);
+    const done = JSON.parse(JSON.stringify(w)); done.schemaVersion = 9;
+    const up2 = parseWorld(JSON.stringify(done));
+    expect(up2.ok && Object.values(up2.world.items).filter((i) => i.definitionId === 'farm_egg_special')).toHaveLength(0);
+    expect(up2.ok && Object.keys(up2.world.pets).length).toBe(pets + 1);
   });
 });
