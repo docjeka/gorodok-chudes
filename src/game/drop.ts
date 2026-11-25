@@ -1,7 +1,7 @@
 // Выбор цели при отпускании предмета, героя или питомца. Чистая логика: принимает мир и точку в координатах комнаты.
 // Приоритет: рука/рот героя → питомец → контейнер-предмет → поверхность/контейнер мебели → пол.
 import { HATCH, POUCH, FURNITURE, GRAIN_EATERS, HAY_EATERS } from '../content/furniture';
-import { ITEMS } from '../content/items';
+import { ITEMS, DOCTOR_TOOLS } from '../content/items';
 import { charBox, charPos, clampFloor, dist, itemPlace, petPos, seatPos, slotPos } from './geometry';
 import { FILLABLE, HEADWEAR, PET_BRUSHES, cushionFree, isWaterSource, POURS, handItems, isInside, seatTaken } from './rules';
 import type { HandSlot, Pt, RoomId, World } from './types';
@@ -84,6 +84,8 @@ export function resolveItemDrop(w: World, itemId: string, pt: Pt, roomId: RoomId
     if (it.owner.kind === 'hand' && it.owner.characterId === c.id && !(edible && isHead(b, pt))) continue; // уронили на самого себя — ищем дальше
     if (def.wearSet) return { type: 'wear', characterId: c.id, setId: def.wearSet };
     const head = isHead(b, pt);
+    // инструмент доктора: пациента лечат, куда бы ни поднесли; доктор в халате берёт инструмент в руку (а лечат его, поднеся к голове)
+    if (DOCTOR_TOOLS[it.definitionId] && c.pose !== 'sleeping' && (head || c.costume !== 'doctor')) return { type: 'care', characterId: c.id };
     if (head && edible && c.pose !== 'sleeping') return { type: 'feed', characterId: c.id };
     if (head && has('care') && !['petbrush', 'pet_grooming_brush'].includes(it.definitionId) && c.pose !== 'sleeping') return { type: 'care', characterId: c.id };
     if (c.pose === 'sleeping' || c.pose === 'bathing') continue;

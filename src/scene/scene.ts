@@ -2,7 +2,7 @@
 import { Application, Container, Graphics, Rectangle, Sprite, Texture } from 'pixi.js';
 import { heart, star, ci, type Art, shade } from '../art/base';
 import { characterArt } from '../art/character';
-import { browArt, eyeArt, eyeStateFor, faceInk, mouthArt } from '../art/face';
+import { bandageArt, browArt, eyeArt, eyeStateFor, faceInk, feverArt, mouthArt, plasterArt } from '../art/face';
 import { tvSceneArt } from '../art/furniture';
 import { itemArt, itemArtKey } from '../art/items';
 import charSprites from '../content/charSprites.json';
@@ -31,7 +31,7 @@ const FURN_SPRITES = furnSprites as unknown as Record<string, SpriteMeta>;
 const ITEM_SPRITES = itemSprites as unknown as Record<string, { w: number; h: number }>;
 const PET_SPRITES = petSprites as unknown as Record<string, SpriteMeta>;
 
-interface FaceWant { eyes: number; brows: number; emotion: Character['emotion']; color: string; sp: CharSprite; closed: boolean; ink: string }
+interface FaceWant { eyes: number; brows: number; emotion: Character['emotion']; color: string; sp: CharSprite; closed: boolean; ink: string; care?: Character['care'] }
 interface Want {
   id: string; kind: Kind; ref: string; x: number; y: number; z: number; flip: boolean; rot: number;
   key: string; load: () => Promise<Tex>; /** запасной рисунок, если нужный кадр не загрузился */ spare?: { key: string; load: () => Promise<Tex> }; face?: FaceWant; overlay?: { key: string; load: () => Promise<Tex> };
@@ -46,7 +46,7 @@ interface Want {
 }
 interface Node {
   id: string; kind: Kind; ref: string; c: Container; body: Sprite; key: string; tex?: Tex;
-  parts?: Record<'eyeL' | 'eyeR' | 'browL' | 'browR' | 'mouth', Sprite>; face?: FaceWant; blinkAt: number; blinkUntil: number;
+  parts?: Record<'fever' | 'eyeL' | 'eyeR' | 'browL' | 'browR' | 'mouth' | 'plaster' | 'bandage', Sprite>; face?: FaceWant; blinkAt: number; blinkUntil: number;
   overlay?: Sprite; overlayKey?: string; pulse: number; liquid?: Graphics; liquidKey?: string; bowlG?: Graphics; bowlKey?: string;
   /** место из модели мира: танец качает фигурку вокруг него и ничего не сохраняет */
   by: number;
@@ -430,7 +430,7 @@ export class Scene {
     if (sp) {
       const key = 'C:' + sp.file;
       return { ...base, key, load: () => imageTex(key, `${BASE}assets/chars/${sp.file}`, { upp: 1 / sp.unit, ox: sp.origin.x, oy: sp.origin.y }),
-        face: { eyes: c.look.eyes, brows: c.look.brows, emotion: c.emotion, color: shade(HAIR_COLORS[c.look.hairColor] ?? '#3b2a26', -0.25), sp, closed: c.pose === 'sleeping', ink: faceInk(c.look.skin) } };
+        face: { eyes: c.look.eyes, brows: c.look.brows, emotion: c.emotion, color: shade(HAIR_COLORS[c.look.hairColor] ?? '#3b2a26', -0.25), sp, closed: c.pose === 'sleeping', ink: faceInk(c.look.skin), care: c.care } };
     }
     const key = `CV:${JSON.stringify([c.look, c.outfit, c.pose === 'sitting', c.emotion, c.pose === 'sleeping'])}`;
     const r = { look: c.look, outfit: c.outfit, pose: c.pose, emotion: c.emotion };
@@ -607,7 +607,7 @@ export class Scene {
     n.face = f;
     if (!f) { if (n.parts) { for (const s of Object.values(n.parts)) s.destroy(); n.parts = undefined; } return; }
     if (!n.parts) {
-      n.parts = { eyeL: new Sprite(), eyeR: new Sprite(), browL: new Sprite(), browR: new Sprite(), mouth: new Sprite() };
+      n.parts = { fever: new Sprite(), eyeL: new Sprite(), eyeR: new Sprite(), browL: new Sprite(), browR: new Sprite(), mouth: new Sprite(), plaster: new Sprite(), bandage: new Sprite() }; // порядок — порядок слоёв
       for (const s of Object.values(n.parts)) n.c.addChild(s);
     }
     this.paintFace(n);
@@ -634,6 +634,11 @@ export class Scene {
     // пока герой говорит, рот слегка шевелится: открытый и обычный кадры чередуются
     const mouthEmotion = f.closed ? 'sleepy' : this.talking.has(n.ref) && this.talkFrame % 2 === 0 ? 'talk' : f.emotion;
     put(parts.mouth, sp.mouth, `mouth:${mouthEmotion}${f.ink === faceInk(0) ? '' : ':' + f.ink}`, () => mouthArt(mouthEmotion, f.ink));
+    // кабинет доктора: жар на щеках, пластырь на щеке, повязка на лбу — точки считаются от глаз и рта спрайта
+    const eyeY = (sp.eyeL.y + sp.eyeR.y) / 2, gap = sp.eyeR.x - sp.eyeL.x, care = f.care;
+    put(parts.fever, { x: sp.mouth.x, y: eyeY + gap * 0.45 }, 'care:fever', feverArt, !!care?.fever);
+    put(parts.plaster, { x: sp.mouth.x + gap * 0.8, y: eyeY + gap * 0.5 }, 'care:plaster', plasterArt, !!care?.plaster);
+    put(parts.bandage, { x: sp.mouth.x, y: (sp.browL.y + sp.browR.y) / 2 - gap * 0.42 }, 'care:bandage', bandageArt, !!care?.bandage);
   }
 
   private syncOverlay(n: Node, o: Want['overlay']) {
@@ -1058,15 +1063,15 @@ export class Scene {
     }, () => end(true));
   }
 
-  consume(ref: string, mouth: Pt, kind: 'eat' | 'drink' | 'scrub' | 'stroke' | 'rub' | 'tilt', done: () => void) {
+  consume(ref: string, mouth: Pt, kind: 'eat' | 'drink' | 'scrub' | 'stroke' | 'rub' | 'tilt' | 'hold' | 'beat', done: () => void) {
     const n = this.nodeOf(ref);
     if (!n || !n.tex) { done(); return; }
     this.animating.add(ref);
     const h = n.tex.oy * n.tex.upp;
     const x0 = n.c.x, y0 = n.c.y;
-    const off: Record<typeof kind, [number, number]> = { eat: [0, h * 0.55], drink: [16, h * 0.75], scrub: [h * 0.88, 8], stroke: [0, h * 0.5], rub: [0, h * 0.5], tilt: [-34, -8] };
+    const off: Record<typeof kind, [number, number]> = { eat: [0, h * 0.55], drink: [16, h * 0.75], scrub: [h * 0.88, 8], stroke: [0, h * 0.5], rub: [0, h * 0.5], tilt: [-34, -8], hold: [22, h * 0.8], beat: [0, h * 0.5] };
     const tx = mouth.x + off[kind][0], ty = mouth.y + off[kind][1];
-    const dur = kind === 'eat' || kind === 'drink' ? 560 : 1000;
+    const dur = kind === 'eat' || kind === 'drink' ? 560 : kind === 'hold' || kind === 'beat' ? 1500 : 1000;
     n.c.zIndex = 1e6 - 1;
     n.c.scale.set(1);
     this.tween(240, (k) => { const e = 1 - (1 - k) * (1 - k); n.c.position.set(x0 + (tx - x0) * e, y0 + (ty - y0) * e); }, () => {
@@ -1077,6 +1082,8 @@ export class Scene {
         else if (kind === 'scrub') { n.c.rotation = -1.25; n.c.position.set(tx + sw * 9, ty); } // щётка лежит боком и ходит туда-сюда
         else if (kind === 'stroke') n.c.position.set(tx + Math.sin(k * Math.PI * 3) * 26, ty + Math.abs(Math.sin(k * Math.PI * 3)) * 16); // расчёска по волосам
         else if (kind === 'rub') n.c.position.set(tx + Math.cos(k * Math.PI * 6) * 14, ty + sw * 12); // круги по лицу
+        else if (kind === 'hold') n.c.rotation = Math.sin(k * Math.PI * 4) * 0.05; // градусник держат у рта и ждут
+        else if (kind === 'beat') n.c.scale.set(1 + 0.14 * Math.max(0, Math.sin(k * Math.PI * 6))); // стетоскоп вздрагивает в такт сердцу
         else n.c.rotation = -Math.sin(k * Math.PI) * 0.7; // лейка наклоняется
       }, () => { n.c.rotation = 0; n.c.scale.set(1); this.animating.delete(ref); done(); });
     });

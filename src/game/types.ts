@@ -1,6 +1,6 @@
 // Типы данных мира. Модель — единственный источник правды; сцена строится из неё.
 
-export const SCHEMA_VERSION = 11;
+export const SCHEMA_VERSION = 12;
 export const ROOM_W = 1600;
 export const ROOM_H = 900;
 export const FLOOR_TOP = 600;
@@ -11,7 +11,7 @@ export const BAG_CAPACITY = 8;
 export const GIFT_CAPACITY = 5;
 
 export type RoomId = 'living' | 'kitchen' | 'bedroom' | 'bathroom'
-  | 'park' | 'park_games' | 'cafe' | 'cafe_bakery' | 'toys' | 'toys_workshop' | 'beach' | 'beach_boats' | 'club' | 'animals' | 'farm_yard' | 'farm_barn' | 'farm_pen';
+  | 'park' | 'park_games' | 'cafe' | 'cafe_bakery' | 'toys' | 'toys_workshop' | 'beach' | 'beach_boats' | 'club' | 'animals' | 'farm_yard' | 'farm_barn' | 'farm_pen' | 'doctor';
 export type HandSlot = 'left' | 'right';
 
 /** Владелец предмета. У каждого экземпляра он ровно один. */
@@ -92,7 +92,11 @@ export interface Character {
   dream?: string;
   /** комплект, надетый целиком: по нему выбирается готовый спрайт фигурки */
   costume?: string;
+  /** кабинет доктора: температура, пластырь на щеке, повязка на голове */
+  care?: CareState;
 }
+export interface CareState { fever?: boolean; cured?: boolean; plaster?: boolean; bandage?: boolean }
+export type DoctorTool = 'thermometer' | 'syrup' | 'plaster' | 'bandage' | 'stethoscope';
 
 export type PetKind = 'cat' | 'dog' | 'rabbit' | 'capybara' | 'frenchie' | 'wolf' | 'cow' | 'sheep' | 'pig' | 'goat' | 'hen' | 'chick' | 'pony' | 'kangaroo' | 'joey';
 export interface Pet {

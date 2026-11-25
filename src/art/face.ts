@@ -1,7 +1,7 @@
 // Лицо отдельным слоем: глаза, брови и рот — самостоятельные детали, которые сцена ставит в точки спрайта.
 // Каждая деталь нарисована вокруг своей точки (0,0), поэтому её можно поставить на любую фигурку.
 import type { Emotion } from '../game/types';
-import { Art, INK as DEFAULT_INK, ci, el, ln, pa } from './base';
+import { Art, INK as DEFAULT_INK, ci, el, g, ln, pa, rc } from './base';
 
 /** На очень тёмной коже линии лица рисуются темнее, иначе их не видно. */
 export const faceInk = (skin: number) => (skin >= 5 ? '#1f0f0b' : DEFAULT_INK);
@@ -62,6 +62,27 @@ export function mouthArt(emotion: Emotion | 'talk', INK: string = DEFAULT_INK): 
     case 'thinking': s = ln('M2,2 Q8,-1 14,1', INK, 3); break;
   }
   return { svg: s, x: -20, y: -12, w: 40, h: 32 };
+}
+
+// Кабинет доктора: три детали поверх лица. Каждая нарисована вокруг своей точки, как глаза и рот.
+/** Жар: горячие щёки и капелька на лбу. Точка — середина между щеками. */
+export function feverArt(): Art {
+  const cheek = (x: number) => el(x, 0, 17, 12, '#ff4b3e', 'opacity="0.5"') + el(x, 0, 10, 7, '#ff2f2f', 'opacity="0.35"');
+  const drop = pa('M36,-62 q-8,12 0,16 q8,-4 0,-16Z', '#8fd3ff', 'stroke="#5aa9e0" stroke-width="1.6" stroke-linejoin="round"');
+  return { svg: cheek(-27) + cheek(27) + drop, x: -48, y: -66, w: 96, h: 82 };
+}
+/** Пластырь на щеке. Точка — его середина. */
+export function plasterArt(): Art {
+  const s = rc(-17, -7, 34, 14, 7, '#f6c9a0', 'stroke="#d79f74" stroke-width="1.6"') + rc(-6, -5, 12, 10, 2.5, '#fff6ea', 'stroke="#e6c4a2" stroke-width="1"')
+    + [-12, 12].map((x) => ci(x, -2.5, 1, '#d79f74', '') + ci(x, 2.5, 1, '#d79f74', '')).join('');
+  return { svg: g(s, 'transform="rotate(-24)"'), x: -22, y: -18, w: 44, h: 36 };
+}
+/** Повязка на лбу с узелком сбоку. Точка — середина лба. */
+export function bandageArt(): Art {
+  const band = pa('M-50,-4 Q0,-13 50,-4 L50,9 Q0,0 -50,9Z', '#fbf4e4', 'stroke="#d9cdb4" stroke-width="1.8" stroke-linejoin="round"');
+  const weave = [-34, -17, 0, 17, 34].map((x) => ln(`M${x - 4},${-7 + Math.abs(x) * 0.07} l8,12`, '#e6dcc6', 1.4)).join('');
+  const knot = el(52, 3, 7, 8, '#fbf4e4', 'stroke="#d9cdb4" stroke-width="1.8"') + pa('M55,8 q10,6 6,18 q-8,-4 -11,-14Z', '#fbf4e4', 'stroke="#d9cdb4" stroke-width="1.8" stroke-linejoin="round"');
+  return { svg: band + weave + knot, x: -56, y: -18, w: 124, h: 50 };
 }
 
 /** Точки лица в координатах векторного героя (стоя, опора между ступнями). */

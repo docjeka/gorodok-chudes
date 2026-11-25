@@ -1,6 +1,6 @@
 // Эффекты синтезируются в браузере (Web Audio); музыка — два локальных файла (фон города и трек DJ-пульта).
 // Запускается только после действия пользователя и возобновляется при возвращении в приложение.
-export type Sfx = 'moo' | 'baa' | 'oink' | 'meh' | 'cluck' | 'peep' | 'neigh' | 'meow' | 'woof' | 'frenchie' | 'howl' | 'whistle' | 'sniff' | 'crunch' | 'lap' | 'boing' | 'squeak' | 'beep' | 'vroom' | 'whoosh' | 'clink' | 'scrub' | 'gulp' | 'pour' | 'pop' | 'put' | 'munch' | 'sparkle' | 'door' | 'water' | 'sleep' | 'nope' | 'gift' | 'click' | 'pet' | 'cook' | 'light';
+export type Sfx = 'moo' | 'baa' | 'oink' | 'meh' | 'cluck' | 'peep' | 'neigh' | 'meow' | 'woof' | 'frenchie' | 'howl' | 'whistle' | 'sniff' | 'crunch' | 'lap' | 'boing' | 'squeak' | 'beep' | 'vroom' | 'whoosh' | 'clink' | 'scrub' | 'gulp' | 'pour' | 'pop' | 'put' | 'munch' | 'sparkle' | 'door' | 'water' | 'sleep' | 'nope' | 'gift' | 'click' | 'pet' | 'cook' | 'light' | 'heart';
 
 const NOTES = [261.63, 293.66, 329.63, 392.0, 440.0, 523.25, 587.33, 659.25];
 
@@ -263,6 +263,7 @@ export class GameAudio {
       case 'pet': this.tone(600, t, 0.1, 'sine', out, 0.6, 800); this.tone(800, t + 0.1, 0.12, 'sine', out, 0.5, 700); break;
       case 'cook': this.noise(t, 0.5, 2600, 0.3); this.tone(660, t + 0.45, 0.25, 'triangle', out, 0.6); break;
       case 'light': this.tone(900, t, 0.05, 'square', out, 0.25); break;
+      case 'heart': [0, 0.5, 1].forEach((d) => { this.tone(74, t + d, 0.12, 'sine', out, 1, 52); this.tone(92, t + d + 0.16, 0.1, 'sine', out, 0.8, 60); }); break; // тук-тук, три удара
     }
   }
 }

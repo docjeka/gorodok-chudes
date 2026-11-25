@@ -121,6 +121,8 @@ export const FURNITURE_LIST: FurnitureDef[] = [
   { id: 'loc_rack3x3', category: 'storage', w: 290, h: 260, layer: 'wall', fixed: true, invisible: true, surfaces: [...row(3, -94, 93, -165), ...row(3, -94, 93, -80), ...row(3, -94, 93, 0)] },
   { id: 'loc_bench4', category: 'tables', w: 320, h: 40, layer: 'wall', fixed: true, invisible: true, surfaces: row(4, -128, 85, 0) },
   { id: 'loc_pond', category: 'decor', w: 380, h: 120, layer: 'wall', fixed: true, invisible: true },
+  // кабинет доктора: полки в двух нишах нарисованы на фоне
+  { id: 'loc_niche3x3', category: 'storage', w: 220, h: 260, layer: 'wall', fixed: true, invisible: true, surfaces: [...row(3, -68, 68, -172), ...row(3, -68, 68, -86), ...row(3, -68, 68, 0)] },
   // ферма: всё нарисовано на фоне, здесь только точки действий
   { id: 'fm_trough', category: 'decor', w: 400, h: 60, layer: 'wall', fixed: true, invisible: true, farm: 'trough' },
   { id: 'fm_grain', category: 'decor', w: 160, h: 40, layer: 'wall', fixed: true, invisible: true, farm: 'grain' },
@@ -131,6 +133,10 @@ export const FURNITURE_LIST: FurnitureDef[] = [
   { id: 'beach_umbrella', category: 'decor', w: 250, h: 285, layer: 'floor' },
   // передний борт лодочки прикрывает ноги сидящих
   { id: 'beach_rowboat', category: 'seats', w: 380, h: 195, layer: 'floor', seats: [{ x: -85, y: -84, pose: 'sitting' }, { x: 85, y: -84, pose: 'sitting' }], front: { x0: -190, y0: -92, x1: 190, y1: 0 } },
+  // кабинет доктора: на кушетку садятся, на шкафчик ставят вещи, весы лежат на полу как коврик
+  { id: 'doc_couch', category: 'seats', w: 380, h: 216, layer: 'floor', seats: [{ x: 45, y: -132, pose: 'sitting' }] },
+  { id: 'doc_cabinet', category: 'storage', w: 260, h: 303, layer: 'floor', surfaces: [{ x: -62, y: -298 }, { x: 62, y: -298 }] },
+  { id: 'doc_scale', category: 'decor', w: 140, h: 145, layer: 'rug' },
   { id: 'club_stool', category: 'seats', w: 160, h: 120, layer: 'floor', seats: [{ x: 0, y: -100, pose: 'sitting' }] },
   { id: 'club_speaker', category: 'decor', w: 115, h: 223, layer: 'floor' },
   { id: 'club_light', category: 'lighting', w: 135, h: 185, layer: 'floor', tap: 'toggleOn' },
@@ -193,6 +199,7 @@ const LAYOUT: Record<RoomId, Place[]> = {
   farm_yard: [['fy_nest', 'fm_nest', 352, 398], ['fy_grain', 'fm_grain', 560, 690], ['fy_bed1', 'fm_bed', 1177, 400], ['fy_bed2', 'fm_bed', 1407, 400]],
   farm_barn: [['fb_trough', 'fm_trough', 1305, 478]],
   farm_pen: [],
+  doctor: [['dc_left', 'loc_niche3x3', 200, 455], ['dc_right', 'loc_niche3x3', 1398, 455], ['dc_couch', 'doc_couch', 520, 770], ['dc_cabinet', 'doc_cabinet', 1000, 750], ['dc_scale', 'doc_scale', 1240, 870]],
   animals: [['an_pond', 'loc_pond', 364, 450], ['an_tunnel', 'pet_tunnel', 1000, 760], ['an_cushion', 'pet_cushion', 1330, 820]],
 };
 
@@ -216,6 +223,7 @@ export const ROOM_GROUPS: Record<string, RoomId[]> = {
   beach: ['beach', 'beach_boats'],
   animals: ['animals'],
   farm: ['farm_yard', 'farm_barn', 'farm_pen'],
+  doctor: ['doctor'],
 };
 export const ROOM_IDS: RoomId[] = Object.values(ROOM_GROUPS).flat();
 export const HOUSE_ROOMS = new Set<RoomId>(ROOM_GROUPS.houses);

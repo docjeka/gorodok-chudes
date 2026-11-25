@@ -76,6 +76,7 @@ export const OUTFIT_SETS: OutfitSetDef[] = [
   { id: 'farmer_work', outfit: o({ dress: ['overalls', 0], shoes: ['boots', 1] }) },
   { id: 'farmer_rain', outfit: o({ top: ['raincoat', 0], bottom: ['trousers', 0], shoes: ['boots', 1] }) },
   { id: 'farmer_harvest', outfit: o({ top: ['sweater', 2], bottom: ['trousers', 2], shoes: ['boots', 0] }) },
+  { id: 'doctor', outfit: o({ top: ['chefcoat', 2], bottom: ['trousers', 3], shoes: ['sneakers', 3] }) },
   { id: 'confectioner', outfit: o({ top: ['chefcoat', 0], bottom: ['trousers', 1], shoes: ['sneakers', 1], hat: ['chefhat', 0] }) },
 ];
 export const OUTFITS: Record<string, OutfitSetDef> = Object.fromEntries(OUTFIT_SETS.map((s) => [s.id, s]));
@@ -116,11 +117,11 @@ export function presetCharacter(id: string): Character | null {
 /** Костюмы каждого героя: для них есть (или готовятся) готовые фигурки стоя и сидя. */
 export const HERO_COSTUMES: Record<string, string[]> = {
   hero_mila: ['summer', 'princess', 'pajama', 'fairy', 'dj'],
-  hero_timur: ['casual', 'chef', 'dragon', 'pirate', 'confectioner'],
+  hero_timur: ['casual', 'chef', 'dragon', 'pirate', 'doctor', 'confectioner'],
   farm_worker_lev: ['farmer_work', 'farmer_rain', 'farmer_harvest'],
   hero_asya: ['artist', 'ballerina', 'winter', 'cat'],
   hero_lev: ['sport', 'astronaut', 'rain', 'pajama'],
-  hero_nora: ['gardener', 'summer', 'chef', 'princess'],
+  hero_nora: ['gardener', 'summer', 'chef', 'princess', 'doctor'],
   hero_yuki: ['casual', 'winter', 'dragon', 'ballerina'],
   hero_iskorka: ['emerald_party', 'iskorka_pajama', 'iskorka_rain', 'iskorka_cosmic'],
   npc_liza: ['liza_work', 'liza_casual', 'liza_party'],

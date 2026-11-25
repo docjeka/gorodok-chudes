@@ -1,4 +1,4 @@
-import type { ItemDef, Recipe, GiftSetDef } from '../game/types';
+import type { DoctorTool, ItemDef, Recipe, GiftSetDef } from '../game/types';
 
 const d = (id: string, tags: ItemDef['tags'], w: number, h: number, extra: Partial<ItemDef> = {}): ItemDef => ({ id, tags, w, h, ...extra });
 
@@ -104,6 +104,13 @@ export const ITEM_LIST: ItemDef[] = [
   d('farm_egg_special', [], 34, 40), // особое яйцо с золотой искоркой: из него в тёплом гнезде выходит цыплёнок
   d('farm_milkcan', ['decor'], 60, 88, { catalog: 'table' }),
   d('farm_can', ['toy'], 86, 54, { catalog: 'toys' }),
+  // кабинет доктора: инструменты подносят к голове героя (что делает каждый — DOCTOR_TOOLS и treat в правилах), в сумку складывают вещи
+  d('doc_bag', ['container'], 84, 67, { capacity: 6, catalog: 'care' }),
+  d('doc_thermometer', ['care'], 54, 55, { catalog: 'care' }),
+  d('doc_stethoscope', ['care'], 60, 65, { catalog: 'care' }),
+  d('doc_bandage', ['care'], 62, 50, { catalog: 'care' }),
+  d('doc_plasters', ['care'], 52, 52, { catalog: 'care' }),
+  d('doc_syrup', ['care'], 50, 66, { catalog: 'care' }),
   // контейнеры
   d('basket', ['container'], 76, 54, { capacity: 8, catalog: 'table' }),
   d('giftbox', ['container', 'giftbox', 'big'], 84, 86, { capacity: 5 }),
@@ -117,6 +124,11 @@ export const ITEM_LIST: ItemDef[] = [
   d('costume_gardener', ['costume'], 56, 60, { wearSet: 'gardener' }),
   d('costume_chef', ['costume'], 56, 60, { wearSet: 'chef' }),
 ];
+
+/** Инструменты доктора: какой предмет что делает. */
+export const DOCTOR_TOOLS: Record<string, DoctorTool> = { doc_thermometer: 'thermometer', doc_syrup: 'syrup', doc_plasters: 'plaster', doc_bandage: 'bandage', doc_stethoscope: 'stethoscope' };
+/** Как часто градусник находит температуру у здорового героя. */
+export const FEVER_CHANCE = 0.4;
 
 export const ITEMS: Record<string, ItemDef> = Object.fromEntries(ITEM_LIST.map((i) => [i.id, i]));
 

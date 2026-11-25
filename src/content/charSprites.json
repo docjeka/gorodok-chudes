@@ -2845,5 +2845,161 @@
    "y": 433
   },
   "faceScale": 1.18
+ },
+ "hero_nora:doctor:stand": {
+  "file": "hero_nora_doctor_stand.webp",
+  "w": 299,
+  "h": 559,
+  "unit": 2,
+  "origin": {
+   "x": 149,
+   "y": 557
+  },
+  "eyeL": {
+   "x": 111,
+   "y": 134
+  },
+  "eyeR": {
+   "x": 187,
+   "y": 134
+  },
+  "browL": {
+   "x": 111,
+   "y": 108
+  },
+  "browR": {
+   "x": 187,
+   "y": 108
+  },
+  "mouth": {
+   "x": 149,
+   "y": 181
+  },
+  "handL": {
+   "x": 45,
+   "y": 387
+  },
+  "handR": {
+   "x": 253,
+   "y": 387
+  },
+  "faceScale": 1.18
+ },
+ "hero_nora:doctor:sit": {
+  "file": "hero_nora_doctor_sit.webp",
+  "w": 302,
+  "h": 528,
+  "unit": 2,
+  "origin": {
+   "x": 152,
+   "y": 434
+  },
+  "eyeL": {
+   "x": 113,
+   "y": 135
+  },
+  "eyeR": {
+   "x": 190,
+   "y": 135
+  },
+  "browL": {
+   "x": 113,
+   "y": 109
+  },
+  "browR": {
+   "x": 190,
+   "y": 109
+  },
+  "mouth": {
+   "x": 152,
+   "y": 181
+  },
+  "handL": {
+   "x": 39,
+   "y": 388
+  },
+  "handR": {
+   "x": 260,
+   "y": 388
+  },
+  "faceScale": 1.18
+ },
+ "hero_timur:doctor:stand": {
+  "file": "hero_timur_doctor_stand.webp",
+  "w": 266,
+  "h": 531,
+  "unit": 2,
+  "origin": {
+   "x": 134,
+   "y": 529
+  },
+  "eyeL": {
+   "x": 95,
+   "y": 146
+  },
+  "eyeR": {
+   "x": 172,
+   "y": 146
+  },
+  "browL": {
+   "x": 95,
+   "y": 120
+  },
+  "browR": {
+   "x": 172,
+   "y": 120
+  },
+  "mouth": {
+   "x": 134,
+   "y": 192
+  },
+  "handL": {
+   "x": 31,
+   "y": 379
+  },
+  "handR": {
+   "x": 235,
+   "y": 377
+  },
+  "faceScale": 1.18
+ },
+ "hero_timur:doctor:sit": {
+  "file": "hero_timur_doctor_sit.webp",
+  "w": 261,
+  "h": 478,
+  "unit": 2,
+  "origin": {
+   "x": 131,
+   "y": 401
+  },
+  "eyeL": {
+   "x": 92,
+   "y": 143
+  },
+  "eyeR": {
+   "x": 169,
+   "y": 143
+  },
+  "browL": {
+   "x": 92,
+   "y": 117
+  },
+  "browR": {
+   "x": 169,
+   "y": 117
+  },
+  "mouth": {
+   "x": 131,
+   "y": 190
+  },
+  "handL": {
+   "x": 28,
+   "y": 369
+  },
+  "handR": {
+   "x": 230,
+   "y": 369
+  },
+  "faceScale": 1.18
  }
 }

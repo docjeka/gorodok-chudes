@@ -81,10 +81,16 @@ const FARM_SEEDS: [string, Owner][] = [
   ['farm_grain', floor('farm_yard', 300, 830)], ['farm_basket', floor('farm_yard', 760, 840)], ['farm_can', floor('farm_yard', 1300, 800)],
   ['farm_hay', floor('farm_barn', 840, 860)], ['farm_milkcan', floor('farm_barn', 1480, 760)],
 ];
-const LOCATION_ROOMS: RoomId[] = ['farm_yard', 'farm_barn', 'farm_pen', 'animals', 'park', 'park_games', 'cafe', 'cafe_bakery', 'toys', 'toys_workshop', 'beach', 'beach_boats', 'club'];
+const LOCATION_ROOMS: RoomId[] = ['doctor', 'farm_yard', 'farm_barn', 'farm_pen', 'animals', 'park', 'park_games', 'cafe', 'cafe_bakery', 'toys', 'toys_workshop', 'beach', 'beach_boats', 'club'];
+/** Кабинет доктора: инструменты на полках в нишах, сумка на полу. */
+const DOCTOR_SEEDS: [string, Owner][] = [
+  ['doc_thermometer', surf('dc_left', 3)], ['doc_stethoscope', surf('dc_left', 5)], ['doc_bandage', surf('dc_left', 7)],
+  ['doc_plasters', surf('dc_right', 3)], ['doc_syrup', surf('dc_right', 5)], ['teddy', surf('dc_right', 7)],
+  ['doc_bag', floor('doctor', 800, 850)],
+];
 /** Особое яйцо: одно на сохранение, лежит во дворе фермы рядом с курятником. */
 const HATCH_SEEDS: [string, Owner][] = [[HATCH.egg, floor('farm_yard', 470, 830)]];
-function seedLocations(world: World, seeds: [string, Owner][] = [...LOCATION_SEEDS, ...PROP_SEEDS, ...PARTY_SEEDS, ...FEED_SEEDS, ...FARM_SEEDS, ...HATCH_SEEDS]): World {
+function seedLocations(world: World, seeds: [string, Owner][] = [...LOCATION_SEEDS, ...PROP_SEEDS, ...PARTY_SEEDS, ...FEED_SEEDS, ...FARM_SEEDS, ...HATCH_SEEDS, ...DOCTOR_SEEDS]): World {
   let w = world;
   for (const [def, owner] of seeds) {
     const r = spawnItem(w, def, owner, def === 'giftbox' ? { packed: false, paper: 2, bow: 1 } : {});
@@ -329,6 +335,15 @@ export const MIGRATIONS: Record<number, Migration> = {
     raw.schemaVersion = 11;
     return raw;
   },
+  // 11 → 12: кабинет доктора — комната, мебель и инструменты, по одному разу
+  11: (raw) => {
+    const fresh = createWorld(raw.settings?.lang === 'en' ? 'en' : 'ru');
+    for (const r of LOCATION_ROOMS) raw.rooms[r] = raw.rooms[r] ?? fresh.rooms[r];
+    for (const [id, f] of Object.entries(fresh.furniture)) if (f.roomId === 'doctor' && !raw.furniture[id]) raw.furniture[id] = structuredClone(f);
+    raw.schemaVersion = 12;
+    const has = Object.values<any>(raw.items ?? {}).some((i) => typeof i.definitionId === 'string' && i.definitionId.startsWith('doc_'));
+    return has ? raw : seedLocations(raw as World, DOCTOR_SEEDS);
+  },
 };
 
 export function migrate(raw: any): any {
@@ -367,6 +382,7 @@ function checkShape(w: any): string | null {
     for (const k of ['skin', 'face', 'eyes', 'brows', 'hair', 'hairColor', 'glasses']) if (!num(c.look[k]) || c.look[k] < 0 || c.look[k] > 8) return 'bad_look';
     for (const worn of Object.values<any>(c.outfit)) if (!isObj(worn) || !GARMENTS[worn.id]) return 'bad_outfit';
     if (c.dream !== undefined && !ITEMS[c.dream]) return 'bad_character';
+    if (c.care !== undefined && !(isObj(c.care) && Object.entries(c.care).every(([k, v]) => ['fever', 'cured', 'plaster', 'bandage'].includes(k) && typeof v === 'boolean'))) return 'bad_character';
   }
   for (const f of Object.values<any>(w.furniture)) if (!isObj(f) || !FURNITURE[f.definitionId] || !num(f.x) || !num(f.y)) return 'bad_furniture';
   for (const p of Object.values<any>(w.pets)) if (!isObj(p) || !['cat', 'dog', 'rabbit', 'capybara', 'frenchie', 'wolf', 'cow', 'sheep', 'pig', 'goat', 'hen', 'chick', 'pony', 'kangaroo', 'joey'].includes(p.kind) || !num(p.x) || !num(p.y)) return 'bad_pet';

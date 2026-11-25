@@ -418,5 +418,29 @@
 "farm_egg_special": {
 "w": 77,
 "h": 92
+},
+"doc_bag": {
+"w": 257,
+"h": 204
+},
+"doc_thermometer": {
+"w": 197,
+"h": 202
+},
+"doc_stethoscope": {
+"w": 214,
+"h": 232
+},
+"doc_bandage": {
+"w": 221,
+"h": 179
+},
+"doc_plasters": {
+"w": 164,
+"h": 163
+},
+"doc_syrup": {
+"w": 182,
+"h": 242
 }
 }

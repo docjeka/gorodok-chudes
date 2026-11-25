@@ -370,7 +370,7 @@ describe('фермер и кенгуру', () => {
     const old: any = JSON.parse(JSON.stringify(createWorld()));
     delete old.characters.farm_worker_lev; delete old.pets.farm_kangaroo_adult; delete old.pets.farm_kangaroo_joey; delete old.rooms.farm_pen; old.schemaVersion = 7;
     const m = parseWorld(JSON.stringify(old));
-    expect(m.ok && [Object.keys(m.world.characters).length, Object.keys(m.world.pets).length, m.world.schemaVersion]).toEqual([9, 15, 11]);
+    expect(m.ok && [Object.keys(m.world.characters).length, Object.keys(m.world.pets).length, m.world.schemaVersion]).toEqual([9, 15, 12]);
     const again = m.ok ? parseWorld(JSON.stringify(m.world)) : m;
     expect(again.ok && [Object.keys(again.world.characters).length, Object.keys(again.world.pets).length]).toEqual([9, 15]);
   });
@@ -457,7 +457,7 @@ describe('сохранения', () => {
     for (const f of Object.values<any>(w.furniture)) { delete f.homeX; delete f.homeY; }
     const r = parseWorld(JSON.stringify(w));
     expect(r.ok).toBe(true);
-    if (r.ok) { expect(r.world.schemaVersion).toBe(11); expect(Object.keys(r.world.pets)).toHaveLength(15); }
+    if (r.ok) { expect(r.world.schemaVersion).toBe(12); expect(Object.keys(r.world.pets)).toHaveLength(15); }
   });
   it('миграция v2 → v8 добавляет локации города, Парк животных и трёх новых питомцев и ничего не трогает в домиках', () => {
     let w: any = createWorld();
@@ -477,7 +477,7 @@ describe('сохранения', () => {
     const r = parseWorld(JSON.stringify(w));
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(r.world.schemaVersion).toBe(11);
+    expect(r.world.schemaVersion).toBe(12);
     expect(validateWorld(r.world)).toEqual([]);
     expect(r.world.furniture.cl_table.roomId).toBe('club');
     expect(Object.values(r.world.items).filter((i) => i.definitionId === 'giftbox' && i.owner.kind === 'room' && i.owner.roomId === 'toys_workshop')).toHaveLength(1);
@@ -500,6 +500,57 @@ describe('сохранения', () => {
     for (const [id, f] of Object.entries<any>(before.furniture)) expect(r.world.furniture[id]).toEqual(f);
     expect(r.world.characters.hero_mila.costume).toBe('fairy');
   });
+  it('инструменты доктора: градусник, сироп, пластырь и бинт меняют только состояние героя и переживают сохранение', async () => {
+    const { treat } = await import('../../src/game/rules');
+    const { resolveItemDrop } = await import('../../src/game/drop');
+    let w = createWorld();
+    const items = JSON.stringify(w.items);
+    const step = (tool: any, roll = 1) => { const r = treat(w, 'hero_mila', tool, roll); expect(r.ok).toBe(true); if (r.ok) w = r.world; return r.ok ? r.info!.outcome : ''; };
+    expect(step('thermometer', 0.99)).toBe('ok');           // здоров
+    expect(w.characters.hero_mila.care).toBeUndefined();
+    expect(step('thermometer', 0.01)).toBe('hot');          // нашлась температура
+    expect(step('thermometer', 0.99)).toBe('hot');          // сама не проходит
+    expect(w.characters.hero_mila.emotion).toBe('sad');
+    expect(step('syrup')).toBe('cured');
+    expect(step('thermometer', 0.01)).toBe('ok');           // после сиропа первый замер всегда 36,6
+    expect(step('syrup')).toBe('sweet');
+    expect(step('plaster')).toBe('on'); expect(step('bandage')).toBe('on');
+    expect(w.characters.hero_mila.care).toEqual({ plaster: true, bandage: true });
+    const saved = parseWorld(JSON.stringify(w));
+    expect(saved.ok && saved.world.characters.hero_mila.care).toEqual({ plaster: true, bandage: true });
+    expect(parseWorld(JSON.stringify({ ...w, characters: { ...w.characters, hero_mila: { ...w.characters.hero_mila, care: { fever: 'yes' } } } })).ok).toBe(false);
+    expect(step('plaster')).toBe('off'); expect(step('bandage')).toBe('off'); expect(step('stethoscope')).toBe('stethoscope');
+    expect(w.characters.hero_mila.care).toBeUndefined();
+    expect(JSON.stringify(w.items)).toBe(items);            // вещи не тратятся и не двигаются
+    // пациента лечат, куда бы ни поднесли инструмент; доктор в халате берёт его в руку
+    const thermo = Object.values(w.items).find((i) => i.definitionId === 'doc_thermometer')!.instanceId;
+    Object.assign(w.characters.hero_mila, { roomId: 'doctor', x: 800, y: 800 });
+    Object.assign(w.characters.hero_nora, { roomId: 'doctor', x: 1200, y: 800, costume: 'doctor' });
+    expect(resolveItemDrop(w, thermo, { x: 800, y: 740 }, 'doctor').type).toBe('care');
+    expect(resolveItemDrop(w, thermo, { x: 1200, y: 740 }, 'doctor').type).toBe('hand');
+  });
+  it('миграция v11 → v12: кабинет доктора появляется один раз, остальное не меняется', async () => {
+    const { heroCostumes } = await import('../../src/content/wardrobe');
+    const w: any = JSON.parse(JSON.stringify(createWorld()));
+    delete w.rooms.doctor;
+    for (const id of Object.keys(w.furniture)) if (w.furniture[id].roomId === 'doctor') delete w.furniture[id];
+    for (const [id, it] of Object.entries<any>(w.items)) if (it.definitionId.startsWith('doc_') || it.owner.furnitureId?.startsWith('dc_')) delete w.items[id];
+    w.schemaVersion = 11;
+    const before = JSON.parse(JSON.stringify(w));
+    const r = parseWorld(JSON.stringify(w));
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.world.schemaVersion).toBe(12);
+    expect(validateWorld(r.world)).toEqual([]);
+    expect(r.world.rooms.doctor).toBeDefined();
+    expect(Object.values(r.world.furniture).filter((f) => f.roomId === 'doctor')).toHaveLength(5);
+    expect(Object.keys(r.world.items).length).toBe(Object.keys(before.items).length + 7); // пять инструментов, мишка и сумка
+    for (const [id, it] of Object.entries<any>(before.items)) expect(r.world.items[id]).toEqual(it);
+    const again = parseWorld(JSON.stringify({ ...r.world, schemaVersion: 11 }));
+    expect(again.ok && Object.keys(again.world.items).length).toBe(Object.keys(r.world.items).length);
+    expect(heroCostumes('hero_nora')).toContain('doctor');
+    expect(heroCostumes('hero_timur')).toContain('doctor');
+  });
   it('миграция v4 → v8: столик в клубе и одна коробка в мастерской, без дублей при повторной загрузке', () => {
     const w: any = JSON.parse(JSON.stringify(createWorld()));
     delete w.furniture.cl_table;
@@ -509,7 +560,7 @@ describe('сохранения', () => {
     const r = parseWorld(JSON.stringify(w));
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    expect(r.world.schemaVersion).toBe(11);
+    expect(r.world.schemaVersion).toBe(12);
     expect(validateWorld(r.world)).toEqual([]);
     expect(Object.keys(r.world.items).length).toBe(Object.keys(before.items).length + 9); // коробка, капкейк, мешок корма, пять вещей фермы и особое яйцо
     for (const [id, it] of Object.entries<any>(before.items)) expect(r.world.items[id]).toEqual(it);

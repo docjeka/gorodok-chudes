@@ -1,15 +1,15 @@
 // Игровые взаимодействия: что происходит при нажатии и при отпускании. Связывает правила, сцену и звук.
 import { GameAudio } from '../audio/audio';
 import { BOUND_CHARS, FERRIS, isRide, DISCO_BALL, HATCH, POUCH, FARM_KINDS, FURNITURE, PEN_KINDS, GRAIN_EATERS, HAY_EATERS, TV_SCENES } from '../content/furniture';
-import { ITEMS } from '../content/items';
+import { DOCTOR_TOOLS, ITEMS } from '../content/items';
 import { resolveCharDrop, resolveItemDrop, resolvePetDrop, freeFloorSpot, type ItemDrop } from '../game/drop';
 import type { Game } from '../game/game';
 import { charBox, charPos, clampFloor, dist, itemPlace, petPos, seatPos, slotPos } from '../game/geometry';
 import {
   HEADWEAR, POURS, clone, collectEgg, eatFromFeeder, emptyBowl, fillBowl, fillFeeder, henFed, waterBed, cook, cookables, drink, feed, fill, moveItem, openGift, patchPet, placeCharacter, placePet, recipeAt, seatTaken, setFurnitureOn,
-  setRoomStyle, toggleOpen, travel, wake, wearSet, moveFurniture, cushionFree, pouchJoey, eggInNest, hatchStep,
+  setRoomStyle, toggleOpen, travel, wake, wearSet, moveFurniture, cushionFree, pouchJoey, eggInNest, hatchStep, treat,
 } from '../game/rules';
-import type { Pt, RoomId, World } from '../game/types';
+import type { DoctorTool, Pt, RoomId, World } from '../game/types';
 import type { Scene } from './scene';
 import type { Talk } from './talk';
 
@@ -39,6 +39,37 @@ export class Play {
     this.audio.play('clink');
     this.scene.hop(sellerId, 8);
     for (const id of ids) { this.scene.pop(id, 0.2); const pl = itemPlace(this.w, this.w.items[id]); this.scene.burst('star', { x: pl.x, y: pl.y - 30 }, 4); }
+  }
+  /**
+   * Инструмент доктора работает на герое и возвращается туда, откуда его взяли (в руку доктора, на полку, в сумку).
+   * Градусник держат у рта и узнают температуру, сироп пьют, стетоскоп слушает сердце, пластырь и бинт остаются на герое.
+   */
+  private doctor(itemId: string, heroId: string, tool: DoctorTool) {
+    const b0 = charBox(this.w, this.w.characters[heroId]);
+    const mouth = this.scene.mouthPos(heroId) ?? { x: b0.headX, y: (b0.headLine ?? b0.y0 + 80) - 30 };
+    const chest = { x: mouth.x, y: mouth.y + 78 };
+    const at = tool === 'stethoscope' ? chest : tool === 'bandage' ? { x: mouth.x, y: mouth.y - 70 } : tool === 'plaster' ? { x: mouth.x + 30, y: mouth.y - 14 } : mouth;
+    const motion = tool === 'thermometer' ? 'hold' : tool === 'syrup' ? 'drink' : tool === 'stethoscope' ? 'beat' : 'rub';
+    this.audio.play('pop');
+    let pulse = 0;
+    if (tool === 'stethoscope') { setTimeout(() => this.audio.play('heart'), 240); pulse = window.setInterval(() => this.scene.burst('heart', { x: chest.x, y: chest.y - 6 }, 1), 500); }
+    if (tool === 'thermometer') [300, 800, 1300].forEach((ms) => setTimeout(() => this.audio.play('click'), ms)); // тикает, пока меряет
+    if (tool === 'syrup') setTimeout(() => this.audio.play('gulp'), 260);
+    this.scene.consume(itemId, at, motion, () => {
+      window.clearInterval(pulse);
+      if (!this.w.characters[heroId]) { this.scene.sync(this.w); return; }
+      const r = treat(this.w, heroId, tool, Math.random());
+      this.game.commit(r);
+      this.scene.sync(this.w); // инструмент возвращается на своё место
+      const outcome = r.ok ? (r.info?.outcome as string) : '';
+      const good = outcome !== 'hot';
+      this.scene.burst(tool === 'stethoscope' || outcome === 'cured' ? 'heart' : good ? 'star' : 'steam', { x: at.x, y: at.y - 20 }, good ? 7 : 4);
+      this.scene.pop(heroId, 0.08);
+      this.audio.play(tool === 'thermometer' ? (good ? 'sparkle' : 'beep') : 'sparkle');
+      const line = tool === 'thermometer' ? (good ? 'tempOk' : 'tempHot') : tool === 'syrup' ? (outcome === 'cured' ? 'syrupCured' : 'syrupSweet')
+        : tool === 'stethoscope' ? 'heart' : outcome === 'off' ? 'careOff' : tool === 'plaster' ? 'plasterOn' : 'bandageOn';
+      this.talk?.say(heroId, line, 350);
+    });
   }
   /** Особое яйцо в тёплом гнезде: каждые полторы секунды игры — следующий шаг (дрожит → трещинки → цыплёнок). */
   private hatchTick() {
@@ -226,6 +257,7 @@ export class Play {
       case 'care': {
         // щётка чистит зубы у рта, расчёска причёсывает, полотенце вытирает, мыло пенится
         const heroId = d.characterId, id = it.definitionId;
+        if (DOCTOR_TOOLS[id]) { this.doctor(itemId, heroId, DOCTOR_TOOLS[id]); return; }
         const b0 = charBox(w, w.characters[heroId]);
         const mouth = this.scene.mouthPos(heroId) ?? { x: b0.headX, y: (b0.headLine ?? b0.y0 + 80) - 30 };
         const top = this.scene.headTop(heroId) ?? { x: mouth.x, y: mouth.y - 70 };

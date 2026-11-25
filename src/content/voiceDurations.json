@@ -10,5 +10,16 @@
  "food2": 1.67,
  "sit1": 1.72,
  "sit2": 1.1,
- "gift1": 2.01
+ "gift1": 2.01,
+ "plasterOn1": 1.23,
+ "tempHot1": 2.85,
+ "syrupCured1": 2.12,
+ "bandageOn1": 1.07,
+ "tempOk2": 2.51,
+ "syrupSweet1": 1.57,
+ "tempHot2": 3.16,
+ "tempOk1": 2.43,
+ "careOff1": 1.07,
+ "heart1": 2.35,
+ "heart2": 1.49
 }

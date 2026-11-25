@@ -26,6 +26,7 @@ export const PLACES: Place[] = [
   { id: 'cafe', nameKey: 'place.cafe', side: 'front', x: 0.67, y: 0.31, r: 0.06, lx: 0.7, ly: 0.225, status: 'open', route: 'cafe' },
   { id: 'toys', nameKey: 'place.toys', side: 'front', x: 0.323, y: 0.6, r: 0.065, lx: 0.3, ly: 0.715, status: 'open', route: 'toys' },
   { id: 'beach', nameKey: 'place.beach', side: 'front', x: 0.675, y: 0.62, r: 0.065, lx: 0.705, ly: 0.725, status: 'open', route: 'beach' },
-  { id: 'farm', nameKey: 'place.farm', side: 'back', x: 0.6, y: 0.335, r: 0.07, lx: 0.615, ly: 0.225, status: 'open', route: 'farm' },
-  { id: 'animals', nameKey: 'place.animals', side: 'back', x: 0.385, y: 0.5, r: 0.07, lx: 0.385, ly: 0.63, status: 'open', route: 'animals' },
+  { id: 'farm', nameKey: 'place.farm', side: 'back', x: 0.622, y: 0.315, r: 0.07, lx: 0.655, ly: 0.2, status: 'open', route: 'farm' },
+  { id: 'doctor', nameKey: 'place.doctor', side: 'back', x: 0.378, y: 0.265, r: 0.06, lx: 0.335, ly: 0.15, status: 'open', route: 'doctor' },
+  { id: 'animals', nameKey: 'place.animals', side: 'back', x: 0.4, y: 0.52, r: 0.07, lx: 0.39, ly: 0.655, status: 'open', route: 'animals' },
 ];

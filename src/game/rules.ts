@@ -1,11 +1,11 @@
 // Чистые правила мира. Каждая функция получает мир и возвращает новый мир либо причину отказа.
 // Ничего не знает про DOM, Canvas и хранилище — поэтому тестируется напрямую.
 import { FURNITURE, GRAIN_EATERS, HATCH, HAY_EATERS, charAllowedIn, petAllowedIn } from '../content/furniture';
-import { GIFTS, ITEMS, RECIPES } from '../content/items';
+import { FEVER_CHANCE, GIFTS, ITEMS, RECIPES } from '../content/items';
 import { GARMENTS, OUTFITS, costumeFits, presetCharacter } from '../content/wardrobe';
 import { charPos, clampFloor, itemPlace, petPos } from './geometry';
 import type {
-  Character, HandSlot, ItemInst, Pet, Liquid, Look, Outfit, Owner, Pt, Recipe, Result, RoomId, World, GarmentSlot, Emotion,
+  Character, DoctorTool, HandSlot, ItemInst, Pet, Liquid, Look, Outfit, Owner, Pt, Recipe, Result, RoomId, World, GarmentSlot, Emotion,
 } from './types';
 import { BAG_CAPACITY, GIFT_CAPACITY, MAX_CUSTOM_HEROES, MAX_ITEMS } from './types';
 
@@ -419,6 +419,40 @@ export function drink(world: World, itemId: string): Result {
   const liquid = it.state.contents;
   delete it.state.contents;
   return ok(w, { liquid });
+}
+
+// ---------- Кабинет доктора ----------
+
+/**
+ * Инструмент доктора на герое. roll — число 0…1 для градусника: правило само случайность не берёт.
+ * Градусник: у больного всегда температура; после сиропа один раз точно 36,6; иначе герой может оказаться с температурой.
+ * Сироп сбивает температуру. Пластырь и бинт надеваются и снимаются повторным касанием. Стетоскоп ничего не меняет.
+ */
+export function treat(world: World, heroId: string, tool: DoctorTool, roll = 1): Result {
+  const w = clone(world);
+  const c = w.characters[heroId];
+  if (!c) return fail('no_hero');
+  const care = { ...(c.care ?? {}) };
+  let outcome: string = tool;
+  switch (tool) {
+    case 'thermometer':
+      if (care.fever) outcome = 'hot';
+      else if (care.cured) { delete care.cured; outcome = 'ok'; }
+      else if (roll < FEVER_CHANCE) { care.fever = true; outcome = 'hot'; }
+      else outcome = 'ok';
+      c.emotion = outcome === 'hot' ? 'sad' : 'joy';
+      break;
+    case 'syrup':
+      outcome = care.fever ? 'cured' : 'sweet';
+      if (care.fever) { delete care.fever; care.cured = true; }
+      c.emotion = 'delight';
+      break;
+    case 'plaster': care.plaster = !care.plaster; if (!care.plaster) delete care.plaster; outcome = care.plaster ? 'on' : 'off'; c.emotion = 'joy'; break;
+    case 'bandage': care.bandage = !care.bandage; if (!care.bandage) delete care.bandage; outcome = care.bandage ? 'on' : 'off'; c.emotion = 'joy'; break;
+    case 'stethoscope': c.emotion = 'calm'; break;
+  }
+  if (Object.keys(care).length) c.care = care; else delete c.care;
+  return ok(w, { outcome });
 }
 
 // ---------- Еда и рецепты ----------
