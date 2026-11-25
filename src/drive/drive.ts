@@ -2,7 +2,7 @@
 // Машина, конусы, шины, знаки и флажок — готовые картинки; небо, холмы, дорога, деревья и звёзды рисует код.
 // Сохранения не трогает.
 import type { GameAudio } from '../audio/audio';
-import { CAR, CAR_COLORS, COLORS, PROPS, ROAD, type CarColor } from '../content/drive';
+import { CAR, CAR_COLORS, COLORS, KART, PROPS, ROAD, type CarColor } from '../content/drive';
 import type { Character } from '../game/types';
 import { t, type Key } from '../i18n';
 import { heroThumb } from '../ui/panels';
@@ -51,7 +51,7 @@ export class DriveSchool {
   constructor(root: HTMLElement, private host: DriveHost) {
     this.el.className = 'drive hidden';
     this.canvas.className = 'drive-view';
-    for (const n of [...SPRITES, ...CAR_COLORS.map((c) => `kart_${c}`)]) { const im = new Image(); im.decoding = 'async'; im.src = img(`${n}.png`); this.pics[n] = im; }
+    for (const n of [...SPRITES, 'kart_wheels', ...CAR_COLORS.map((c) => `kart_${c}_body`)]) { const im = new Image(); im.decoding = 'async'; im.src = img(`${n}.png`); this.pics[n] = im; }
     this.starsEl.className = 'drive-stars';
     this.lapEl.className = 'drive-lap';
     this.who.className = 'drive-who';
@@ -134,7 +134,7 @@ export class DriveSchool {
   }
   /** Новый заезд: машина на старте, круг первый, звёзды с нуля. */
   start() {
-    this.state = newDrive(); this.fly = []; this.lean = 0;
+    this.state = newDrive(); this.fly = []; this.lean = 0; this.turn = 0;
     this.picker.classList.add('hidden');
     const hero = this.host.heroes().find((h) => h.id === this.driver);
     this.who.innerHTML = hero ? heroThumb({ ...hero, emotion: 'joy' }, 60) : '';
@@ -315,18 +315,26 @@ export class DriveSchool {
     c.restore();
   }
 
-  /** Машина игрока: внизу по центру, наклоняется в повороте и подрагивает на ходу. */
+  /** Машина игрока: внизу по центру, наклоняется в повороте и подрагивает на ходу; передние колёса поворачиваются за рулём. */
   private kart(c: CanvasRenderingContext2D, W: number, H: number, now: number) {
-    const pic = this.pics[`kart_${this.color}`], s = this.state;
+    const pic = this.pics[`kart_${this.color}_body`], wheels = this.pics.kart_wheels, s = this.state;
     if (!pic.complete || !pic.naturalWidth) return;
     const steer = this.picking ? 0 : (this.input.right ? 1 : 0) - (this.input.left ? 1 : 0), k = Math.min(1, Math.abs(s.speed) / CAR.maxSpeed);
-    this.lean += (steer * Math.min(1, k * 3) - this.lean) * 0.18;
-    const w = Math.min(W * 0.3, H * 0.42), h = (w * pic.naturalHeight) / pic.naturalWidth;
+    this.turn += (steer - this.turn) * 0.25;                               // колёса слушаются руля сразу, даже на месте
+    this.lean += (steer * Math.min(1, k * 3) - this.lean) * 0.18;          // кузов кренится только на ходу
+    const w = Math.min(W * 0.3, H * 0.42), u = w / KART.w, h = KART.h * u;
     const bump = (Math.abs(s.x) > 1 ? 3.2 : 1) * k * Math.sin(now / 38) * h * 0.012;
     const x = W / 2 + this.lean * W * 0.03, y = H * 0.93 + bump;
-    c.fillStyle = 'rgba(70,56,72,0.22)'; c.beginPath(); c.ellipse(x, y - h * 0.03, w * 0.5, h * 0.09, 0, 0, 7); c.fill();
-    c.save(); c.translate(x, y - h * 0.5); c.rotate(this.lean * 0.07); c.drawImage(pic, -w / 2, -h / 2, w, h); c.restore();
+    c.fillStyle = 'rgba(70,56,72,0.22)'; c.beginPath(); c.ellipse(x, y - h * 0.04, w * 0.5, h * 0.1, 0, 0, 7); c.fill();
+    c.save(); c.translate(x, y - h * 0.5); c.rotate(this.lean * 0.07);
+    if (wheels.complete && wheels.naturalWidth) for (const [x0, y0, x1, y1] of KART.wheels) {
+      const cx = ((x0 + x1) / 2 - KART.w / 2) * u, cy = ((y0 + y1) / 2 - KART.h / 2) * u, ww = (x1 - x0) * u * KART.grow, wh = (y1 - y0) * u * KART.grow;
+      c.save(); c.translate(cx + this.turn * w * 0.012, cy); c.rotate(this.turn * KART.turn); c.drawImage(wheels, x0, y0, x1 - x0, y1 - y0, -ww / 2, -wh / 2, ww, wh); c.restore();
+    }
+    c.drawImage(pic, -w / 2, -h / 2, w, h);
+    c.restore();
   }
+  private turn = 0;
 
   /** Отлетающие конусы и шины, пойманные звёзды, конфетти на финише. */
   private flying(c: CanvasRenderingContext2D, W: number, H: number, now: number) {

@@ -25,6 +25,8 @@ export const CAR = {
   limit: 1.9,          // дальше от середины дороги не уехать
   half: 0.2,           // половина ширины машины (в долях половины дороги)
 };
+/** Рисунок машины: кузов без передних колёс и отдельный слой колёс (они поворачиваются при рулении). Прямоугольники — в точках рисунка 520×365. */
+export const KART = { w: 520, h: 365, wheels: [[438, 31, 481, 122], [38, 31, 81, 122]], turn: 0.42, grow: 1.2 };
 export const CAR_COLORS = ['coral', 'mint', 'yellow'] as const;
 export type CarColor = (typeof CAR_COLORS)[number];
 
