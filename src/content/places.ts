@@ -28,5 +28,7 @@ export const PLACES: Place[] = [
   { id: 'beach', nameKey: 'place.beach', side: 'front', x: 0.675, y: 0.62, r: 0.065, lx: 0.705, ly: 0.725, status: 'open', route: 'beach' },
   { id: 'farm', nameKey: 'place.farm', side: 'back', x: 0.622, y: 0.315, r: 0.07, lx: 0.655, ly: 0.2, status: 'open', route: 'farm' },
   { id: 'doctor', nameKey: 'place.doctor', side: 'back', x: 0.378, y: 0.265, r: 0.06, lx: 0.335, ly: 0.15, status: 'open', route: 'doctor' },
+  // автошкола — отдельная мини-игра, а не комнаты: route 'drive' открывает экран езды
+  { id: 'drive', nameKey: 'place.drive', side: 'back', x: 0.668, y: 0.545, r: 0.07, lx: 0.672, ly: 0.555, status: 'open', route: 'drive' },
   { id: 'animals', nameKey: 'place.animals', side: 'back', x: 0.4, y: 0.52, r: 0.07, lx: 0.39, ly: 0.655, status: 'open', route: 'animals' },
 ];

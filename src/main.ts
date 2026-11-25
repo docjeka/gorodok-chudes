@@ -15,7 +15,8 @@ import { Hud } from './ui/hud';
 import { Panels } from './ui/panels';
 import { Offline } from './storage/offline';
 import { WorldMap } from './map/globe';
-import { ROOM_GROUPS, charAllowedIn, groupOf } from './content/furniture';
+import { DriveSchool } from './drive/drive';
+import { BOUND_CHARS, ROOM_GROUPS, charAllowedIn, groupOf } from './content/furniture';
 
 const stage = document.getElementById('stage')!;
 const ui = document.getElementById('ui')!;
@@ -123,6 +124,7 @@ async function run(kv: KV, initial: World) {
   const lastRoom: Record<string, RoomId> = {};
   const map = new WorldMap(document.body, {
     enter: (place) => {
+      if (place.route === 'drive') { drive.open(); return; } // автошкола открывается поверх карты и возвращает на неё
       const group = place.route ? ROOM_GROUPS[place.route] : undefined;
       if (!group) return;
       map.close();
@@ -164,6 +166,8 @@ async function run(kv: KV, initial: World) {
     sound: (n) => audio.play(n),
     reducedMotion: () => game.world.settings.reducedMotion,
   });
+  // автошкола: водителем может быть любой герой, кроме жителей, привязанных к своему месту
+  const drive = new DriveSchool(document.body, { heroes: () => Object.values(game.world.characters).filter((c) => !BOUND_CHARS[c.id]), audio, onClose: () => { /* карта осталась открытой под экраном езды */ } });
   mapOpen = () => map.isOpen;
   const toMap = () => {
     input.cancel();
@@ -209,7 +213,7 @@ async function run(kv: KV, initial: World) {
   document.addEventListener('visibilitychange', () => { if (document.hidden) void game.flush(); });
   window.addEventListener('pagehide', () => void game.flush());
   // отладочный доступ для автоматических тестов
-  (window as unknown as { __game: unknown }).__game = { game, scene, play, input, audio, rules, geometry, offline, talk, map };
+  (window as unknown as { __game: unknown }).__game = { game, scene, play, input, audio, rules, geometry, offline, talk, map, drive };
 }
 
 void boot();

@@ -21,7 +21,7 @@ test('ферма: двор и амбар с животными, кормлени
   await page.waitForFunction(() => window.__game.offline.state === 'ready', null, { timeout: 60_000 });
   await page.click('#play');
   await page.click('.map-turn.right'); await page.waitForFunction(() => !window.__game.map.turning);
-  expect(await page.evaluate(() => window.__game.map.frontPlaces().sort())).toEqual(['animals', 'doctor', 'farm']);
+  expect(await page.evaluate(() => window.__game.map.frontPlaces().sort())).toEqual(['animals', 'doctor', 'drive', 'farm']);
   const p = await page.evaluate(() => window.__game.map.screenOf('farm'));
   await page.mouse.click(p!.x, p!.y);
   await expect(page.locator('.map')).toBeHidden();

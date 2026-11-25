@@ -889,3 +889,39 @@ describe('колесо обозрения', () => {
     expect(up.ok && up.world.furniture.pk_carousel).toEqual(old.furniture.pk_carousel);
   });
 });
+
+describe('автошкола', () => {
+  it('машина едет и рулит; объехал конус — звезда, задел — падает и сам встаёт; на парковке — праздник', async () => {
+    const { newDrive, stepDrive } = await import('../../src/drive/physics');
+    const { CAR, CONES, PARKING, YARD } = await import('../../src/content/drive');
+    const idle = { gas: false, back: false, left: false, right: false, brake: false };
+    const run = (s: any, input: any, seconds: number) => { const all: any[] = []; for (let i = 0; i < seconds * 60; i++) all.push(...stepDrive(s, { ...idle, ...input }, 1 / 60)); return all; };
+    // едем прямо рядом с рядом конусов: первый объехан чисто
+    let s = newDrive();
+    s.y = CONES[0].y + 110;
+    let ev = run(s, { gas: true }, 1.6);
+    expect(ev.filter((e) => e.type === 'pass')).toEqual([{ type: 'pass', index: 0 }]);
+    expect(s.stars).toBe(1);
+    expect(s.speed).toBeGreaterThan(200); expect(s.speed).toBeLessThanOrEqual(CAR.maxSpeed);
+    run(s, { brake: true }, 1); expect(s.speed).toBe(0);                       // тормоз останавливает
+    const a0 = s.angle; run(s, { right: true }, 1); expect(s.angle).toBe(a0); // на месте руль не поворачивает
+    run(s, { back: true, left: true }, 0.5); expect(s.speed).toBeLessThan(0); expect(s.angle).not.toBe(a0);
+    // далеко от конусов звёзд не дают
+    s = newDrive(); s.y = YARD.y0;
+    expect(run(s, { gas: true }, 2).some((e) => e.type === 'pass')).toBe(false);
+    // прямо в конус: он падает, звезды нет; когда машина отъехала — встаёт на место
+    s = newDrive();
+    ev = run(s, { gas: true }, 1.4);
+    expect(ev.some((e) => e.type === 'cone')).toBe(true); expect(ev.some((e) => e.type === 'pass')).toBe(false);
+    expect(s.cones[0].down).toBe(true);
+    run(s, { brake: true }, 1); run(s, { back: true }, 5);                     // отъезжаем задним ходом
+    expect(s.cones[0].down).toBe(false); expect([s.cones[0].x, s.cones[0].y]).toEqual([CONES[0].x, CONES[0].y]);
+    // за край площадки машина не выезжает
+    run(s, { back: true }, 6); expect(s.x).toBe(YARD.x0);
+    // парковка: остановился внутри места — три звезды, один раз
+    s = newDrive(); const p = PARKING[1]; s.x = (p.x0 + p.x1) / 2; s.y = (p.y0 + p.y1) / 2; s.passSide = s.passSide.map(() => 1); // машина уже справа от всех конусов
+    ev = run(s, {}, 1.2);
+    expect(ev.filter((e) => e.type === 'parked')).toHaveLength(1); expect(s.stars).toBe(3);
+    expect(run(s, {}, 2)).toEqual([]);
+  });
+});
