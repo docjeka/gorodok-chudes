@@ -891,37 +891,39 @@ describe('колесо обозрения', () => {
 });
 
 describe('автошкола', () => {
-  it('машина едет и рулит; объехал конус — звезда, задел — падает и сам встаёт; на парковке — праздник', async () => {
-    const { newDrive, stepDrive } = await import('../../src/drive/physics');
-    const { CAR, CONES, PARKING, YARD } = await import('../../src/content/drive');
+  it('дорога: газ, тормоз и руль; звёзды собираются, задетый конус тормозит; новый круг возвращает всё на места', async () => {
+    const { buildTrack, newDrive, stepDrive, PLAYER_Z } = await import('../../src/drive/road');
+    const { CAR, ROAD } = await import('../../src/content/drive');
+    const track = buildTrack();
+    expect(buildTrack().segments.map((s) => s.props.map((p) => p.kind + p.offset))).toEqual(track.segments.map((s) => s.props.map((p) => p.kind + p.offset))); // трасса всегда одна и та же
+    expect(Math.abs(track.segments[track.segments.length - 1].y2)).toBeLessThan(1);   // круг замкнут по высоте
     const idle = { gas: false, back: false, left: false, right: false, brake: false };
-    const run = (s: any, input: any, seconds: number) => { const all: any[] = []; for (let i = 0; i < seconds * 60; i++) all.push(...stepDrive(s, { ...idle, ...input }, 1 / 60)); return all; };
-    // едем прямо рядом с рядом конусов: первый объехан чисто
+    const run = (s: any, input: any, seconds: number) => { const all: any[] = []; for (let i = 0; i < seconds * 60; i++) all.push(...stepDrive(track, s, { ...idle, ...input }, 1 / 60)); return all; };
     let s = newDrive();
-    s.y = CONES[0].y + 110;
-    let ev = run(s, { gas: true }, 1.6);
-    expect(ev.filter((e) => e.type === 'pass')).toEqual([{ type: 'pass', index: 0 }]);
-    expect(s.stars).toBe(1);
-    expect(s.speed).toBeGreaterThan(200); expect(s.speed).toBeLessThanOrEqual(CAR.maxSpeed);
-    run(s, { brake: true }, 1); expect(s.speed).toBe(0);                       // тормоз останавливает
-    const a0 = s.angle; run(s, { right: true }, 1); expect(s.angle).toBe(a0); // на месте руль не поворачивает
-    run(s, { back: true, left: true }, 0.5); expect(s.speed).toBeLessThan(0); expect(s.angle).not.toBe(a0);
-    // далеко от конусов звёзд не дают
-    s = newDrive(); s.y = YARD.y0;
-    expect(run(s, { gas: true }, 2).some((e) => e.type === 'pass')).toBe(false);
-    // прямо в конус: он падает, звезды нет; когда машина отъехала — встаёт на место
-    s = newDrive();
-    ev = run(s, { gas: true }, 1.4);
-    expect(ev.some((e) => e.type === 'cone')).toBe(true); expect(ev.some((e) => e.type === 'pass')).toBe(false);
-    expect(s.cones[0].down).toBe(true);
-    run(s, { brake: true }, 1); run(s, { back: true }, 5);                     // отъезжаем задним ходом
-    expect(s.cones[0].down).toBe(false); expect([s.cones[0].x, s.cones[0].y]).toEqual([CONES[0].x, CONES[0].y]);
-    // за край площадки машина не выезжает
-    run(s, { back: true }, 6); expect(s.x).toBe(YARD.x0);
-    // парковка: остановился внутри места — три звезды, один раз
-    s = newDrive(); const p = PARKING[1]; s.x = (p.x0 + p.x1) / 2; s.y = (p.y0 + p.y1) / 2; s.passSide = s.passSide.map(() => 1); // машина уже справа от всех конусов
-    ev = run(s, {}, 1.2);
-    expect(ev.filter((e) => e.type === 'parked')).toHaveLength(1); expect(s.stars).toBe(3);
-    expect(run(s, {}, 2)).toEqual([]);
+    run(s, { gas: true }, 1);
+    expect(s.speed).toBeGreaterThan(1000); expect(s.position).toBeGreaterThan(0);
+    const x0 = s.x; run(s, { gas: true, right: true }, 0.3); expect(s.x).toBeGreaterThan(x0);          // руль вправо
+    run(s, { brake: true }, 2); expect(s.speed).toBe(0);                                                // тормоз
+    const p0 = s.position; run(s, { back: true }, 1); expect(s.position).toBeLessThan(p0);              // задний ход
+    // на траве не разогнаться
+    s = newDrive(); s.x = 1.5; run(s, { gas: true }, 6); expect(s.speed).toBeLessThanOrEqual(CAR.grassSpeed);
+    // первая звезда на трассе: подъезжаем по её полосе и собираем
+    const stars = track.segments.flatMap((g) => g.props.filter((p) => p.kind === 'star').map((p) => ({ ...p, seg: g.index })));
+    const cones = track.segments.flatMap((g) => g.props.filter((p) => p.kind === 'cone').map((p) => ({ ...p, seg: g.index })));
+    expect(stars.length).toBeGreaterThan(20); expect(cones.length).toBeGreaterThan(10);
+    s = newDrive(); s.x = stars[0].offset; s.position = stars[0].seg * ROAD.segment - PLAYER_Z - 300; s.speed = 2000;
+    let ev = run(s, { gas: true }, 0.4);
+    expect(ev.filter((e) => e.type === 'star').map((e) => e.id)).toContain(stars[0].id); expect(s.stars).toBeGreaterThanOrEqual(1);
+    // конус: задели — он исчезает с дороги, скорость падает, звезды за это нет
+    s = newDrive(); s.x = cones[0].offset; s.position = cones[0].seg * ROAD.segment - PLAYER_Z - 100; s.speed = 3000;
+    ev = run(s, {}, 0.1);
+    expect(ev.map((e) => e.type)).toEqual(['cone']); expect(s.speed).toBeLessThan(2400); expect(s.gone.has(cones[0].id)).toBe(true);
+    // мимо конуса по свободной полосе — ничего не случается
+    s = newDrive(); s.x = cones[0].offset > 0 ? -1 : 1; s.position = cones[0].seg * ROAD.segment - PLAYER_Z - 100; s.speed = 3000;
+    expect(run(s, {}, 0.1).filter((e) => e.type === 'cone')).toEqual([]);
+    // финиш: новый круг, сбитое и собранное возвращается
+    s = newDrive(); s.position = track.length - 200; s.speed = 3000; s.gone.add(cones[0].id);
+    ev = run(s, {}, 0.2);
+    expect(ev).toContainEqual({ type: 'lap', lap: 2 }); expect(s.lap).toBe(2); expect(s.gone.size).toBe(0);
   });
 });

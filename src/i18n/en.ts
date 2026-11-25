@@ -268,6 +268,7 @@ export const en: Record<Key, string> = {
   'place.drive': "Driving school",
   'drive.who': "Who is driving?",
   'drive.go': "Let's go!",
+  'drive.lap': "Lap",
   'drive.change': "Change driver",
   'drive.exit': "To the map",
   'drive.horn': "Horn",

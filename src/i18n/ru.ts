@@ -267,6 +267,7 @@ export const ru = {
   'place.drive': "Автошкола",
   'drive.who': "Кто за рулём?",
   'drive.go': "Поехали!",
+  'drive.lap': "Круг",
   'drive.change': "Сменить водителя",
   'drive.exit': "На карту",
   'drive.horn': "Гудок",

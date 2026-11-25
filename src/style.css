@@ -177,32 +177,28 @@ img.clay { width: 46px; height: 46px; margin: -6px; display: block; pointer-even
 @media (prefers-reduced-motion: reduce) { .round:active, .roombtn:active, .dockbtn:active { transform: none; } }
 
 /* ---------- автошкола ---------- */
-.drive { position: fixed; left: 0; top: 0; width: var(--app-w, 100%); height: var(--app-h, 100%); z-index: 40; overflow: hidden; background: #8fca62; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
-.drive-field { position: absolute; left: 0; top: 0; width: 1600px; height: 900px; transform-origin: 0 0; background-size: 100% 100%; }
-.drive-field img { pointer-events: none; -webkit-user-drag: none; }
-.drive-cone { position: absolute; object-fit: contain; }
-.drive-car { position: absolute; left: 0; top: 0; transform-origin: 50% 50%; will-change: transform; filter: drop-shadow(0 6px 5px rgba(90, 74, 92, 0.28)); }
-.drive-car > img { width: 100%; height: 100%; display: block; }
-.drive-head { position: absolute; border-radius: 50%; overflow: hidden; background: #ffe9d2; border: 3px solid #fff6e6; box-shadow: 0 2px 4px rgba(90, 74, 92, 0.3); }
-.drive-head svg, .drive-head img { display: block; width: 100%; height: 100%; }
-.drive-puff { position: absolute; z-index: 2000; font-size: 44px; line-height: 1; transform: translate(-50%, -50%); pointer-events: none; animation: drive-puff 0.9s ease-out forwards; }
-@keyframes drive-puff { from { opacity: 1; margin-top: 0; } to { opacity: 0; margin-top: -90px; } }
-.drive-stars { position: absolute; top: max(12px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); background: var(--cream); border: 4px solid var(--ink); border-radius: 26px; padding: 4px 22px; font-weight: 800; font-size: 28px; box-shadow: var(--shadow); z-index: 3; }
+.drive { position: fixed; left: 0; top: 0; width: var(--app-w, 100%); height: var(--app-h, 100%); z-index: 40; overflow: hidden; background: #9fd0ff; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.drive-view { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; }
+.drive-stars, .drive-lap { position: absolute; top: max(12px, env(safe-area-inset-top)); background: var(--cream); border: 4px solid var(--ink); border-radius: 26px; font-weight: 800; box-shadow: var(--shadow); z-index: 3; }
+.drive-stars { left: 50%; transform: translateX(-50%); padding: 4px 22px; font-size: 28px; }
 .drive-stars.pop { animation: drive-pop 0.35s ease-out; }
 @keyframes drive-pop { 50% { transform: translateX(-50%) scale(1.22); } }
-.drive-exit, .drive-horn, .drive-again { position: absolute; top: max(12px, env(safe-area-inset-top)); z-index: 3; }
+.drive-lap { left: calc(50% + 96px); padding: 8px 16px; font-size: 18px; }
+.drive-exit, .drive-horn, .drive-who { position: absolute; top: max(12px, env(safe-area-inset-top)); z-index: 3; }
 .drive-exit { left: max(12px, env(safe-area-inset-left)); width: 64px; height: 64px; }
+.drive-who { left: calc(max(12px, env(safe-area-inset-left)) + 78px); width: 68px; height: 68px; border-radius: 50%; overflow: hidden; background: #ffe9d2; border: 4px solid var(--ink); box-shadow: var(--shadow); cursor: pointer; }
+.drive-who svg, .drive-who img { display: block; width: 100%; height: 100%; }
 .drive-horn { right: max(12px, env(safe-area-inset-right)); width: 72px; height: 72px; background: var(--sun); }
-.drive-again { left: calc(max(12px, env(safe-area-inset-left)) + 76px); background: #fff8ec; }
 .drive-controls { position: absolute; left: 0; right: 0; bottom: max(14px, env(safe-area-inset-bottom)); display: flex; justify-content: space-between; align-items: flex-end; padding: 0 max(16px, env(safe-area-inset-right)) 0 max(16px, env(safe-area-inset-left)); pointer-events: none; z-index: 3; }
 .drive-controls .steer, .drive-controls .pedals { display: flex; gap: 14px; align-items: flex-end; pointer-events: auto; }
-.drive-btn { width: 96px; height: 96px; touch-action: none; opacity: 0.94; }
-.drive-btn.gas { width: 112px; height: 112px; background: #c9efdf; }
+.drive-btn { width: 104px; height: 104px; touch-action: none; opacity: 0.92; }
+.drive-btn.gas { width: 120px; height: 120px; background: #c9efdf; }
+.drive-btn.back { width: 80px; height: 80px; }
 .drive-btn.brake { background: #ffd9d2; }
 .drive-btn.held { transform: scale(0.92); background: var(--sun); }
 .drive-picker { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; background: rgba(90, 74, 92, 0.35); padding: 16px; }
 .drive-picker .card { background: var(--cream); border: 4px solid var(--ink); border-radius: 30px; padding: 18px 22px; max-width: min(760px, 94%); max-height: 92%; overflow: auto; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 14px; }
 .drive-picker h2 { margin: 0; text-align: center; font-size: 26px; }
 .drive-heroes, .drive-cars { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
-.drive-carchip { min-width: 96px; padding: 8px 14px; }
+.drive-carchip { min-width: 120px; padding: 8px 14px; }
 .drive-carchip img { background: none; border-radius: 0; height: 84px; width: auto; }
