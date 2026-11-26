@@ -1,12 +1,12 @@
 // Экран «Автошкола»: дорога с видом из-за машины, нарисованная на одном холсте полосками в перспективе.
-// Машина, конусы, шины, знаки и флажок — готовые картинки; небо, холмы, дорога, деревья и звёзды рисует код.
+// Машина, конусы, шины, знаки и флажок — готовые картинки; небо, холмы, дорога, деревья, звёзды и передние колёса машины рисует код.
 // Сохранения не трогает.
 import type { GameAudio } from '../audio/audio';
 import { CAR, CAR_COLORS, COLORS, KART, PROPS, ROAD, type CarColor } from '../content/drive';
 import type { Character } from '../game/types';
 import { t, type Key } from '../i18n';
 import { heroThumb } from '../ui/panels';
-import { CAMERA_DEPTH, PLAYER_Z, buildTrack, newDrive, segmentAt, stepDrive, type DriveInput, type DriveState, type Prop, type Segment } from './road';
+import { buildTrack, camera, newDrive, segmentAt, stepDrive, type DriveInput, type DriveState, type Prop, type Segment } from './road';
 
 const BASE = import.meta.env.BASE_URL;
 const img = (name: string) => `${BASE}assets/drive/${name}`;
@@ -24,6 +24,8 @@ const SIDE_W: Record<string, number> = { tree: 1700, bush: 900, flowers: 620, si
 export interface DriveHost { heroes(): Character[]; audio: GameAudio; onClose(): void }
 interface Fly { kind: 'cone' | 'tyres' | 'star' | 'party'; x: number; y: number; vx: number; vy: number; size: number; spin: number; born: number }
 interface Shown { x: number; y: number; w: number; scale: number; clip: number }
+/** Раскладка кадра: u — точек холста на точку рисунка машины, top и rear — верх рисунка и строка задних колёс, hz — горизонт, sv — масштаб высот. */
+interface View { u: number; top: number; rear: number; hz: number; sv: number }
 
 export class DriveSchool {
   readonly el = document.createElement('div');
@@ -51,7 +53,7 @@ export class DriveSchool {
   constructor(root: HTMLElement, private host: DriveHost) {
     this.el.className = 'drive hidden';
     this.canvas.className = 'drive-view';
-    for (const n of [...SPRITES, 'kart_wheels', ...CAR_COLORS.map((c) => `kart_${c}_body`)]) { const im = new Image(); im.decoding = 'async'; im.src = img(`${n}.png`); this.pics[n] = im; }
+    for (const n of [...SPRITES, 'kart_shadow', ...CAR_COLORS.map((c) => `kart_${c}_body`)]) { const im = new Image(); im.decoding = 'async'; im.src = img(`${n}.png`); this.pics[n] = im; }
     this.starsEl.className = 'drive-stars';
     this.lapEl.className = 'drive-lap';
     this.who.className = 'drive-who';
@@ -185,7 +187,7 @@ export class DriveSchool {
           continue;
         }
         // предмет улетает оттуда, где он только что был нарисован (у самой машины)
-        const at = shown.get(e.id) ?? { x: W / 2 + (e.offset - this.state.x) * W * 0.3, y: H * 0.74, w: W * 0.08, scale: 0, clip: H };
+        const at = shown.get(e.id) ?? { x: W / 2 + (e.offset - this.state.x) * W * 0.3, y: H * 0.6, w: W * 0.08, scale: 0, clip: H };
         if (e.type === 'star') { a.play('sparkle'); const y0 = Math.min(H * 0.7, at.y - at.w * 0.5); this.fly.push({ kind: 'star', x: at.x, y: y0, vx: (W / 2 - at.x) / 0.6, vy: (H * 0.05 - y0) / 0.6, size: W * 0.09, spin: 0, born: now }); } // звезда летит к счётчику
         else { a.play(e.type === 'cone' ? 'boing' : 'put'); this.fly.push({ kind: e.type, x: at.x, y: at.y, vx: (e.offset >= this.state.x ? 1 : -1) * W * (0.5 + Math.random() * 0.3), vy: -H * 0.9, size: Math.max(W * 0.1, at.w), spin: (Math.random() < 0.5 ? -1 : 1) * 7, born: now }); }
       }
@@ -196,14 +198,22 @@ export class DriveSchool {
 
   // ---------- рисование ----------
 
+  /** Где на экране машина и горизонт. Камера смотрит на дорогу сверху под тем же углом, под каким нарисована машина, поэтому горизонт выше середины. */
+  private view(W: number, H: number): View {
+    const u = Math.min(W * KART.size, H * 0.52 * (KART.w / KART.h)) / KART.w, top = H * KART.bottom - KART.h * u * KART.squash, rear = top + KART.rear * u * KART.squash;
+    const hz = Math.max(H * ROAD.sky, rear - ROAD.look * W);
+    return { u, top, rear, hz, sv: (rear - hz) / (2 * ROAD.look) };
+  }
+
   private draw(now: number, shown: Map<number, Shown>) {
     const c = this.ctx, W = this.canvas.width, H = this.canvas.height, s = this.state, T = this.track, segs = T.segments, N = segs.length;
+    const v = this.view(W, H), cam = camera();
     const base = segmentAt(T, s.position), pct = (((s.position % ROAD.segment) + ROAD.segment) % ROAD.segment) / ROAD.segment;
-    const player = segmentAt(T, s.position + PLAYER_Z), ppct = ((((s.position + PLAYER_Z) % ROAD.segment) + ROAD.segment) % ROAD.segment) / ROAD.segment;
+    const player = segmentAt(T, s.position + cam.rearZ), ppct = ((((s.position + cam.rearZ) % ROAD.segment) + ROAD.segment) % ROAD.segment) / ROAD.segment;
     const playerY = player.y1 + (player.y2 - player.y1) * ppct;
-    this.backdrop(c, W, H, s, base);
+    this.backdrop(c, W, H, v.hz, s, base);
     const camY = playerY + ROAD.cameraHeight;
-    const project = (wx: number, wy: number, wz: number) => { const k = CAMERA_DEPTH / wz; return { x: Math.round(W / 2 + k * wx * (W / 2)), y: Math.round(H / 2 - k * (wy - camY) * (H / 2)), w: Math.round(k * ROAD.width * (W / 2)), scale: k }; };
+    const project = (wx: number, wy: number, wz: number) => { const k = cam.depth / wz; return { x: Math.round(W / 2 + k * wx * (W / 2)), y: Math.round(v.hz - k * (wy - camY) * v.sv), w: Math.round(k * ROAD.width * (W / 2)), scale: k }; };
     let maxy = H, x = 0, dx = -(base.curve * pct);
     const lines: { seg: Segment; p: ReturnType<typeof project>; clip: number }[] = [];
     for (let n = 0; n < ROAD.draw; n++) {
@@ -211,7 +221,7 @@ export class DriveSchool {
       const z1 = (n - pct) * ROAD.segment, z2 = z1 + ROAD.segment;
       const camX = s.x * ROAD.width;
       const xa = x, xb = x + dx; x += dx; dx += seg.curve;
-      if (z1 <= CAMERA_DEPTH * 60) { continue; }
+      if (z1 <= cam.depth * 60) { continue; }
       const p1 = project(xa * 1 - camX, seg.y1, z1), p2 = project(xb * 1 - camX, seg.y2, z2);
       lines.push({ seg, p: p1, clip: maxy });
       if (p2.y >= p1.y || p2.y >= maxy) continue;       // отрезок за бугром или обращён от нас
@@ -227,31 +237,31 @@ export class DriveSchool {
         const wWorld = pr.kind === 'cone' || pr.kind === 'tyres' || pr.kind === 'star' ? PROPS[pr.kind].w : SIDE_W[pr.kind];
         const w = p.scale * wWorld * (W / 2);
         if (w < 2 || sx < -w || sx > W + w) continue;
-        const lift = pr.kind === 'star' ? p.scale * PROPS.star.lift * (H / 2) + Math.sin(now / 260 + pr.id) * w * 0.12 : 0;
+        const lift = pr.kind === 'star' ? p.scale * PROPS.star.lift * v.sv + Math.sin(now / 260 + pr.id) * w * 0.12 : 0;
         shown.set(pr.id, { x: sx, y: p.y - lift, w, scale: p.scale, clip });
         this.prop(c, pr, sx, p.y - lift, w, clip, now);
       }
     }
-    this.kart(c, W, H, now);
+    this.kart(c, W, v, now);
     this.flying(c, W, H, now);
   }
 
   /** Небо, облака и дальние холмы: они сдвигаются в повороте. */
-  private backdrop(c: CanvasRenderingContext2D, W: number, H: number, s: DriveState, base: Segment) {
-    const g = c.createLinearGradient(0, 0, 0, H * 0.62);
+  private backdrop(c: CanvasRenderingContext2D, W: number, H: number, hz: number, s: DriveState, base: Segment) {
+    const g = c.createLinearGradient(0, 0, 0, hz * 1.2), m = Math.min(H, W * 0.75);
     g.addColorStop(0, COLORS.sky[0]); g.addColorStop(0.7, COLORS.sky[1]); g.addColorStop(1, COLORS.sky[2]);
     c.fillStyle = g; c.fillRect(0, 0, W, H);
     this.pan = (this.pan ?? 0) + base.curve * (s.speed / CAR.maxSpeed) * 0.0009;
     const shift = (k: number) => (((-this.pan * k * W) % W) + W) % W;
     c.fillStyle = 'rgba(255,255,255,0.9)';
     for (let i = 0; i < 6; i++) {
-      const cx = ((i * 0.37 * W + shift(0.5)) % (W * 1.4)) - W * 0.2, cy = H * (0.1 + (i % 3) * 0.07), r = W * (0.035 + (i % 2) * 0.012);
+      const cx = ((i * 0.37 * W + shift(0.5)) % (W * 1.4)) - W * 0.2, cy = hz * (0.2 + (i % 3) * 0.15), r = W * (0.035 + (i % 2) * 0.012);
       c.beginPath(); c.arc(cx, cy, r, 0, 7); c.arc(cx + r * 1.1, cy + r * 0.15, r * 0.8, 0, 7); c.arc(cx - r * 1.1, cy + r * 0.2, r * 0.7, 0, 7); c.fill();
     }
     COLORS.hills.forEach((col, layer) => {
       c.fillStyle = col; c.beginPath(); c.moveTo(0, H);
-      const off = shift(1 + layer), top = H * (0.5 - layer * 0.035);
-      for (let px = 0; px <= W; px += 16) { const a = ((px + off) / W) * Math.PI * 2; c.lineTo(px, top - Math.sin(a * (2 + layer)) * H * 0.05 - Math.sin(a * 5 + layer * 2) * H * 0.018); }
+      const off = shift(1 + layer), top = hz - layer * m * 0.035;
+      for (let px = 0; px <= W; px += 16) { const a = ((px + off) / W) * Math.PI * 2; c.lineTo(px, top - Math.sin(a * (2 + layer)) * m * 0.05 - Math.sin(a * 5 + layer * 2) * m * 0.018); }
       c.lineTo(W, H); c.closePath(); c.fill();
     });
   }
@@ -315,26 +325,72 @@ export class DriveSchool {
     c.restore();
   }
 
-  /** Машина игрока: внизу по центру, наклоняется в повороте и подрагивает на ходу; передние колёса поворачиваются за рулём. */
-  private kart(c: CanvasRenderingContext2D, W: number, H: number, now: number) {
-    const pic = this.pics[`kart_${this.color}_body`], wheels = this.pics.kart_wheels, s = this.state;
-    if (!pic.complete || !pic.naturalWidth) return;
+  /**
+   * Машина игрока: стоит на дороге внизу по центру. Под ней тень во весь след, кузов чуть кренится в повороте и подрагивает на ходу,
+   * а передние колёса нарисованы кодом как настоящие цилиндры и поворачиваются вокруг вертикальной оси вслед за рулём.
+   */
+  private kart(c: CanvasRenderingContext2D, W: number, v: View, now: number) {
+    const body = this.pics[`kart_${this.color}_body`], shadow = this.pics.kart_shadow, s = this.state;
+    if (!body.complete || !body.naturalWidth) return;
     const steer = this.picking ? 0 : (this.input.right ? 1 : 0) - (this.input.left ? 1 : 0), k = Math.min(1, Math.abs(s.speed) / CAR.maxSpeed);
     this.turn += (steer - this.turn) * 0.25;                               // колёса слушаются руля сразу, даже на месте
     this.lean += (steer * Math.min(1, k * 3) - this.lean) * 0.18;          // кузов кренится только на ходу
-    const w = Math.min(W * 0.3, H * 0.42), u = w / KART.w, h = KART.h * u;
-    const bump = (Math.abs(s.x) > 1 ? 3.2 : 1) * k * Math.sin(now / 38) * h * 0.012;
-    const x = W / 2 + this.lean * W * 0.03, y = H * 0.93 + bump;
-    c.fillStyle = 'rgba(70,56,72,0.22)'; c.beginPath(); c.ellipse(x, y - h * 0.04, w * 0.5, h * 0.1, 0, 0, 7); c.fill();
-    c.save(); c.translate(x, y - h * 0.5); c.rotate(this.lean * 0.07);
-    if (wheels.complete && wheels.naturalWidth) for (const [x0, y0, x1, y1] of KART.wheels) {
-      const cx = ((x0 + x1) / 2 - KART.w / 2) * u, cy = ((y0 + y1) / 2 - KART.h / 2) * u, ww = (x1 - x0) * u * KART.grow, wh = (y1 - y0) * u * KART.grow;
-      c.save(); c.translate(cx + this.turn * w * 0.012, cy); c.rotate(this.turn * KART.turn); c.drawImage(wheels, x0, y0, x1 - x0, y1 - y0, -ww / 2, -wh / 2, ww, wh); c.restore();
+    const u = v.u, q = KART.squash, mid = W / 2 + this.lean * W * 0.02, left = mid - (KART.w / 2) * u;
+    const bump = (Math.abs(s.x) > 1 ? 3.2 : 1) * k * Math.sin(now / 38) * KART.h * u * 0.01;
+    const ph = (KART.pitch * Math.PI) / 180, sp = Math.sin(ph) * q, cp = Math.sqrt(1 - sp * sp), yaw = (this.turn * KART.turn * Math.PI) / 180;
+    if (shadow.complete && shadow.naturalWidth) c.drawImage(shadow, left - KART.shadowPad * u, v.top - KART.shadowPad * u * q, shadow.naturalWidth * u, shadow.naturalHeight * u * q);
+    const F = KART.front, B = KART.back;
+    for (const side of [-1, 1]) {
+      this.contact(c, mid + side * B.x * u, v.rear, B.r * u, B.tyre * u, 0, sp);
+      this.wheel(c, mid + side * F.x * u, v.top + F.y * u * q, u, yaw, side, sp, cp);
     }
-    c.drawImage(pic, -w / 2, -h / 2, w, h);
+    c.save(); c.translate(mid, v.rear); c.rotate(this.lean * KART.lean);
+    c.drawImage(body, (-KART.w / 2) * u, -KART.rear * u * q + bump, KART.w * u, KART.h * u * q);
     c.restore();
   }
   private turn = 0;
+
+  /** Пятно тени под колесом: эллипс на дороге, вытянутый вдоль колеса. */
+  private contact(c: CanvasRenderingContext2D, x: number, y: number, r: number, tyre: number, yaw: number, sp: number) {
+    const sd = Math.sin(yaw), cd = Math.cos(yaw);
+    c.save(); c.transform(cd * tyre * 0.62, sd * sp * tyre * 0.62, sd * r * 0.7, -cd * sp * r * 0.7, x, y);
+    c.beginPath(); c.arc(0, 0, 1, 0, 7); c.restore();
+    c.fillStyle = 'rgba(48,36,52,0.2)'; c.fill();
+  }
+
+  /**
+   * Переднее колесо: цилиндр, повёрнутый на yaw вокруг вертикальной оси и увиденный камерой сверху-сзади (sp и cp — синус и косинус её наклона).
+   * На экране ось колеса — a, направление «вперёд» — f, «вверх» — (0, −cp); шина — выпуклая оболочка двух эллипсов-торцов.
+   */
+  private wheel(c: CanvasRenderingContext2D, x: number, y: number, u: number, yaw: number, side: number, sp: number, cp: number) {
+    const F = KART.front, R = F.r * u, T = F.tyre * u, sd = Math.sin(yaw), cd = Math.cos(yaw);
+    const ax = cd, ay = sd * sp, fx = sd, fy = -cd * sp, orient = -sd * cp >= 0 ? 1 : -1;
+    /** Круг радиуса r в плоскости колеса, протянутый вдоль оси от t0 до t1. */
+    const puck = (r: number, t0: number, t1: number) => {
+      c.beginPath();
+      for (let i = 0; i < 28; i++) {
+        const th = (i / 28) * Math.PI * 2, co = Math.cos(th), si = Math.sin(th);
+        const ex = r * co * fx, ey = r * (co * fy - si * cp), dx = -si * fx, dy = -si * fy - co * cp;   // точка торца и касательная в ней
+        const t = (dy * ax - dx * ay) * orient * (t1 - t0) > 0 ? t1 : t0;
+        c.lineTo(x + ex + t * ax, y + ey + t * ay);
+      }
+      c.closePath();
+    };
+    const disc = (r: number, t: number) => { c.beginPath(); for (let i = 0; i < 28; i++) { const th = (i / 28) * Math.PI * 2; c.lineTo(x + t * ax + r * Math.cos(th) * fx, y + t * ay + r * (Math.cos(th) * fy - Math.sin(th) * cp)); } c.closePath(); };
+    const round = T * 0.44, edge = T / 2 - round, facing = Math.abs(sd) < 0.03 ? 0 : Math.sign(sd);   // какой торец виден камере: правый (+1) или левый (−1)
+    const cap = () => {                                                                             // колпак на наружном торце
+      const rc = F.cap * u * 0.8;                                                                    // скруглённый край: колпак выпуклый
+      puck(F.hub * u - rc, side * edge, side * (T / 2 + F.cap * u - rc)); c.fillStyle = c.strokeStyle = KART.hubcap[0]; c.lineJoin = 'round'; c.lineWidth = rc * 2; c.fill(); c.stroke();
+      if (facing === side) { disc(F.hub * u * 0.6, side * (T / 2 + F.cap * u)); c.fillStyle = KART.hubcap[1]; c.fill(); }
+    };
+    this.contact(c, x, y + R * cp, R, T, yaw, sp);
+    if (facing !== side) cap();                                                                     // колпак с той стороны выглядывает из-за шины
+    const g = c.createLinearGradient(x - (T / 2) * ax, y - (T / 2) * ay, x + (T / 2) * ax, y + (T / 2) * ay);
+    g.addColorStop(0, KART.tyre[0]); g.addColorStop(0.45, KART.tyre[1]); g.addColorStop(1, KART.tyre[2]);
+    puck(R - round, -edge, edge); c.fillStyle = c.strokeStyle = g; c.lineJoin = 'round'; c.lineWidth = round * 2; c.fill(); c.stroke();
+    if (facing) { disc(R - round * 0.4, facing * (T / 2 - round * 0.5)); c.fillStyle = facing === side ? KART.side : KART.inner; c.fill(); }
+    if (facing === side) cap();
+  }
 
   /** Отлетающие конусы и шины, пойманные звёзды, конфетти на финише. */
   private flying(c: CanvasRenderingContext2D, W: number, H: number, now: number) {

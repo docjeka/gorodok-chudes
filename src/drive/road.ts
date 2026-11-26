@@ -1,5 +1,5 @@
 // Правила езды по дороге: трасса из отрезков и чистая функция шага. Экран (drive.ts) только рисует и играет звуки.
-import { CAR, PROPS, ROAD, TRACK } from '../content/drive';
+import { CAR, KART, PROPS, ROAD, TRACK } from '../content/drive';
 
 export type PropKind = 'cone' | 'tyres' | 'star' | 'tree' | 'bush' | 'flowers' | 'sign_stop' | 'sign_park' | 'flag';
 export interface Prop { id: number; kind: PropKind; offset: number }
@@ -62,9 +62,16 @@ export function buildTrack(): Track {
   return { segments, length: segments.length * ROAD.segment };
 }
 
-/** Камера: глубина проекции и на сколько машина впереди камеры. */
-export const CAMERA_DEPTH = 1 / Math.tan(((ROAD.fov / 2) * Math.PI) / 180);
-export const PLAYER_Z = ROAD.cameraHeight * CAMERA_DEPTH;
+/**
+ * Камера висит позади машины и смотрит на дорогу сверху. depth — глубина проекции; rearZ и noseZ — как далеко от камеры
+ * задние колёса и нос машины (считаются из того, где машина нарисована на экране, чтобы рисунок и дорога сходились).
+ */
+export function camera() {
+  const depth = 1 / Math.tan(((ROAD.fov / 2) * Math.PI) / 180), far = (row: number) => (depth * ROAD.cameraHeight) / (2 * Math.max(0.05, ROAD.look - ((KART.rear - row) * KART.squash * KART.size) / KART.w));
+  return { depth, rearZ: far(KART.rear), noseZ: far(KART.nose) };
+}
+/** Машина задевает конусы и ловит звёзды носом. */
+export const PLAYER_Z = camera().noseZ;
 
 export const newDrive = (): DriveState => ({ position: 0, speed: 0, x: 0, lap: 1, stars: 0, time: 0, gone: new Set() });
 export const segmentAt = (t: Track, position: number): Segment => t.segments[Math.floor((((position % t.length) + t.length) % t.length) / ROAD.segment) % t.segments.length];
