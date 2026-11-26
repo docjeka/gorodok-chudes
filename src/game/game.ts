@@ -24,11 +24,17 @@ export class Game {
     fn(w);
     this.commit({ ok: true, world: w }, critical);
   }
+  /** Тихое изменение: в историю «отменить» не попадает (счётчик звёзд автошколы). */
+  quiet(fn: (w: World) => void, critical = false) {
+    const w: World = JSON.parse(JSON.stringify(this.world));
+    fn(w);
+    this.set(w, critical);
+  }
   canUndo() { return this.undoStack.length > 0; }
   undo(): boolean {
     const prev = this.undoStack.pop();
     if (!prev) return false;
-    this.set({ ...prev, settings: this.world.settings }, true);
+    this.set({ ...prev, settings: this.world.settings, driving: this.world.driving }, true); // настройки и звёзды автошколы «отменить» не трогает
     return true;
   }
   replace(world: World) { this.undoStack = []; this.set(world, true); }

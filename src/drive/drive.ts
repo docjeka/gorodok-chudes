@@ -1,12 +1,12 @@
 // Экран «Автошкола»: дорога с видом из-за машины, нарисованная на одном холсте полосками в перспективе.
 // Машина, конусы, шины, знаки и флажок — готовые картинки; небо, холмы, дорога, деревья, звёзды и передние колёса машины рисует код.
-// Сохранения не трогает.
+// В сохранение пишет только одно: сколько звёзд собрал герой за все заезды — по ним вручаются права.
 import type { GameAudio } from '../audio/audio';
-import { CAR, CAR_COLORS, COLORS, KART, PROPS, ROAD, type CarColor } from '../content/drive';
+import { CAR, CAR_COLORS, COLORS, KART, LICENSE, PROPS, ROAD, type CarColor } from '../content/drive';
 import type { Character } from '../game/types';
 import { t, type Key } from '../i18n';
 import { heroThumb } from '../ui/panels';
-import { buildTrack, camera, newDrive, segmentAt, stepDrive, type DriveInput, type DriveState, type Prop, type Segment } from './road';
+import { buildTrack, camera, licenseTier, newDrive, segmentAt, stepDrive, type DriveInput, type DriveState, type Prop, type Segment } from './road';
 
 const BASE = import.meta.env.BASE_URL;
 const img = (name: string) => `${BASE}assets/drive/${name}`;
@@ -21,7 +21,15 @@ const SPRITES = ['cone', 'tyres', 'sign_stop', 'sign_park', 'flag'] as const;
 /** Ширина придорожных предметов в единицах мира (у дорожных она задана в PROPS). */
 const SIDE_W: Record<string, number> = { tree: 1700, bush: 900, flowers: 620, sign_stop: 520, sign_park: 520, flag: 900 };
 
-export interface DriveHost { heroes(): Character[]; audio: GameAudio; onClose(): void }
+export interface DriveHost {
+  heroes(): Character[]; audio: GameAudio; onClose(): void;
+  /** сколько звёзд герой собрал за все заезды */
+  stars(heroId: string): number;
+  /** записать герою ещё n звёзд */
+  earn(heroId: string, n: number): void;
+}
+const medal = (tier: number) => `<i class="medal t${tier}"></i>`;
+const BRAKING: DriveInput = { gas: false, back: false, left: false, right: false, brake: true };
 interface Fly { kind: 'cone' | 'tyres' | 'star' | 'party'; x: number; y: number; vx: number; vy: number; size: number; spin: number; born: number }
 interface Shown { x: number; y: number; w: number; scale: number; clip: number }
 /** Раскладка кадра: u — точек холста на точку рисунка машины, top и rear — верх рисунка и строка задних колёс, hz — горизонт, sv — масштаб высот. */
@@ -43,6 +51,11 @@ export class DriveSchool {
   private who = document.createElement('div');
   private picker = document.createElement('div');
   private controls = document.createElement('div');
+  private award = document.createElement('div');
+  /** звёзды этого заезда, ещё не записанные герою */
+  private pending = 0;
+  /** вручаются права: машина сама тормозит, кнопки ждут */
+  private awarding = false;
   private fly: Fly[] = [];
   private raf = 0;
   private last = 0;
@@ -59,15 +72,17 @@ export class DriveSchool {
     this.who.className = 'drive-who';
     this.controls.className = 'drive-controls';
     this.picker.className = 'drive-picker';
+    this.award.className = 'drive-award hidden';
+    const top = document.createElement('div'); top.className = 'drive-top'; top.append(this.starsEl, this.lapEl);
     const back = this.button('home', 'drive.exit', false); back.classList.add('drive-exit'); back.onclick = () => this.close();
     const horn = this.button('horn', 'drive.horn', false); horn.classList.add('drive-horn'); horn.onclick = () => this.host.audio.play('beep');
     this.who.onclick = () => this.showPicker();
-    this.el.append(this.canvas, this.starsEl, this.lapEl, back, this.who, horn, this.controls, this.picker);
+    this.el.append(this.canvas, top, back, this.who, horn, this.controls, this.picker, this.award);
     for (const [name, key, group] of [['left', 'drive.left', 'steer'], ['right', 'drive.right', 'steer'], ['back', 'drive.back', 'pedals'], ['brake', 'drive.brake', 'pedals'], ['gas', 'drive.gas', 'pedals']] as const) {
       let box = this.controls.querySelector<HTMLElement>('.' + group);
       if (!box) { box = document.createElement('div'); box.className = group; this.controls.append(box); }
       const b = this.button(name, key, true); b.classList.add('drive-btn', name);
-      const set = (on: boolean) => { this.input[name] = on; b.classList.toggle('held', on); if (on && (name === 'gas' || name === 'back')) this.vroom(); };
+      const set = (on: boolean) => { if (on && this.awarding) return; this.input[name] = on; b.classList.toggle('held', on); if (on && (name === 'gas' || name === 'back')) this.vroom(); };
       b.addEventListener('pointerdown', (e) => { e.preventDefault(); b.setPointerCapture?.(e.pointerId); set(true); });
       for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture'] as const) b.addEventListener(ev, () => set(false));
       b.addEventListener('contextmenu', (e) => e.preventDefault());
@@ -75,7 +90,7 @@ export class DriveSchool {
     }
     root.append(this.el);
     if ('ResizeObserver' in window) new ResizeObserver(() => { if (this.isOpen) this.layout(); }).observe(this.el);
-    document.addEventListener('visibilitychange', () => { if (document.hidden) this.release(); });
+    document.addEventListener('visibilitychange', () => { if (document.hidden) { this.release(); this.bank(); } });
   }
 
   private button(icon: string, key: Key, filled: boolean) {
@@ -93,7 +108,7 @@ export class DriveSchool {
     this.isOpen = true;
     this.el.classList.remove('hidden');
     this.texts(); this.layout();
-    this.state = newDrive(); this.fly = [];
+    this.state = newDrive(); this.fly = []; this.pending = 0; this.awarding = false; this.award.classList.add('hidden');
     window.addEventListener('keydown', this.keys); window.addEventListener('keyup', this.keys);
     this.showPicker();
     this.last = performance.now();
@@ -104,7 +119,7 @@ export class DriveSchool {
     if (!this.isOpen) return;
     this.isOpen = false;
     cancelAnimationFrame(this.raf);
-    this.release();
+    this.release(); this.bank(); this.awarding = false; this.award.classList.add('hidden');
     window.removeEventListener('keydown', this.keys); window.removeEventListener('keyup', this.keys);
     this.el.classList.add('hidden');
     this.host.onClose();
@@ -114,18 +129,26 @@ export class DriveSchool {
 
   /** Кто за рулём и какая машина. Заезд начинается заново со старта. */
   private showPicker() {
-    this.release();
+    this.release(); this.bank();
     const heroes = this.host.heroes();
     if (!this.driver || !heroes.some((h) => h.id === this.driver)) this.driver = heroes[0]?.id ?? null;
     const p = this.picker;
     p.classList.remove('hidden');
-    p.innerHTML = `<div class="card"><h2>${t('drive.who')}</h2><div class="drive-heroes"></div><div class="drive-cars"></div><button class="pill wide drive-go">${t('drive.go')}</button></div>`;
-    const hs = p.querySelector('.drive-heroes')!, cs = p.querySelector('.drive-cars')!;
+    p.innerHTML = `<div class="card"><h2>${t('drive.who')}</h2><div class="drive-heroes"></div><button class="drive-progress"></button><div class="drive-cars"></div><button class="pill wide drive-go">${t('drive.go')}</button></div>`;
+    const hs = p.querySelector('.drive-heroes')!, cs = p.querySelector('.drive-cars')!, pr = p.querySelector<HTMLButtonElement>('.drive-progress')!;
+    // под героями — его звёзды и полоска до следующих прав; если права уже есть, по нажатию их можно посмотреть
+    const sync = () => {
+      const hero = heroes.find((h) => h.id === this.driver), total = hero ? this.host.stars(hero.id) : 0, tier = licenseTier(total);
+      pr.innerHTML = (tier && tier < LICENSE.stars.length ? medal(tier) : '') + this.progress(total); pr.disabled = !tier; pr.setAttribute('aria-label', t('drive.show'));
+      pr.onclick = () => { if (hero && tier) { this.host.audio.play('click'); this.showLicense(hero, tier, total, false); } };
+    };
     for (const h of heroes) {
-      const b = document.createElement('button'); b.className = 'herochip' + (h.id === this.driver ? ' current' : ''); b.innerHTML = heroThumb(h, 64) + `<span>${h.name}</span>`;
-      b.onclick = () => { this.driver = h.id; this.host.audio.play('click'); for (const x of hs.children) x.classList.toggle('current', x === b); };
+      const b = document.createElement('button'), name = document.createElement('span'), tier = licenseTier(this.host.stars(h.id));
+      b.className = 'herochip' + (h.id === this.driver ? ' current' : ''); b.innerHTML = heroThumb(h, 64) + (tier ? medal(tier) : ''); name.textContent = h.name; b.append(name);
+      b.onclick = () => { this.driver = h.id; this.host.audio.play('click'); for (const x of hs.children) x.classList.toggle('current', x === b); sync(); };
       hs.append(b);
     }
+    sync();
     for (const c of CAR_COLORS) {
       const b = document.createElement('button'); b.className = 'herochip drive-carchip' + (c === this.color ? ' current' : ''); b.dataset.car = c; b.innerHTML = `<img src="${img(`kart_${c}.png`)}" alt="" height="84" draggable="false">`;
       b.setAttribute('aria-label', t(`drive.car.${c}` as Key));
@@ -134,8 +157,9 @@ export class DriveSchool {
     }
     p.querySelector<HTMLButtonElement>('.drive-go')!.onclick = () => this.start();
   }
-  /** Новый заезд: машина на старте, круг первый, звёзды с нуля. */
+  /** Новый заезд: машина на старте, круг первый. Звёзды героя копятся дальше. */
   start() {
+    this.bank();
     this.state = newDrive(); this.fly = []; this.lean = 0; this.turn = 0;
     this.picker.classList.add('hidden');
     const hero = this.host.heroes().find((h) => h.id === this.driver);
@@ -147,7 +171,7 @@ export class DriveSchool {
   private key(e: KeyboardEvent) {
     const map: Record<string, keyof DriveInput> = { ArrowUp: 'gas', ArrowDown: 'back', ArrowLeft: 'left', ArrowRight: 'right', ' ': 'brake' };
     const k = map[e.key];
-    if (!k || this.picking) return;
+    if (!k || this.picking || this.awarding) return;
     e.preventDefault();
     this.input[k] = e.type === 'keydown';
     if (e.type === 'keydown' && !e.repeat && (k === 'gas' || k === 'back')) this.vroom();
@@ -166,11 +190,43 @@ export class DriveSchool {
     if (this.canvas.width !== w || this.canvas.height !== h) { this.canvas.width = w; this.canvas.height = h; }
   }
 
+  /** Все звёзды героя: записанные раньше и собранные в этом заезде. */
+  private get total() { return (this.driver ? this.host.stars(this.driver) : 0) + this.pending; }
+  /** Записать герою звёзды этого заезда. */
+  private bank() { if (this.pending && this.driver) this.host.earn(this.driver, this.pending); this.pending = 0; }
+  /** Счётчик звёзд и полоска до следующих прав (после золотых — просто счётчик с золотой медалью). */
+  private progress(total: number) {
+    const tier = licenseTier(total), need = LICENSE.stars[tier], from = tier ? LICENSE.stars[tier - 1] : 0;
+    return `<span>⭐ ${total}</span>` + (need ? `<i class="drive-bar"><b style="width:${Math.round(((total - from) / (need - from)) * 100)}%"></b></i>${medal(tier + 1)}` : medal(tier));
+  }
+
   private hud() {
-    const s = this.state;
-    const stars = `⭐ ${s.stars}`, lap = `${t('drive.lap')} ${s.lap}`;
-    if (this.starsEl.textContent !== stars) { this.starsEl.textContent = stars; this.starsEl.classList.remove('pop'); void this.starsEl.offsetWidth; this.starsEl.classList.add('pop'); }
+    const s = this.state, total = this.total, lap = `${t('drive.lap')} ${s.lap}`;
+    if (this.starsEl.dataset.n !== String(total)) { this.starsEl.dataset.n = String(total); this.starsEl.innerHTML = this.progress(total); this.starsEl.classList.remove('pop'); void this.starsEl.offsetWidth; this.starsEl.classList.add('pop'); }
     if (this.lapEl.textContent !== lap) this.lapEl.textContent = lap;
+  }
+
+  /** Вручение прав: машина тормозит сама, летит конфетти, появляется карточка. Звёзды сразу записываются герою. */
+  private grant(tier: number, now: number) {
+    const hero = this.host.heroes().find((h) => h.id === this.driver), total = this.total;
+    this.awarding = true; this.release(); this.bank();
+    this.host.audio.play('gift'); this.party(now);
+    window.setTimeout(() => { if (this.isOpen && this.awarding && hero) { this.host.audio.play('sparkle'); this.showLicense(hero, tier, total, true); } else this.awarding = false; }, 900);
+  }
+  /** Карточка прав: портрет героя, имя, машина, звёздочки по ступени и печать. fresh — только что вручили. */
+  private showLicense(hero: Character, tier: number, total: number, fresh: boolean) {
+    const a = this.award;
+    a.className = 'drive-award' + (fresh ? ' fresh' : '');
+    a.innerHTML = `<div class="license t${tier}"><div class="license-head"><b>${t('drive.license')}</b><span>${'★'.repeat(tier)}<s>${'★'.repeat(3 - tier)}</s></span></div>`
+      + `<div class="license-body"><div class="license-photo">${heroThumb({ ...hero, emotion: 'joy' }, 150)}</div>`
+      + `<div class="license-info"><div class="license-name"></div><div class="license-tier">${t(`drive.tier.${tier}` as Key)}</div><img class="license-car" src="${img(`kart_${this.color}.png`)}" alt="" draggable="false"></div>`
+      + `<div class="license-seal">${medal(tier)}<b>⭐ ${total}</b></div></div></div><button class="pill drive-great">${t('drive.great')}</button>`;
+    a.querySelector('.license-name')!.textContent = hero.name;
+    a.querySelector<HTMLButtonElement>('.drive-great')!.onclick = () => { a.classList.add('hidden'); this.awarding = false; this.host.audio.play('click'); };
+  }
+  private party(now: number) {
+    const W = this.canvas.width, H = this.canvas.height;
+    for (let i = 0; i < 26; i++) this.fly.push({ kind: 'party', x: W * (0.1 + Math.random() * 0.8), y: H * 0.3, vx: (Math.random() - 0.5) * W * 0.4, vy: -H * (0.3 + Math.random() * 0.6), size: W * 0.03, spin: Math.random() * 6, born: now + i * 20 });
   }
 
   private frame(now: number) {
@@ -180,15 +236,14 @@ export class DriveSchool {
     this.draw(now, shown);
     if (!this.picking) {
       const a = this.host.audio, W = this.canvas.width, H = this.canvas.height;
-      for (const e of stepDrive(this.track, this.state, this.input, dt)) {
+      for (const e of stepDrive(this.track, this.state, this.awarding ? BRAKING : this.input, dt)) {
         if (e.type === 'lap') {
-          a.play('gift');
-          for (let i = 0; i < 26; i++) this.fly.push({ kind: 'party', x: W * (0.1 + Math.random() * 0.8), y: H * 0.3, vx: (Math.random() - 0.5) * W * 0.4, vy: -H * (0.3 + Math.random() * 0.6), size: W * 0.03, spin: Math.random() * 6, born: now + i * 20 });
+          a.play('gift'); this.party(now);
           continue;
         }
         // предмет улетает оттуда, где он только что был нарисован (у самой машины)
         const at = shown.get(e.id) ?? { x: W / 2 + (e.offset - this.state.x) * W * 0.3, y: H * 0.6, w: W * 0.08, scale: 0, clip: H };
-        if (e.type === 'star') { a.play('sparkle'); const y0 = Math.min(H * 0.7, at.y - at.w * 0.5); this.fly.push({ kind: 'star', x: at.x, y: y0, vx: (W / 2 - at.x) / 0.6, vy: (H * 0.05 - y0) / 0.6, size: W * 0.09, spin: 0, born: now }); } // звезда летит к счётчику
+        if (e.type === 'star') { const before = licenseTier(this.total); this.pending += 1; if (licenseTier(this.total) > before) this.grant(before + 1, now); else if (this.pending >= 10) this.bank(); a.play('sparkle'); const y0 = Math.min(H * 0.7, at.y - at.w * 0.5); this.fly.push({ kind: 'star', x: at.x, y: y0, vx: (W / 2 - at.x) / 0.6, vy: (H * 0.05 - y0) / 0.6, size: W * 0.09, spin: 0, born: now }); } // звезда летит к счётчику
         else { a.play(e.type === 'cone' ? 'boing' : 'put'); this.fly.push({ kind: e.type, x: at.x, y: at.y, vx: (e.offset >= this.state.x ? 1 : -1) * W * (0.5 + Math.random() * 0.3), vy: -H * 0.9, size: Math.max(W * 0.1, at.w), spin: (Math.random() < 0.5 ? -1 : 1) * 7, born: now }); }
       }
       this.hud();

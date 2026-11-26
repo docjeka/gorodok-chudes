@@ -179,11 +179,18 @@ img.clay { width: 46px; height: 46px; margin: -6px; display: block; pointer-even
 /* ---------- автошкола ---------- */
 .drive { position: fixed; left: 0; top: 0; width: var(--app-w, 100%); height: var(--app-h, 100%); z-index: 40; overflow: hidden; background: #9fd0ff; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .drive-view { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; }
-.drive-stars, .drive-lap { position: absolute; top: max(12px, env(safe-area-inset-top)); background: var(--cream); border: 4px solid var(--ink); border-radius: 26px; font-weight: 800; box-shadow: var(--shadow); z-index: 3; }
-.drive-stars { left: 50%; transform: translateX(-50%); padding: 4px 22px; font-size: 28px; }
+.drive-top { position: absolute; top: max(12px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 10px; z-index: 3; }
+.drive-stars, .drive-lap { background: var(--cream); border: 4px solid var(--ink); border-radius: 26px; font-weight: 800; box-shadow: var(--shadow); white-space: nowrap; }
+.drive-stars { padding: 4px 12px 4px 18px; font-size: 26px; display: flex; align-items: center; gap: 10px; min-height: 52px; }
 .drive-stars.pop { animation: drive-pop 0.35s ease-out; }
-@keyframes drive-pop { 50% { transform: translateX(-50%) scale(1.22); } }
-.drive-lap { left: calc(50% + 96px); padding: 8px 16px; font-size: 18px; }
+@keyframes drive-pop { 50% { transform: scale(1.14); } }
+.drive-lap { padding: 8px 16px; font-size: 18px; }
+.drive-bar { display: block; width: 120px; height: 18px; border-radius: 11px; border: 3px solid var(--ink); background: #fff; overflow: hidden; flex: none; }
+.drive-bar b { display: block; height: 100%; background: var(--sun); transition: width 0.25s; }
+.medal { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; border: 3px solid var(--ink); font-style: normal; font-size: 18px; line-height: 1; flex: none; background: #e3a577; }
+.medal::before { content: '★'; color: #fff; text-shadow: 0 1px 0 rgba(90, 74, 92, 0.5); }
+.medal.t2 { background: #c9d2dc; }
+.medal.t3 { background: var(--sun); }
 .drive-exit, .drive-horn, .drive-who { position: absolute; top: max(12px, env(safe-area-inset-top)); z-index: 3; }
 .drive-exit { left: max(12px, env(safe-area-inset-left)); width: 64px; height: 64px; }
 .drive-who { left: calc(max(12px, env(safe-area-inset-left)) + 78px); width: 68px; height: 68px; border-radius: 50%; overflow: hidden; background: #ffe9d2; border: 4px solid var(--ink); box-shadow: var(--shadow); cursor: pointer; }
@@ -202,3 +209,26 @@ img.clay { width: 46px; height: 46px; margin: -6px; display: block; pointer-even
 .drive-heroes, .drive-cars { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
 .drive-carchip { min-width: 120px; padding: 8px 14px; }
 .drive-carchip img { background: none; border-radius: 0; height: 84px; width: auto; }
+.drive-heroes .herochip { position: relative; }
+.drive-heroes .medal { position: absolute; top: -8px; right: -8px; width: 32px; height: 32px; }
+.drive-progress { align-self: center; display: flex; align-items: center; gap: 10px; padding: 6px 14px; border-radius: 26px; background: #fff; font-weight: 800; font-size: 22px; min-height: 54px; box-shadow: var(--shadow); }
+.drive-progress:disabled { opacity: 1; cursor: default; box-shadow: none; }
+.drive-award { position: absolute; inset: 0; z-index: 6; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; background: rgba(90, 74, 92, 0.4); padding: 16px; }
+.license { --tier: #e3a577; width: min(660px, 94%); background: var(--cream); border: 5px solid var(--ink); border-radius: 32px; box-shadow: var(--shadow); overflow: hidden; }
+.license.t2 { --tier: #c9d2dc; }
+.license.t3 { --tier: var(--sun); }
+.drive-award.fresh .license { animation: license-in 0.6s cubic-bezier(0.2, 1.4, 0.4, 1); }
+@keyframes license-in { from { transform: scale(0.3) rotate(-8deg); opacity: 0; } }
+.license-head { background: var(--tier); display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 20px; font-size: 24px; border-bottom: 4px solid var(--ink); }
+.license-head span { font-size: 30px; color: #fff; text-shadow: 0 2px 0 rgba(90, 74, 92, 0.55); letter-spacing: 4px; white-space: nowrap; }
+.license-head s { text-decoration: none; opacity: 0.35; }
+.license-body { display: flex; align-items: center; gap: 16px; padding: 16px 18px; }
+.license-photo { flex: none; width: 176px; height: 176px; border-radius: 26px; border: 4px solid var(--ink); background: #ffe9d2; overflow: hidden; }
+.license-photo svg, .license-photo img { display: block; width: 100%; height: 100%; }
+.license-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.license-name { font-size: 36px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.license-tier { font-size: 20px; font-weight: 700; opacity: 0.75; }
+.license-car { height: 96px; width: auto; align-self: flex-start; margin-top: 6px; }
+.license-seal { flex: none; display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 20px; }
+.license-seal .medal { width: 88px; height: 88px; font-size: 48px; border-width: 4px; transform: rotate(-10deg); }
+.drive-great { min-width: 280px; justify-content: center; font-size: 22px; min-height: 64px; }

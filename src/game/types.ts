@@ -162,6 +162,8 @@ export interface World {
   /** идеи, для которых уже нажимали «Подготовить игру» (поля нет в старых сохранениях) */
   preparedIdeas?: string[];
   savedOutfits: SavedOutfit[];
+  /** автошкола: сколько звёзд собрал каждый герой за все заезды — по ним выдаются права (поля нет в старых сохранениях) */
+  driving?: { stars: Record<string, number> };
   settings: Settings;
 }
 

@@ -1,5 +1,5 @@
 // Правила езды по дороге: трасса из отрезков и чистая функция шага. Экран (drive.ts) только рисует и играет звуки.
-import { CAR, KART, PROPS, ROAD, TRACK } from '../content/drive';
+import { CAR, KART, LICENSE, PROPS, ROAD, TRACK } from '../content/drive';
 
 export type PropKind = 'cone' | 'tyres' | 'star' | 'tree' | 'bush' | 'flowers' | 'sign_stop' | 'sign_park' | 'flag';
 export interface Prop { id: number; kind: PropKind; offset: number }
@@ -72,6 +72,9 @@ export function camera() {
 }
 /** Машина задевает конусы и ловит звёзды носом. */
 export const PLAYER_Z = camera().noseZ;
+
+/** Какие права у героя с таким числом звёзд: 0 — ещё нет, 1 — бронзовые, 2 — серебряные, 3 — золотые. */
+export const licenseTier = (stars: number) => LICENSE.stars.filter((n) => stars >= n).length;
 
 export const newDrive = (): DriveState => ({ position: 0, speed: 0, x: 0, lap: 1, stars: 0, time: 0, gone: new Set() });
 export const segmentAt = (t: Track, position: number): Segment => t.segments[Math.floor((((position % t.length) + t.length) % t.length) / ROAD.segment) % t.segments.length];

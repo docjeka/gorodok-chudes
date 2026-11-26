@@ -368,6 +368,7 @@ function checkShape(w: any): string | null {
   if (!num(w.schemaVersion) || !num(w.revision) || !num(w.nextId)) return 'bad_header';
   for (const k of ['items', 'characters', 'pets', 'furniture', 'rooms', 'settings']) if (!isObj(w[k])) return `bad_${k}`;
   if (w.preparedIdeas !== undefined && !(Array.isArray(w.preparedIdeas) && w.preparedIdeas.length <= 40 && w.preparedIdeas.every((x: unknown) => typeof x === 'string' && ID_RE.test(x)))) return 'bad_ideas';
+  if (w.driving !== undefined && !(isObj(w.driving) && isObj(w.driving.stars) && Object.keys(w.driving.stars).length <= 80 && Object.entries(w.driving.stars).every(([k, v]) => ID_RE.test(k) && Number.isInteger(v) && (v as number) >= 0 && (v as number) <= 1e6))) return 'bad_driving';
   if (!Array.isArray(w.openedGiftIds) || !w.openedGiftIds.every((x: unknown) => typeof x === 'string' && ID_RE.test(x))) return 'bad_gifts';
   if (!Array.isArray(w.savedOutfits) || w.savedOutfits.length > 40) return 'bad_outfits';
   for (const it of Object.values<any>(w.items)) {

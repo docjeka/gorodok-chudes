@@ -167,7 +167,11 @@ async function run(kv: KV, initial: World) {
     reducedMotion: () => game.world.settings.reducedMotion,
   });
   // автошкола: водителем может быть любой герой, кроме жителей, привязанных к своему месту
-  const drive = new DriveSchool(document.body, { heroes: () => Object.values(game.world.characters).filter((c) => !BOUND_CHARS[c.id]), audio, onClose: () => { /* карта осталась открытой под экраном езды */ } });
+  const drive = new DriveSchool(document.body, {
+    heroes: () => Object.values(game.world.characters).filter((c) => !BOUND_CHARS[c.id]), audio,
+    stars: (id) => game.world.driving?.stars[id] ?? 0,
+    earn: (id, n) => game.quiet((w) => { const d = (w.driving ??= { stars: {} }); d.stars[id] = (d.stars[id] ?? 0) + n; }, true),
+    onClose: () => { /* карта осталась открытой под экраном езды */ } });
   mapOpen = () => map.isOpen;
   const toMap = () => {
     input.cancel();

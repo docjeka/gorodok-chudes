@@ -926,4 +926,18 @@ describe('автошкола', () => {
     ev = run(s, {}, 0.2);
     expect(ev).toContainEqual({ type: 'lap', lap: 2 }); expect(s.lap).toBe(2); expect(s.gone.size).toBe(0);
   });
+  it('права: звёзды героя хранятся в сохранении, «отменить» их не трогает, ступени — по числу звёзд', async () => {
+    const { licenseTier } = await import('../../src/drive/road');
+    const { LICENSE } = await import('../../src/content/drive');
+    const { Game } = await import('../../src/game/game');
+    expect([0, LICENSE.stars[0] - 1, LICENSE.stars[0], LICENSE.stars[1], LICENSE.stars[2] + 50].map(licenseTier)).toEqual([0, 0, 1, 2, 3]);
+    const game = new Game(createWorld(), new Saver(new MemoryKV(), () => {}, 0));
+    game.update((w) => { w.characters.hero_mila.x += 10; });
+    game.quiet((w) => { w.driving = { stars: { hero_mila: 25 } }; });
+    expect(game.undo()).toBe(true);                                           // шаг героини отменился, звёзды остались
+    expect(game.world.driving).toEqual({ stars: { hero_mila: 25 } });
+    expect(parseWorld(JSON.stringify(game.world)).ok).toBe(true);
+    expect(parseWorld(JSON.stringify(createWorld())).ok).toBe(true);          // старое сохранение без поля — годится
+    expect(parseWorld(JSON.stringify({ ...game.world, driving: { stars: { hero_mila: -3 } } })).ok).toBe(false);
+  });
 });
